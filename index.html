@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="description" content="Drift Rally — een realistische browser racegame geïnspireerd op PolyTrack." />
+    <meta name="theme-color" content="#05060a" />
+    <title>Drift Rally</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- 3D canvas mount -->
+      <canvas id="game-canvas"></canvas>
+
+      <!-- Loading screen -->
+      <div id="loading-screen" class="overlay-screen">
+        <div class="loading-content">
+          <div class="loading-logo">DRIFT<span>RALLY</span></div>
+          <div class="loading-bar"><div class="loading-bar-fill" id="loading-bar-fill"></div></div>
+          <div class="loading-text" id="loading-text">Wagenpark opbouwen…</div>
+        </div>
+      </div>
+
+      <!-- Main menu -->
+      <div id="main-menu" class="overlay-screen hidden">
+        <div class="menu-vignette"></div>
+        <div class="menu-scanlines"></div>
+        <header class="menu-header">
+          <h1 class="game-title" id="game-title">
+            <span class="title-line1">DRIFT</span><span class="title-line2">RALLY</span>
+          </h1>
+          <p class="game-subtitle">Los van het spoor. Vol in de drift.</p>
+        </header>
+
+        <div class="menu-panel">
+          <div class="menu-field">
+            <label for="player-name">Bestuurdersnaam</label>
+            <input id="player-name" maxlength="16" placeholder="Voer je naam in" autocomplete="off" spellcheck="false" />
+          </div>
+
+          <div class="menu-field">
+            <label>Kies circuit</label>
+            <div class="track-select" id="track-select"><!-- track cards injected by JS --></div>
+          </div>
+
+          <div class="menu-field">
+            <label>Voertuigkleur</label>
+            <div class="color-select" id="color-select"><!-- color swatches injected by JS --></div>
+          </div>
+
+          <button id="play-button" class="btn-primary" type="button">
+            <span>START RACE</span>
+          </button>
+
+          <div class="menu-secondary-row">
+            <button id="controls-button" class="btn-secondary" type="button">Besturing</button>
+            <button id="sound-toggle" class="btn-secondary" type="button">Geluid: Aan</button>
+          </div>
+
+          <div class="best-time-display" id="best-time-display"></div>
+        </div>
+
+        <footer class="menu-footer">
+          <span>Gemaakt met Three.js · Speel gratis in de browser</span>
+        </footer>
+      </div>
+
+      <!-- Controls modal -->
+      <div id="controls-modal" class="overlay-screen hidden modal-screen">
+        <div class="modal-box">
+          <h2>Besturing</h2>
+          <div class="controls-grid">
+            <div class="control-row"><span class="key">W / &#8593;</span><span>Gas geven</span></div>
+            <div class="control-row"><span class="key">S / &#8595;</span><span>Remmen / achteruit</span></div>
+            <div class="control-row"><span class="key">A / &#8592;</span><span>Links sturen</span></div>
+            <div class="control-row"><span class="key">D / &#8594;</span><span>Rechts sturen</span></div>
+            <div class="control-row"><span class="key">SPATIE</span><span>Handrem (drift)</span></div>
+            <div class="control-row"><span class="key">SHIFT</span><span>Nitro boost</span></div>
+            <div class="control-row"><span class="key">R</span><span>Reset op circuit</span></div>
+            <div class="control-row"><span class="key">ESC</span><span>Pauze</span></div>
+          </div>
+          <p class="modal-note">Op mobiel verschijnen automatisch de aanraakknoppen.</p>
+          <button class="btn-primary" id="controls-close" type="button"><span>Sluiten</span></button>
+        </div>
+      </div>
+
+      <!-- In-race HUD -->
+      <div id="hud" class="hud hidden">
+        <div class="hud-top-left">
+          <div class="hud-lap">RONDE <span id="hud-lap-current">1</span>/<span id="hud-lap-total">3</span></div>
+          <div class="hud-time">
+            <div class="hud-time-row"><span>Huidig</span><span id="hud-time-current">00:00.000</span></div>
+            <div class="hud-time-row"><span>Beste ronde</span><span id="hud-time-best">--:--.---</span></div>
+          </div>
+        </div>
+
+        <div class="hud-top-right">
+          <canvas id="minimap" width="160" height="160"></canvas>
+        </div>
+
+        <div class="hud-wrongway hidden" id="hud-wrongway">VERKEERDE RICHTING</div>
+
+        <div class="hud-bottom-right">
+          <div class="speedometer">
+            <svg class="speedo-dial" viewBox="0 0 200 120">
+              <path d="M 15 110 A 85 85 0 0 1 185 110" class="speedo-track" />
+              <path d="M 15 110 A 85 85 0 0 1 185 110" class="speedo-fill" id="speedo-fill" />
+            </svg>
+            <div class="speedo-value"><span id="speed-value">0</span><small>km/u</small></div>
+            <div class="gear-indicator" id="gear-indicator">D</div>
+          </div>
+        </div>
+
+        <div class="hud-boost-bar">
+          <div class="hud-boost-fill" id="hud-boost-fill"></div>
+          <span class="hud-boost-label">NITRO</span>
+        </div>
+      </div>
+
+      <!-- Countdown -->
+      <div id="countdown" class="countdown hidden">
+        <div class="countdown-number" id="countdown-number">3</div>
+      </div>
+
+      <!-- Touch controls -->
+      <div id="touch-controls" class="touch-controls hidden">
+        <div class="touch-left">
+          <button class="touch-btn" id="touch-left" aria-label="Links">&#8592;</button>
+          <button class="touch-btn" id="touch-right" aria-label="Rechts">&#8594;</button>
+        </div>
+        <div class="touch-right">
+          <button class="touch-btn touch-btn-round" id="touch-brake" aria-label="Remmen">&#9660;</button>
+          <button class="touch-btn touch-btn-round touch-btn-accent" id="touch-gas" aria-label="Gas">&#9650;</button>
+        </div>
+        <button class="touch-btn touch-drift" id="touch-drift" aria-label="Handrem">DRIFT</button>
+        <button class="touch-btn touch-nos" id="touch-nos" aria-label="Nitro">NOS</button>
+      </div>
+
+      <!-- Pause menu -->
+      <div id="pause-menu" class="overlay-screen hidden modal-screen">
+        <div class="modal-box">
+          <h2>Gepauzeerd</h2>
+          <button class="btn-primary" id="resume-button" type="button"><span>Hervatten</span></button>
+          <button class="btn-secondary" id="restart-button" type="button">Herstart ronde</button>
+          <button class="btn-secondary" id="quit-button" type="button">Terug naar menu</button>
+        </div>
+      </div>
+
+      <!-- Finish screen -->
+      <div id="finish-screen" class="overlay-screen hidden modal-screen">
+        <div class="modal-box modal-box-wide">
+          <h2 id="finish-title">Race voltooid!</h2>
+          <div class="finish-laps" id="finish-laps"><!-- lap rows injected --></div>
+          <div class="finish-summary">
+            <div><span>Totale tijd</span><strong id="finish-total-time">00:00.000</strong></div>
+            <div><span>Beste ronde</span><strong id="finish-best-lap">00:00.000</strong></div>
+          </div>
+          <div class="finish-record hidden" id="finish-record">NIEUW RECORD!</div>
+          <button class="btn-primary" id="finish-retry" type="button"><span>Opnieuw racen</span></button>
+          <button class="btn-secondary" id="finish-menu" type="button">Terug naar menu</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
