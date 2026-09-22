@@ -60,32 +60,44 @@ Dit genereert een volledig statische site in de map `dist/`. Test 'm lokaal met:
 npm run preview
 ```
 
-## Deployen naar Cloudflare Pages
+## Deployen naar Cloudflare
 
-Omdat dit een pure statische Vite-app is, werkt Cloudflare Pages out-of-the-box. Twee manieren:
+Dit is een pure statische Vite-app, dus die host je op Cloudflare's edge als een **Worker met
+statische assets** (de huidige, aanbevolen aanpak — de opvolger van de losse "Pages"-flow). De
+meegeleverde `wrangler.toml` is hier al voor ingericht:
+
+```toml
+name = "game"
+compatibility_date = "2024-09-01"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
+```
 
 ### Optie 1 — via de Cloudflare-dashboard + GitHub (aanbevolen)
 
 1. Push deze repository naar GitHub (als dat nog niet is gebeurd).
 2. Ga in het [Cloudflare-dashboard](https://dash.cloudflare.com/) naar **Workers & Pages → Create →
-   Pages → Connect to Git**.
+   Import a repository**.
 3. Selecteer deze repository.
-4. Vul de build-instellingen in:
-   - **Framework preset:** `Vite`
+4. Cloudflare herkent de `wrangler.toml` en stelt automatisch in:
    - **Build command:** `npm run build`
-   - **Build output directory:** `dist`
-5. Klik op **Save and Deploy**. Bij elke push naar je hoofdbranch bouwt Cloudflare automatisch een
-   nieuwe versie.
+   - **Deploy command:** `npx wrangler deploy`
+5. Klik op **Save and Deploy**. Bij elke push bouwt Cloudflare automatisch een nieuwe versie.
+
+> **Let op:** als je project al eerder is aangemaakt met een ander build-/deploy-commando of een
+> andere `name`, kan de deploy-stap falen terwijl de build zelf slaagt. Zorg dat de `name` in
+> `wrangler.toml` overeenkomt met de projectnaam in het dashboard, en dat het deploy-commando
+> `npx wrangler deploy` is (niet `wrangler pages deploy`).
 
 ### Optie 2 — via de Wrangler CLI
 
 ```bash
 npm install -g wrangler
 npm run build
-wrangler pages deploy dist --project-name=drift-rally
+wrangler deploy
 ```
-
-De meegeleverde `wrangler.toml` bevat alvast de juiste `pages_build_output_dir`.
 
 ## Projectstructuur
 
