@@ -357,5 +357,7 @@ select option { color: #111; }
 .cg-logo-wrap { margin: 0; line-height: 0; font-size: 0; }
 .cg-logo { height: 46px; width: auto; max-width: 100%; margin-bottom: 4px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.4)); }
 .poster-logo-wrap { margin: 0; line-height: 0; font-size: 0; }
-.poster-logo { width: min(420px, 78vw); height: auto; filter: drop-shadow(0 10px 18px rgba(0,0,0,.55)); }
+.poster-logo { width: auto; height: auto; max-width: min(420px, 78vw); max-height: clamp(90px, 22vh, 210px); object-fit: contain; filter: drop-shadow(0 10px 18px rgba(0,0,0,.55)); }
+.poster-card { gap: 8px; padding: 12px; }
+.poster-teun svg { height: clamp(70px, 12vh, 120px); }
 @media (max-width: 760px) { .cg-logo { height: 38px; } .feat-logo { width: min(280px, 100%); } }
