@@ -83,7 +83,7 @@ const FALLBACK_GAMES = [{
   id: 'te-un-puzzel', title: 'Te-Un Puzzel', category: 'puzzel',
   tagline: 'Vier legpuzzels met Te-Un. Maak ze allemaal af voor een nieuwe profielfoto.',
   description: 'Sleep de door elkaar liggende stukjes naar de juiste plek en maak de afbeelding af. Vier levels, van rustig tot serieus moeilijk.',
-  logo: '', hero: '/assets/te-un-puzzel-hero.jpg', thumb: '/assets/te-un-puzzel.jpg', created_at: '2025-06-01T00:00:00Z', controls: [],
+  logo: '/assets/te-un-puzzel-logo.png', hero: '/assets/te-un-puzzel-hero.jpg', thumb: '/assets/te-un-puzzel.jpg', created_at: '2025-06-01T00:00:00Z', controls: [],
 }];
 
 const GENRE = (id) => { const t = String(id || 'game'); return t[0].toUpperCase() + t.slice(1); };

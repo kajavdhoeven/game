@@ -25,7 +25,7 @@ export const DEFAULT_GAMES = [
       ['Voorbeeld', 'Laat de afbeelding zien'],
       ['Randen', 'Maakt de middenstukjes doorzichtig, zo vind je de randen sneller'],
     ],
-    logo: '', thumb: '/assets/te-un-puzzel.jpg', hero: '/assets/te-un-puzzel-hero.jpg', url: '/games/te-un-puzzel/',
+    logo: '/assets/te-un-puzzel-logo.png', thumb: '/assets/te-un-puzzel.jpg', hero: '/assets/te-un-puzzel-hero.jpg', url: '/games/te-un-puzzel/',
     published: true, featured: false, created_at: '2025-06-01T00:00:00Z', plays: 0, likes: 0,
   },
 ];

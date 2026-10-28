@@ -267,6 +267,7 @@ values (
 
 -- titel-logo voor de eerste game
 update public.games set logo = '/assets/te-un-surfers-logo.png' where id = 'te-un-surfers' and coalesce(logo, '') = '';
+update public.games set logo = '/assets/te-un-puzzel-logo.png' where id = 'te-un-puzzel' and coalesce(logo, '') = '';
 
 -- ---------- JIJ ALS EIGENAAR ----------
 -- 1. Maak eerst een account op je eigen site (te-ungames.nl).

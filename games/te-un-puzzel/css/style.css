@@ -6,6 +6,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: radial-gradi
 #menu { align-items: center; justify-content: center; padding: 20px 16px; gap: 14px; overflow: auto; touch-action: pan-y; }
 .title { margin: 0; font-size: clamp(38px, 8vw, 68px); line-height: 1; font-weight: 700; text-shadow: 0 4px 0 rgba(0,0,0,.25); }
 .title b { color: var(--sun); }
+.title-logo { display: block; width: min(300px, 62vw); max-height: 34vh; height: auto; object-fit: contain; filter: drop-shadow(0 6px 14px rgba(0,0,0,.35)); }
+@media (max-height: 640px) { .title-logo { max-height: 26vh; } }
 .sub { margin: 0; max-width: 520px; text-align: center; opacity: .85; font-size: 17px; }
 .levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; width: min(760px, 100%); margin-top: 6px; }
 .lv { position: relative; border: 0; padding: 0; border-radius: 18px; overflow: hidden; background: #0a2a66; color: #fff; font-family: inherit; text-align: left; cursor: pointer; box-shadow: 0 8px 22px rgba(0,0,0,.35); transition: transform .12s; }
