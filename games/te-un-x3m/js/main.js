@@ -1,6 +1,7 @@
 // Te-Un X3M: menu, spelverloop, opslaan en koppeling met het platform.
 import { makeLevel, LEVEL_COUNT, ceilAt } from './levels.js';
 import { Terrain, makeBike, stepBike, crashTest, VEH, VEH_ORDER, headPos, G } from './sim.js';
+import { initDev } from '/js/devmode.js';
 import { Renderer, CHARS, CHAR_ORDER, limpPose } from './draw.js';
 
 const GAME_ID = 'te-un-x3m';
@@ -124,7 +125,6 @@ function setScreen(s) {
   $('hud').hidden = s !== 'play';
   const tc = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
   $('touch').hidden = !(s === 'play' && tc);
-  $('devCorner').hidden = s === 'play';
   $('pause').hidden = true; $('end').hidden = true;
   if (s !== 'play') engine(0, false, 'fatbike', false);
   if (s === 'menu') refreshMenu();
@@ -402,25 +402,12 @@ $('eRetry').addEventListener('click', () => startLevel(g.n));
 $('eNext').addEventListener('click', () => startLevel(g.n + 1));
 addEventListener('resize', () => { R.resize(); $('rotate').hidden = !(screen === 'play' && innerHeight > innerWidth); });
 
-// ontwikkelaarstruc in de garage: 12x snel tikken op je sterren = 100 sterren
-{
-  let n = 0, t = 0;
-  const box = $('gStars');
-  box.style.cursor = 'pointer';
-  box.addEventListener('click', () => {
-    const now = performance.now(); n = now - t > 1800 ? 1 : n + 1; t = now;
-    if (n >= 12) { n = 0; P.bonus = (P.bonus || 0) + 100; save(); renderGarage(); toast('Developer: +100 sterren', 2400); beep(880, 0.2); }
-  });
-}
-// ontwikkelaarstruc: 3x snel tikken linksboven = 100 sterren en alles open
-{
-  let n = 0, t = 0;
-  addEventListener('pointerdown', (e) => {
-    if (e.clientX > 80 || e.clientY > 80 || screen === 'play') return;
-    const now = performance.now(); n = now - t > 1800 ? 1 : n + 1; t = now;
-    if (n >= 3) { n = 0; if (!P.dev) { P.dev = true; P.bonus = (P.bonus || 0) + 100; } save(); refreshAll(); toast('Developer: alles open + 100 sterren', 2600); }
-  }, true);
-}
+// ---- developer-modus (knopje Dev rechtsboven, met wachtwoord)
+initDev([
+  { label: 'Alle levels en personages openen', run: () => { P.dev = true; save(); refreshAll(); return 'Alles open'; } },
+  { label: '+100 sterren', run: () => { P.bonus = (P.bonus || 0) + 100; save(); refreshAll(); return `Nu ${freeStars()} sterren`; } },
+  { label: 'Alle levels met 3 sterren afmaken', run: () => { for (let n = 1; n <= LEVEL_COUNT; n++) { P.stars[n] = 3; if (!P.best[n]) P.best[n] = 60; } save(); refreshAll(); return 'Alle levels 3 sterren'; } },
+]);
 
 // ---------------------------------------------------------------- hoofdlus
 let last = performance.now(), acc = 0;

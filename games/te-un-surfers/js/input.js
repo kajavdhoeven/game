@@ -32,7 +32,7 @@ export function initInput(el, onAction) {
   let lastTapY = 0;
 
   el.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('button, input, a, .panel, #leader, #shop, .hud-coins, #devCorner, #vehBox')) return;
+    if (e.target.closest('button, input, a, .panel, #leader, #shop, .hud-coins, #teunDevBtn, .teun-dev-ov, #vehBox')) return;
     active = true;
     fired = false;
     pid = e.pointerId;

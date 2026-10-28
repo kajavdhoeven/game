@@ -13,6 +13,7 @@ import { audio } from './audio.js';
 import { initInput } from './input.js';
 import { softCircleTexture } from './textures.js';
 import { P, load, save, buy, owns, ownedVehicles, VEHICLES, VEHICLE_ORDER, VEHICLE_TIME, PRICES } from './save.js';
+import { initDev } from '/js/devmode.js';
 import { fetchBoard, submitScore, cleanName, isOnline } from './net.js';
 import { initBridge } from './bridge.js';
 
@@ -1800,55 +1801,30 @@ window.addEventListener('blur', () => {
   (trainPool[t + 1] ||= []).push(createTrain(t, 1, rand));
 });
 
-// ---- developer-trucjes (om alles te kunnen testen)
-// 3x snel tikken links boven in beeld: +100.000 munten
-// 12x snel tikken op je voertuig tijdens het rennen: oneindig refill
-// 12x snel tikken op een muntenteller (menu, winkel, tijdens het spel): +1.000.000 munten
-function devTaps(target, count, onGrant) {
-  let n = 0;
-  let t = 0;
-  target.addEventListener('click', () => {
-    const now = performance.now();
-    n = now - t > 1800 ? 1 : n + 1;
-    t = now;
-    if (n >= count) { n = 0; onGrant(); }
-  });
-}
+// ---- developer-modus (knopje Dev rechtsboven, met wachtwoord)
 function devCoins(amount) {
   P.coins += amount;
   save();
   audio.unlock();
   audio.powerup();
-  toast('Developer: +' + amount.toLocaleString('nl-NL') + ' munten', 2400);
   refreshMenuStats();
   if (!$('shop').hidden) renderShop();
+  return '+' + amount.toLocaleString('nl-NL') + ' munten';
 }
-// de hoek luistert op window-niveau, zodat geen paneel of overlay de tikken kan blokkeren
-{
-  let n = 0;
-  let t = 0;
-  window.addEventListener('pointerdown', (e) => {
-    if (e.clientX > 90 || e.clientY > 90) return;
-    const now = performance.now();
-    n = now - t > 1800 ? 1 : n + 1;
-    t = now;
-    if (n >= 3) { n = 0; devCoins(100000); }
-  }, true);
-}
-[$('menuCoins')?.parentElement, $('shopCoins')?.parentElement, ui.coinBox].forEach((el) => {
-  if (!el) return;
-  el.style.pointerEvents = 'auto';
-  devTaps(el, 12, () => devCoins(1000000));
-});
-devTaps($('vehBtn'), 12, () => {
-  if (S.mode !== 'playing' && S.mode !== 'intro') return;
-  S.infRefill = true;
-  const id = P.vehicle;
-  if (id && owns(id)) S.vehCharge[id] = 1;
-  lastVehKey = '';
-  audio.powerup();
-  toast('Developer: oneindig refill aan', 2600);
-});
+initDev([
+  { label: '+100.000 munten', run: () => devCoins(100000) },
+  { label: '+1.000.000 munten', run: () => devCoins(1000000) },
+  { label: 'Alles kopen (voertuigen, skins, kleding)', run: () => { Object.keys(PRICES).forEach((k) => { P.owned[k] = true; }); P.vehicle = P.vehicle || 'wheelchair'; save(); refreshMenuStats(); if (!$('shop').hidden) renderShop(); return 'Alles gekocht'; } },
+  { label: 'Oneindig refill (tijdens een rit)', run: () => {
+    if (S.mode !== 'playing' && S.mode !== 'intro') return 'Start eerst een rit';
+    S.infRefill = true;
+    const id = P.vehicle;
+    if (id && owns(id)) S.vehCharge[id] = 1;
+    lastVehKey = '';
+    audio.powerup();
+    return 'Oneindig refill aan';
+  } },
+]);
 
 updateSoundIcon();
 goMenu();

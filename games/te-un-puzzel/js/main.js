@@ -1,4 +1,5 @@
 // Te-Un Puzzel: vier legpuzzels. Alles wordt in de browser getekend, er is geen build nodig.
+import { initDev } from '/js/devmode.js';
 const GAME_ID = 'te-un-puzzel';
 const LEVELS = [
   { n: 1, name: 'Te-Un', img: 'img/level1.jpg', cols: 3, rows: 4, ghost: 0.28, rotate: false, limit: 30 },
@@ -12,9 +13,9 @@ const rand = (a, b) => a + Math.random() * (b - a);
 
 // ---------------------------------------------------------------- opslaan + platform
 const KEY = 'teun-puzzel-v1';
-let P = { done: {}, fast: {}, slide: {}, updatedAt: 0 };
+let P = { done: {}, fast: {}, slide: {}, dev: false, updatedAt: 0 };
 try { P = Object.assign(P, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* geen opslag */ }
-const snapshot = () => ({ done: P.done, fast: P.fast, slide: P.slide, updatedAt: P.updatedAt });
+const snapshot = () => ({ done: P.done, fast: P.fast, slide: P.slide, dev: P.dev, updatedAt: P.updatedAt });
 const post = (type, extra = {}) => {
   if (window.parent === window) return;
   try { window.parent.postMessage({ type, game: GAME_ID, ...extra }, location.origin); } catch (e) { /* geen ouder */ }
@@ -355,7 +356,7 @@ function renderMenu() {
   $('menuSub').textContent = menuMode === 'jig' ? 'Sleep de stukjes naar de juiste plek. Elke puzzel heeft een tijdslimiet.' : 'Schuif de vakjes tot de foto weer klopt. Geen tijdslimiet, neem de tijd.';
   LEVELS.forEach((l) => {
     const slide = menuMode === 'slide';
-    const open = slide ? (l.n === 1 || P.slide[l.n - 1]) : (l.n === 1 || P.done[l.n - 1]);
+    const open = P.dev || (slide ? (l.n === 1 || P.slide[l.n - 1]) : (l.n === 1 || P.done[l.n - 1]));
     const b = document.createElement('button');
     const ok = slide ? P.slide[l.n] : P.fast && P.fast[l.n];
     b.className = 'lv' + (ok ? ' done' : '');
@@ -529,4 +530,8 @@ window.__puz = {
 };
 
 renderMenu();
+initDev([
+  { label: 'Alle levels openen (leg- en schuifpuzzel)', run: () => { P.dev = true; save(); renderMenu(); return 'Alle levels open'; } },
+  { label: 'Alles als gehaald markeren (met profielfoto\'s)', run: () => { LEVELS.forEach((l) => { P.done[l.n] = P.done[l.n] || l.limit; P.fast[l.n] = P.fast[l.n] || Math.max(1, l.limit - 5); P.slide[l.n] = P.slide[l.n] || 60; }); save(); renderMenu(); return 'Alles gehaald'; } },
+]);
 post('teun:ready');

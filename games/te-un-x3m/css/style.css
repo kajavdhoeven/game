@@ -61,7 +61,6 @@ button:disabled { filter: grayscale(.8); opacity: .6; cursor: not-allowed; }
 @keyframes rise { from { transform: translateY(20px) scale(.96); opacity: 0; } }
 @keyframes pop { from { transform: scale(0) rotate(-40deg); } }
 
-#devCorner { position: fixed; left: 0; top: 0; width: 70px; height: 70px; z-index: 30; }
 #toast { position: fixed; left: 50%; bottom: 80px; transform: translateX(-50%) translateY(20px); background: rgba(0,0,0,.85); padding: 10px 18px; border-radius: 12px; opacity: 0; pointer-events: none; transition: .25s; z-index: 60; font-weight: 600; }
 #toast.on { opacity: 1; transform: translateX(-50%); }
 .rotate { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 15; background: rgba(0,0,0,.7); padding: 8px 16px; border-radius: 12px; font-size: 16px; pointer-events: none; }
@@ -84,3 +83,5 @@ button:disabled { filter: grayscale(.8); opacity: .6; cursor: not-allowed; }
 .logo-h { margin: 0; line-height: 0; }
 .title-logo { display: block; width: min(340px, 64vw); max-height: 38vh; height: auto; object-fit: contain; filter: drop-shadow(0 8px 14px rgba(0,0,0,.5)); }
 @media (max-height: 640px) { .title-logo { max-height: 30vh; } }
+
+.ink.right { padding-right: 52px; }

@@ -4,6 +4,7 @@ import { makeLevel, LEVEL_COUNT } from './levels.js';
 import { Terrain, makeCar, stepCar, crashTest, CARS, CAR_ORDER } from './sim.js';
 import { buildWorld } from './world.js';
 import { createCar } from './cars3d.js';
+import { initDev } from '/js/devmode.js';
 
 const GAME_ID = 'te-un-drive';
 const $ = (id) => document.getElementById(id);
@@ -167,7 +168,6 @@ function setScreen(s) {
   $('hud').hidden = s !== 'play';
   const tc = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
   $('touch').hidden = !(s === 'play' && tc);
-  $('devCorner').hidden = s === 'play';
   $('pause').hidden = true; $('end').hidden = true;
   canvas.style.visibility = s === 'play' ? 'visible' : 'hidden';
   if (s !== 'play') engine(0, false, false);
@@ -331,14 +331,11 @@ $('eMenu').addEventListener('click', () => setScreen('levels'));
 $('eRetry').addEventListener('click', () => startLevel(g.n));
 $('eNext').addEventListener('click', () => startLevel(g.n + 1));
 addEventListener('resize', resize);
-{
-  let n = 0, t = 0;
-  addEventListener('pointerdown', (e) => {
-    if (e.clientX > 80 || e.clientY > 80 || screen === 'play') return;
-    const now = performance.now(); n = now - t > 1800 ? 1 : n + 1; t = now;
-    if (n >= 3) { n = 0; P.dev = true; save(); refreshAll(); toast('Developer: alle levels en auto\'s open', 2600); }
-  }, true);
-}
+// ---- developer-modus (knopje Dev rechtsboven, met wachtwoord)
+initDev([
+  { label: 'Alle levels en auto\'s openen', run: () => { P.dev = true; save(); refreshAll(); return 'Alles open'; } },
+  { label: 'Alle levels als gehaald markeren', run: () => { for (let n = 1; n <= LEVEL_COUNT; n++) if (!P.done[n]) P.done[n] = 60; save(); refreshAll(); return 'Alle levels gehaald'; } },
+]);
 
 // ---------------------------------------------------------------- hoofdlus
 let last = performance.now(), acc = 0;
