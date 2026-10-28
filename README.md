@@ -7,7 +7,7 @@ Het gameplatform van te-ungames.nl, met Te-Un de kabouter als hoofdpersoon. Stat
 
 ## Logo
 
-Zet je logo als **`assets/logo.png`** (vierkant, bij voorkeur 512x512 of groter). Dat bestand wordt overal gebruikt: topbalk, laadscherm, favicon, apple-touch-icon, delen via social media en in de game. Ontbreekt het bestand, dan tekent het platform zelf een kabouter.
+Zet je logo als **`assets/logo.jpg`** (vierkant, bij voorkeur 512x512 of groter). Dat bestand wordt overal gebruikt: topbalk, laadscherm, favicon, apple-touch-icon, delen via social media en in de game. Ontbreekt het bestand, dan tekent het platform zelf een kabouter.
 
 ## Accounts koppelen met Supabase
 
