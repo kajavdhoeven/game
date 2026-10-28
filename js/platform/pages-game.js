@@ -97,10 +97,12 @@ export async function renderGame(app, id) {
   paintProgress();
 
   page.querySelector('#btnLike').addEventListener('click', async (e) => {
+    const btn = e.currentTarget; // na een await bestaat currentTarget niet meer, dus nu vastpakken
+    if (!app.can('can_like')) return toast('Je mag geen games liken.');
     try {
       const nowLiked = await api.toggleLike(g.id);
       if (nowLiked) { app.state.likes.add(g.id); g.likes++; } else { app.state.likes.delete(g.id); g.likes = Math.max(0, g.likes - 1); }
-      e.currentTarget.classList.toggle('liked', nowLiked);
+      btn.classList.toggle('liked', nowLiked);
       page.querySelector('#likeCount').textContent = fmt(g.likes);
       page.querySelector('#likeCount2').textContent = fmt(g.likes);
       if (nowLiked) toast('Leuk! Opgeslagen bij je favorieten.');
