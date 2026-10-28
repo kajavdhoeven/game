@@ -3,9 +3,10 @@ import { icon, teunSVG, avatarSVG, AVATARS, avatarUnlocked } from './art.js';
 import { genreName } from './games.js';
 import { gameCard, titleHTML } from './components.js';
 import { api } from './api.js';
+import { isUpcoming, canPreview, countdownHTML, whenText, startCountdowns, stopCountdowns } from './soon.js';
 
 let cleanup = null;
-export function leaveGame() { if (cleanup) { cleanup(); cleanup = null; } }
+export function leaveGame() { stopCountdowns(); if (cleanup) { cleanup(); cleanup = null; } }
 
 export async function renderGame(app, id) {
   leaveGame();
@@ -16,6 +17,8 @@ export async function renderGame(app, id) {
     return f;
   }
   const cat = { name: genreName(g.category) };
+  const upcoming = isUpcoming(g);
+  const locked = upcoming && !canPreview(app.state.profile);
   const liked = app.state.likes.has(g.id);
   const page = el(`<div class="game-page">
     <nav class="crumbs"><a href="/">Home</a> &rsaquo; <a href="/games">Games</a> &rsaquo; <b>${esc(g.title)}</b></nav>
@@ -25,8 +28,9 @@ export async function renderGame(app, id) {
           <div class="player-poster"><div class="poster-card">
             <div class="poster-teun">${teunSVG({ cls: 'wave' })}</div>
             ${titleHTML(g, 'poster-logo', 'h2')}
-            <button class="btn primary big" id="btnStart">${icon('play', 22)} Speel nu</button>
-            <small>Gratis, zonder download</small></div></div>
+            ${locked
+    ? `<span class="soon-tag">Binnenkort</span>${countdownHTML(g, true)}<small>Uit op ${esc(whenText(g))}</small>`
+    : `<button class="btn primary big" id="btnStart">${icon('play', 22)} Speel nu</button><small>${upcoming ? 'Nog niet uitgekomen: alleen beheerders kunnen nu testen' : 'Gratis, zonder download'}</small>`}</div></div>
         </div>
         <div class="player-bar">
           <div class="pb-title"><h1>${esc(g.title)} <small>gratis online spelen</small></h1><span class="muted">${esc(cat.name)}</span></div>
@@ -60,10 +64,11 @@ export async function renderGame(app, id) {
     iframe = el(`<iframe title="${esc(g.title)}" src="${esc(g.url)}" allow="fullscreen; autoplay; gamepad; accelerometer" allowfullscreen></iframe>`);
     player.classList.add('playing');
     player.appendChild(iframe);
-    api.recordPlay(g.id).catch(() => {});
-    g.plays++;
+    if (!upcoming) { api.recordPlay(g.id).catch(() => {}); g.plays++; }
   };
-  page.querySelector('#btnStart').addEventListener('click', start);
+  const sb = page.querySelector('#btnStart');
+  if (sb) sb.addEventListener('click', start);
+  if (locked) startCountdowns(page, async () => { await app.reloadGames(); app.route(); });
 
   // berichten van het spel: voortgang laden en bewaren
   const onMsg = async (e) => {
@@ -177,6 +182,7 @@ export async function renderGame(app, id) {
     setPseudo(true);
   };
   page.querySelector('#btnFull').addEventListener('click', () => {
+    if (locked) return;
     if (!iframe) start();
     if (nativeFs() || player.classList.contains('pfs')) exitFull(); else enterFull();
   });

@@ -190,3 +190,5 @@ body.admin-mode { background: linear-gradient(180deg, #eef4ff 0%, #f8f5ff 45%, #
   .ad-hero { padding: 18px; } .ad-hero-art { display: none; } .ad-hero h2 { font-size: 22px; }
   .ad-side nav a { padding: 8px 12px; }
 }
+.ad-soon { background: #fff7e6; border: 1px solid #fde1a8; border-radius: 12px; padding: 12px 14px; display: grid; gap: 6px; }
+.ad-soon p { margin: 0; font-size: 12.5px; }

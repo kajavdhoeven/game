@@ -125,6 +125,7 @@ export const remote = {
     const row = {
       id: g.id, title: g.title, category: g.category, tags: g.tags || [], tagline: g.tagline || '', description: g.description || '',
       controls: g.controls || [], logo: g.logo || '', thumb: g.thumb || '', hero: g.hero || g.thumb || '', url: g.url, published: !!g.published, featured: !!g.featured,
+      coming_soon: !!g.coming_soon, release_at: g.coming_soon && g.release_at ? g.release_at : null,
     };
     fail((await client.from('games').upsert(row)).error);
   },

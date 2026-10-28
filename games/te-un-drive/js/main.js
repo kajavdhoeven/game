@@ -4,7 +4,7 @@ import { makeLevel, LEVEL_COUNT } from './levels.js';
 import { Terrain, makeCar, stepCar, crashTest, CARS, CAR_ORDER } from './sim.js';
 import { buildWorld } from './world.js';
 import { createCar } from './cars3d.js';
-import { initDev } from '/js/devmode.js';
+import { initDev, setDevVisible } from '/js/devmode.js';
 import { initTutorial } from '/js/tutorial.js';
 
 const GAME_ID = 'te-un-drive';
@@ -163,6 +163,7 @@ function startLevel(n) {
 
 function setScreen(s) {
   screen = s;
+  setDevVisible(s !== 'play');
   $('menu').hidden = s !== 'menu';
   $('levels').hidden = s !== 'levels';
   $('garage').hidden = s !== 'garage';

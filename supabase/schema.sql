@@ -31,6 +31,9 @@ create table if not exists public.games (
   featured    boolean not null default false,
   created_at  timestamptz not null default now()
 );
+-- binnenkort beschikbaar: tot 'release_at' kunnen alleen beheerders de game spelen
+alter table public.games add column if not exists coming_soon boolean not null default false;
+alter table public.games add column if not exists release_at timestamptz;
 
 create table if not exists public.likes (
   user_id    uuid not null references auth.users(id) on delete cascade,

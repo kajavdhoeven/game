@@ -1,18 +1,28 @@
 import { el } from './ui.js';
-import { featured, gameCard, emptyState } from './components.js';
+import { featured, gameCard, emptyState, soonHero } from './components.js';
+import { isUpcoming, canPreview, startCountdowns } from './soon.js';
 import { bigLogo, teunSVG } from './art.js';
 
 export function renderHome(app) {
   const { games, user } = app.state;
   const f = document.createDocumentFragment();
   const live = games.filter((g) => g.published);
-  const top = live.find((g) => g.featured) || live[0];
+  const released = live.filter((g) => !isUpcoming(g));
+  const top = released.find((g) => g.featured) || released[0];
+  const soon = live.filter((g) => g.featured && isUpcoming(g));
 
   f.appendChild(el(`<section class="brand" aria-label="Te-Un Games">
     <h1 class="brand-logo">${bigLogo()}<span class="sr-only">Te-Un Games: gratis online games met Te-Un de kabouter</span></h1>
     <p class="brand-sub">Gratis online games met Te-Un de kabouter. Direct spelen, zonder download.</p>
   </section>`));
 
+  // uitgelichte games die nog moeten uitkomen: groot met een aftelklok
+  const soonBox = document.createDocumentFragment();
+  soon.forEach((g) => soonBox.appendChild(soonHero(g, canPreview(app.state.profile))));
+  if (soon.length) {
+    f.appendChild(soonBox);
+    queueMicrotask(() => startCountdowns(document.getElementById('view') || document.body, async () => { await app.reloadGames(); app.route(); }));
+  }
   if (top) f.appendChild(featured(top));
 
   const sec = el('<section class="block"><div class="block-head"><h2>Onze games</h2></div><div class="grid-games"></div></section>');

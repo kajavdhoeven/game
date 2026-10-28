@@ -1,7 +1,7 @@
 // Te-Un X3M: menu, spelverloop, opslaan en koppeling met het platform.
 import { makeLevel, LEVEL_COUNT, ceilAt } from './levels.js';
 import { Terrain, makeBike, stepBike, crashTest, VEH, VEH_ORDER, headPos, G } from './sim.js';
-import { initDev } from '/js/devmode.js';
+import { initDev, setDevVisible } from '/js/devmode.js';
 import { initTutorial } from '/js/tutorial.js';
 import { Renderer, CHARS, CHAR_ORDER, limpPose } from './draw.js';
 
@@ -120,6 +120,7 @@ function startLevel(n) {
 
 function setScreen(s) {
   screen = s;
+  setDevVisible(s !== 'play');
   $('menu').hidden = s !== 'menu';
   $('levels').hidden = s !== 'levels';
   $('garage').hidden = s !== 'garage';

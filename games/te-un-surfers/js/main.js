@@ -13,7 +13,7 @@ import { audio } from './audio.js';
 import { initInput } from './input.js';
 import { softCircleTexture } from './textures.js';
 import { P, load, save, buy, owns, ownedVehicles, VEHICLES, VEHICLE_ORDER, VEHICLE_TIME, PRICES } from './save.js';
-import { initDev } from '/js/devmode.js';
+import { initDev, setDevVisible } from '/js/devmode.js';
 import { initTutorial } from '/js/tutorial.js';
 import { fetchBoard, submitScore, cleanName, isOnline } from './net.js';
 import { initBridge } from './bridge.js';
@@ -1330,7 +1330,10 @@ void camBase;
 
 function baseSpeed() { return Math.min(40, 18 + S.dist * 0.0042); }
 
+let devShown = null;
 function update(dt) {
+  const wantDev = S.mode === 'menu';
+  if (wantDev !== devShown) { devShown = wantDev; setDevVisible(wantDev); }
   S.t += dt;
   const mode = S.mode;
   const live = mode === 'playing' || mode === 'intro';

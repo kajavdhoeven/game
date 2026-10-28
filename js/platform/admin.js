@@ -17,6 +17,14 @@ export const USER_PERMS = [
   ['can_edit_profile', 'Profiel aanpassen', 'Naam en profielpictogram wijzigen.'],
 ];
 
+// ISO-tijd omzetten naar de waarde voor een datetime-local veld
+function toLocalInput(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 const has = (p, k) => !!p && (p.is_owner || (p.is_admin && p.permissions && p.permissions[k] === true));
 
 const PALETTE = ['#2563eb', '#f97316', '#10b981', '#ec4899', '#8b5cf6', '#eab308', '#06b6d4'];
@@ -115,7 +123,7 @@ export async function renderAdmin(app) {
       <section class="ad-card flush"><div class="ad-table-wrap"><table class="ad-table"><thead><tr><th>Game</th><th>Genre</th><th>Gespeeld</th><th>Likes</th><th>Status</th><th></th></tr></thead>
       <tbody>${games.map((g, n) => `<tr><td><div class="ad-cell">${gameTile(g, n)}<div><b>${esc(g.title)}</b><small>/g/${esc(g.id)}</small></div></div></td>
         <td>${esc(genreName(g.category))}</td><td>${fmt(g.plays)}</td><td>${fmt(g.likes)}</td>
-        <td><span class="ad-tag ${g.published ? 'ok' : ''}">${g.published ? 'Gepubliceerd' : 'Verborgen'}</span>${g.featured ? '<span class="ad-tag blue">Uitgelicht</span>' : ''}</td>
+        <td><span class="ad-tag ${g.published ? 'ok' : ''}">${g.published ? 'Gepubliceerd' : 'Verborgen'}</span>${g.featured ? '<span class="ad-tag blue">Uitgelicht</span>' : ''}${g.coming_soon && g.release_at && new Date(g.release_at) > new Date() ? `<span class="ad-tag warn">Binnenkort: ${esc(new Date(g.release_at).toLocaleString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>` : ''}</td>
         <td class="ad-actions"><button class="ad-btn sm" data-edit="${esc(g.id)}">Bewerken</button><button class="ad-btn sm" data-toggle="${esc(g.id)}">${g.published ? 'Verbergen' : 'Publiceren'}</button><button class="ad-btn sm danger" data-del="${esc(g.id)}">Verwijderen</button></td></tr>`).join('') || '<tr><td colspan="6" class="ad-muted">Nog geen games.</td></tr>'}</tbody></table></div></section>`;
 
     const edit = (g) => {
@@ -131,16 +139,21 @@ export async function renderAdmin(app) {
         <label>Titel-logo (url, optioneel; vervangt de tekst als titel)<input name="logo" value="${esc(x.logo || '')}" placeholder="/assets/mijn-game-logo.png"></label>
         <div class="ad-two"><label>Plaatje (url)<input name="thumb" value="${esc(x.thumb)}"></label><label>Groot plaatje (url)<input name="hero" value="${esc(x.hero || '')}"></label></div>
         <label>Besturing (per regel: toets | uitleg)<textarea name="controls" rows="3">${esc((x.controls || []).map((c) => c.join(' | ')).join('\n'))}</textarea></label>
-        <div class="ad-checks"><label><input type="checkbox" name="published" ${x.published ? 'checked' : ''}> Gepubliceerd</label><label><input type="checkbox" name="featured" ${x.featured ? 'checked' : ''}> Uitgelicht op home</label></div>
+        <div class="ad-checks"><label><input type="checkbox" name="published" ${x.published ? 'checked' : ''}> Gepubliceerd</label><label><input type="checkbox" name="featured" ${x.featured ? 'checked' : ''}> Uitgelicht op home</label><label><input type="checkbox" name="coming_soon" id="csCheck" ${x.coming_soon ? 'checked' : ''}> Binnenkort beschikbaar</label></div>
+        <div class="ad-soon" id="csBox" ${x.coming_soon ? '' : 'hidden'}><label>Verschijnt op (datum en tijd)<input type="datetime-local" name="release_at" value="${esc(toLocalInput(x.release_at))}"></label><p class="ad-muted">Tot dat moment zien spelers een aftelklok in plaats van de speelknop. Als je ook "Uitgelicht" aanvinkt, komt er een grote aftelklok op home. Beheerders kunnen de game al wel spelen en testen.</p></div>
         <div class="ad-err" id="gErr"></div><div class="ad-foot"><button class="ad-btn primary" type="submit">Opslaan</button></div></form>`, { cls: 'ad-modal' });
+      m.body.querySelector('#csCheck').addEventListener('change', (ev) => { m.body.querySelector('#csBox').hidden = !ev.target.checked; });
       m.body.querySelector('form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
+        const soon = !!fd.get('coming_soon');
+        const rel = fd.get('release_at');
+        if (soon && !rel) { m.body.querySelector('#gErr').textContent = 'Kies een datum en tijd waarop de game uitkomt.'; return; }
         const game = {
           id: fd.get('id').trim(), title: fd.get('title').trim(), category: fd.get('category'), tags: x.tags || [],
           tagline: fd.get('tagline').trim(), description: fd.get('description').trim(), url: fd.get('url').trim(), logo: fd.get('logo').trim(), thumb: fd.get('thumb').trim(), hero: fd.get('hero').trim(),
           controls: fd.get('controls').split('\n').map((l) => l.split('|').map((s) => s.trim())).filter((p) => p[0]).map((p) => [p[0], p[1] || '']),
-          published: !!fd.get('published'), featured: !!fd.get('featured'), created_at: x.created_at,
+          published: !!fd.get('published'), featured: !!fd.get('featured'), coming_soon: soon, release_at: soon ? new Date(rel).toISOString() : null, created_at: x.created_at,
         };
         try { await api.adminSaveGame(game); m.close(); await app.reloadGames(); toast('Game opgeslagen'); show(); } catch (err) { m.body.querySelector('#gErr').textContent = err.message; }
       });

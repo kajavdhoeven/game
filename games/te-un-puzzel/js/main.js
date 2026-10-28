@@ -1,5 +1,5 @@
 // Te-Un Puzzel: vier legpuzzels. Alles wordt in de browser getekend, er is geen build nodig.
-import { initDev } from '/js/devmode.js';
+import { initDev, setDevVisible } from '/js/devmode.js';
 import { initTutorial } from '/js/tutorial.js';
 const GAME_ID = 'te-un-puzzel';
 const LEVELS = [
@@ -140,6 +140,7 @@ function layout(level, img) {
 }
 
 async function startLevel(n) {
+  setDevVisible(false);
   const level = LEVELS[n - 1];
   $('menu').hidden = true;
   $('play').hidden = false;
@@ -371,6 +372,7 @@ function renderMenu() {
   });
 }
 function toMenu() {
+  setDevVisible(true);
   if (cur) clearInterval(cur.tick);
   cur = null;
   if (sl) { clearInterval(sl.tick); sl = null; }
@@ -408,6 +410,7 @@ let sl = null;
 for (const l of LEVELS) { l.sc = [3, 4, 5, 6][l.n - 1]; l.sr = [3, 4, 5, 6][l.n - 1]; }
 
 async function startSlide(n) {
+  setDevVisible(false);
   const level = LEVELS[n - 1];
   $('menu').hidden = true;
   $('slide').hidden = false;

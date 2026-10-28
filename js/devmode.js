@@ -10,6 +10,12 @@ async function sha256(text) {
 const isOpen = () => { try { return sessionStorage.getItem(SKEY) === '1'; } catch (e) { return false; } };
 const setOpen = (v) => { try { sessionStorage.setItem(SKEY, v ? '1' : '0'); } catch (e) { /* geen opslag */ } };
 
+// De Dev- en ?-knop zijn alleen in de menu's te zien, niet tijdens het spelen.
+export function setDevVisible(v) {
+  for (const id of ['teunDevBtn', 'teunHelpBtn']) { const b = document.getElementById(id); if (b) b.style.display = v ? '' : 'none'; }
+  if (!v) document.querySelectorAll('.teun-dev-ov').forEach((o) => o.remove());
+}
+
 // actions: [{ label, run() -> tekst | undefined }]
 export function initDev(actions) {
   if (document.getElementById('teunDevBtn')) return;
