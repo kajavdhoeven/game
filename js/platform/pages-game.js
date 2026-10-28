@@ -129,11 +129,40 @@ export async function renderGame(app, id) {
       else { await navigator.clipboard.writeText(url); toast('Link gekopieerd!'); }
     } catch (e) { /* geannuleerd */ }
   });
+  // volledig scherm: de echte Fullscreen API waar die bestaat, anders (iPhone) een scherm-vullende weergave
+  const exitBtn = el('<button class="fs-exit" aria-label="Volledig scherm sluiten">&#10005;</button>');
+  player.appendChild(exitBtn);
+  const nativeFs = () => document.fullscreenElement || document.webkitFullscreenElement;
+  const setPseudo = (on) => {
+    player.classList.toggle('pfs', on);
+    document.body.classList.toggle('pfs-lock', on);
+    if (on) window.scrollTo(0, 0);
+    try { if (on && screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); else if (!on && screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) { /* niet overal mogelijk */ }
+  };
+  const exitFull = () => {
+    if (nativeFs()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    setPseudo(false);
+  };
+  const enterFull = async () => {
+    const t = player;
+    const req = t.requestFullscreen || t.webkitRequestFullscreen;
+    if (req) {
+      try {
+        await req.call(t);
+        try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); } catch (e) { /* ok */ }
+        return;
+      } catch (e) { /* val terug op de scherm-vullende weergave */ }
+    }
+    setPseudo(true);
+  };
   page.querySelector('#btnFull').addEventListener('click', () => {
     if (!iframe) start();
-    const t = player;
-    (t.requestFullscreen || t.webkitRequestFullscreen || (() => {})).call(t);
+    if (nativeFs() || player.classList.contains('pfs')) exitFull(); else enterFull();
   });
+  exitBtn.addEventListener('click', exitFull);
+  const onFsChange = () => { if (!nativeFs()) try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) { /* ok */ } };
+  document.addEventListener('fullscreenchange', onFsChange);
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && player.classList.contains('pfs')) exitFull(); });
 
   // meer games
   const more = app.state.games.filter((x) => x.published && x.id !== g.id);

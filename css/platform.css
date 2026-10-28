@@ -368,3 +368,10 @@ select option { color: #111; }
   .poster-teun svg { height: 64px; }
   .poster-logo { max-height: clamp(90px, 26vh, 180px); }
 }
+
+/* volledig scherm zonder Fullscreen API (iPhone): de speler vult het hele scherm */
+.fs-exit { display: none; position: absolute; top: max(10px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); z-index: 5; width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(255,255,255,.4); background: rgba(0,0,0,.6); color: #fff; font-size: 20px; cursor: pointer; }
+.player.pfs .fs-exit, .player:fullscreen .fs-exit, .player:-webkit-full-screen .fs-exit { display: block; }
+.player.pfs { position: fixed; inset: 0; z-index: 9999; width: 100vw; height: 100vh; height: 100dvh; max-height: none; aspect-ratio: auto; border-radius: 0; border: 0; }
+body.pfs-lock { overflow: hidden; }
+.player:fullscreen { aspect-ratio: auto; }
