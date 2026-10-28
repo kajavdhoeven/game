@@ -4,8 +4,8 @@ const K = 3600, C = 150;
 
 export const VEH = {
   fatbike: { id: 'fatbike', name: 'Fatbike', r: 0.46, wb: 1.56, wy: -0.33, F: 15, vmax: 11.5, mu: 1.15, brake: 9, lean: 12, leanAir: 16, rev: 3, I: 0.55, parMul: 1, price: 0, desc: 'Dikke banden, rustig tempo. Prima om te leren.' },
-  motor: { id: 'motor', name: 'Motor', r: 0.4, wb: 1.62, wy: -0.3, F: 24, vmax: 17.5, mu: 1.05, brake: 12, lean: 13, leanAir: 18, rev: 3.5, I: 0.6, parMul: 0.62, price: 12, desc: 'Veel sneller en sterker. Perfect voor grote sprongen.' },
-  vape: { id: 'vape', name: 'Gouden Vape', fly: true, r: 0.22, wb: 1.5, wy: -0.28, thrust: 13, vmax: 16, mu: 0.4, rev: 0.5, lean: 10, leanAir: 12, I: 0.55, parMul: 0.55, price: 36, desc: 'Vliegt! Gas = vooruit en omhoog, leun om te sturen.' },
+  motor: { id: 'motor', name: 'Motor', r: 0.4, wb: 1.62, wy: -0.3, F: 24, vmax: 17.5, mu: 1.05, brake: 12, lean: 13, leanAir: 18, rev: 3.5, I: 0.6, parMul: 0.75, price: 12, desc: 'Veel sneller en sterker. Perfect voor grote sprongen.' },
+  vape: { id: 'vape', name: 'Gouden Vape', fly: true, r: 0.22, wb: 1.5, wy: -0.28, thrust: 13, vmax: 16, mu: 0.4, rev: 0.5, lean: 10, leanAir: 12, I: 0.55, parMul: 0.7, price: 36, desc: 'Vliegt! Gas = vooruit en omhoog, leun om te sturen.' },
 };
 export const VEH_ORDER = ['fatbike', 'motor', 'vape'];
 

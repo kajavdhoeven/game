@@ -149,7 +149,7 @@ function finishLevel() {
   const V = VEH[g.bike.vid];
   const par = g.level.par * V.parMul;
   const t = g.tl;
-  const stars = t <= par ? 3 : t <= par * 1.3 ? 2 : 1;
+  const stars = t <= par ? 3 : t <= par * 1.5 ? 2 : 1;
   const prevStars = P.stars[g.n] || 0;
   const all3 = () => Array.from({ length: LEVEL_COUNT }, (_, i) => i + 1).every((k) => (P.stars[k] || 0) >= 3);
   const wasAll3 = all3();

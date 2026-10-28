@@ -129,7 +129,7 @@ export function makeLevel(n) {
   for (let px = 18; px < finishX; px += 24 + R() * 10) torches.push([px, trackY(px) + 3.6 + R() * 1.2]);
 
   const length = finishX;
-  const par = length / 7.6 + 4;
+  const par = length / 5.8 + 10;
   return { n, theme: themeOf(n), pts, track, hz, tunnels, ceil, finishX, startX: 3, length, par, torches, minY: Math.min(...pts.map((p) => p[1])) };
 }
 
