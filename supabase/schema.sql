@@ -255,6 +255,16 @@ values (
   '/assets/te-un-surfers.jpg', '/assets/te-un-surfers-hero.jpg', '/games/te-un-surfers/', true, true
 ) on conflict (id) do nothing;
 
+-- tweede game: Te-Un Puzzel
+insert into public.games (id, title, category, tags, tagline, description, controls, thumb, hero, url, published, featured)
+values (
+  'te-un-puzzel', 'Te-Un Puzzel', 'puzzel', array['puzzel','kinderen'],
+  'Vier legpuzzels met Te-Un. Maak ze allemaal af voor een nieuwe profielfoto.',
+  'Sleep de door elkaar liggende stukjes naar de juiste plek en maak de afbeelding af. Level 1 is rustig, level 4 is serieus moeilijk: 54 stukjes die je ook nog moet draaien. Wie alle vier de levels haalt, speelt de profielfoto Te-Un met puzzelstukje vrij.',
+  '[["Slepen","Een stukje verplaatsen, het klikt vast op zijn plek"],["Tikken","Een stukje draaien (level 4)"],["Voorbeeld","Laat de afbeelding zien"],["Randen","Maakt de middenstukjes doorzichtig, zo vind je de randen sneller"]]'::jsonb,
+  '/assets/te-un-puzzel.jpg', '/assets/te-un-puzzel-hero.jpg', '/games/te-un-puzzel/', true, false
+) on conflict (id) do nothing;
+
 -- titel-logo voor de eerste game
 update public.games set logo = '/assets/te-un-surfers-logo.png' where id = 'te-un-surfers' and coalesce(logo, '') = '';
 

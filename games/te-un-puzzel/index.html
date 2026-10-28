@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0b5bd3">
+  <meta name="description" content="Te-Un Puzzel: vier legpuzzels met Te-Un de kabouter. Sleep de stukjes op hun plek en speel een nieuwe profielfoto vrij.">
+  <title>Te-Un Puzzel</title>
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main id="menu" class="screen">
+    <h1 class="title">Te-Un <b>Puzzel</b></h1>
+    <p class="sub">Sleep de stukjes naar de juiste plek. Maak alle vier de puzzels af en speel een nieuwe profielfoto vrij.</p>
+    <div id="levels" class="levels"></div>
+    <p id="reward" class="reward"></p>
+  </main>
+
+  <section id="play" class="screen" hidden>
+    <header class="bar">
+      <button id="back" class="btn" aria-label="Terug naar het menu">&#8592; Menu</button>
+      <div class="info"><b id="lvName">Level 1</b><span id="count">0 / 0</span><span id="clock">0:00</span></div>
+      <div class="tools">
+        <button id="btnPeek" class="btn ghost" aria-pressed="false">Voorbeeld</button>
+        <button id="btnEdges" class="btn ghost" aria-pressed="false">Randen</button>
+        <button id="btnSpread" class="btn ghost">Spreiden</button>
+      </div>
+    </header>
+    <div id="stage">
+      <div id="board"><img id="ghost" alt="" draggable="false"></div>
+      <div id="pieces"></div>
+      <img id="peek" alt="Voorbeeld van de puzzel" draggable="false" hidden>
+    </div>
+  </section>
+
+  <div id="win" class="overlay" hidden>
+    <div class="card">
+      <h2 id="winTitle">Puzzel af!</h2>
+      <p id="winText"></p>
+      <div id="winReward" class="winreward" hidden></div>
+      <div class="row">
+        <button id="winMenu" class="btn ghost">Menu</button>
+        <button id="winNext" class="btn">Volgende level</button>
+      </div>
+    </div>
+  </div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

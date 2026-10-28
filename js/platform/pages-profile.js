@@ -1,5 +1,5 @@
 import { el, esc, fmt, ago, toast } from './ui.js';
-import { avatarSVG, AVATARS, icon, teunSVG } from './art.js';
+import { avatarSVG, AVATARS, avatarUnlocked, icon, teunSVG } from './art.js';
 import { api } from './api.js';
 
 export async function renderProfile(app) {
@@ -24,9 +24,13 @@ export async function renderProfile(app) {
   if (user) {
     const sec = el('<section class="card"><h3>Profielpictogram</h3><p class="muted">Kies wie jij bent in het platform. Er komen meer pictogrammen bij met elke nieuwe game.</p><div class="avatar-grid"></div></section>');
     const grid = sec.querySelector('.avatar-grid');
+    const progress = {};
+    for (const a of AVATARS) if (a.unlock && !progress[a.unlock.game]) progress[a.unlock.game] = await api.getProgress(a.unlock.game).catch(() => null);
     AVATARS.forEach((a) => {
-      const b = el(`<button class="av-opt ${profile && profile.avatar === a.id ? 'on' : ''}" data-id="${a.id}"><div class="avatar lg">${avatarSVG(a.id)}</div><b>${esc(a.name)}</b><small>${esc(a.desc)}</small></button>`);
+      const open = avatarUnlocked(a, a.unlock && progress[a.unlock.game]);
+      const b = el(`<button class="av-opt ${profile && profile.avatar === a.id ? 'on' : ''} ${open ? '' : 'locked'}" data-id="${a.id}"><div class="avatar lg">${avatarSVG(a.id)}</div><b>${esc(a.name)}${open ? '' : ' 🔒'}</b><small>${esc(a.desc)}</small></button>`);
       b.addEventListener('click', async () => {
+        if (!open) { toast('Nog vergrendeld: ' + a.desc + '.'); return app.go(a.unlock.link); }
         if (!app.can('can_edit_profile')) return toast('Je mag je profiel niet aanpassen.');
         await app.updateProfile({ avatar: a.id });
         grid.querySelectorAll('.av-opt').forEach((x) => x.classList.toggle('on', x === b));

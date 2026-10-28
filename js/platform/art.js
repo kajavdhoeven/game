@@ -58,6 +58,7 @@ export function teunSVG(opts = {}) {
 // profielpictogrammen
 export function avatarSVG(kind = 'teun') {
   if (kind === 'train') return trainAvatar();
+  if (kind === 'puzzle') return `<div class="av-face">${teunSVG({ crop: 'face' })}${PIECE_BADGE}</div>`;
   return `<div class="av-face">${teunSVG({ crop: 'face' })}</div>`;
 }
 
@@ -78,10 +79,21 @@ function trainAvatar() {
 </svg>`;
 }
 
+// puzzelstukje dat Te-Un vasthoudt (profielfoto uit Te-Un Puzzel)
+const PIECE_BADGE = `<svg class="av-piece" viewBox="0 0 64 64" aria-hidden="true"><path d="M8 16h15a8 8 0 1 1 18 0h15v15a8 8 0 1 0 0 18v15H41a8 8 0 1 0-18 0H8V49a8 8 0 1 0 0-18z" fill="#ffc917" stroke="#0b3a99" stroke-width="4" stroke-linejoin="round"/><path d="M18 24h10M18 30h6" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"/></svg>`;
+
 export const AVATARS = [
   { id: 'teun', name: 'Te-Un', desc: 'De kabouter zelf' },
   { id: 'train', name: 'NS-trein', desc: 'Een gele trein' },
+  { id: 'puzzle', name: 'Puzzel-Te-Un', desc: 'Voltooi level 1 t/m 4 van Te-Un Puzzel', unlock: { game: 'te-un-puzzel', link: '/g/te-un-puzzel' } },
 ];
+
+// een profielfoto met een slot: de voortgang van de bijbehorende game bepaalt of hij open is
+export function avatarUnlocked(a, progress) {
+  if (!a.unlock) return true;
+  const d = progress && progress.done;
+  return !!d && [1, 2, 3, 4].every((n) => d[n]);
+}
 
 // Het officiele logo staat in /assets/logo-256.png. Ontbreekt het bestand, dan tekenen we de kabouter zelf.
 const LOGO_FALLBACK = `<svg class="logo-mark" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

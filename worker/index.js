@@ -79,6 +79,11 @@ const FALLBACK_GAMES = [{
   tagline: 'Ren over het spoor, spring op treinen en spuit treinspotters nat.',
   description: 'Help Te-Un de kabouter ontsnappen aan de boze kabouters. Ren over drie sporen, ontwijk rijdende NS-treinen, spring via schansen op de daken en pak power-ups.',
   logo: '/assets/te-un-surfers-logo.png', hero: '/assets/te-un-surfers-hero.jpg', thumb: '/assets/te-un-surfers.jpg', created_at: '2025-01-01T00:00:00Z', controls: [],
+}, {
+  id: 'te-un-puzzel', title: 'Te-Un Puzzel', category: 'puzzel',
+  tagline: 'Vier legpuzzels met Te-Un. Maak ze allemaal af voor een nieuwe profielfoto.',
+  description: 'Sleep de door elkaar liggende stukjes naar de juiste plek en maak de afbeelding af. Vier levels, van rustig tot serieus moeilijk.',
+  logo: '', hero: '/assets/te-un-puzzel-hero.jpg', thumb: '/assets/te-un-puzzel.jpg', created_at: '2025-06-01T00:00:00Z', controls: [],
 }];
 
 const GENRE = (id) => { const t = String(id || 'game'); return t[0].toUpperCase() + t.slice(1); };

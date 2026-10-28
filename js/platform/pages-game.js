@@ -89,6 +89,11 @@ export async function renderGame(app, id) {
     }
     const d = data || (await api.getProgress(g.id));
     if (!d) { box.innerHTML = '<h3>Jouw voortgang</h3><p class="muted">Speel een ronde en je voortgang verschijnt hier.</p>'; return; }
+    if (g.id === 'te-un-puzzel') {
+      const dn = [1, 2, 3, 4].filter((n) => d.done && d.done[n]).length;
+      box.innerHTML = `<h3>Jouw voortgang</h3><div class="prog-grid"><div><b>${dn}/4</b><small>Levels af</small></div><div><b>${dn === 4 ? 'Open' : 'Dicht'}</b><small>Profielfoto</small></div></div>`;
+      return;
+    }
     const veh = Object.keys(d.owned || {}).filter((k) => ['wheelchair', 'cow', 'train'].includes(k)).length;
     box.innerHTML = `<h3>Jouw voortgang</h3><div class="prog-grid">
       <div><b>${fmt(d.best)}</b><small>Record</small></div><div><b>${fmt(d.coins)}</b><small>Munten</small></div>
