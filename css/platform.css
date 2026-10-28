@@ -361,3 +361,10 @@ select option { color: #111; }
 .poster-card { gap: 8px; padding: 12px; }
 .poster-teun svg { height: clamp(70px, 12vh, 120px); }
 @media (max-width: 760px) { .cg-logo { height: 38px; } .feat-logo { width: min(280px, 100%); } }
+
+/* telefoon: een hoger speelvenster, zodat logo en Speel-knop er altijd in passen */
+@media (max-width: 760px) {
+  .player { aspect-ratio: 4 / 5; }
+  .poster-teun svg { height: 64px; }
+  .poster-logo { max-height: clamp(90px, 26vh, 180px); }
+}
