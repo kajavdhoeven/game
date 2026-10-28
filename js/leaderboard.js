@@ -73,7 +73,7 @@ export function openTimeBoard({ game, title, levels, start }) {
         li.children[1].textContent = t.name || 'Naamloos';
         list.appendChild(li);
       });
-    } catch (e) { list.innerHTML = '<div class="empty">De ranglijst is nu niet bereikbaar.</div>'; }
+    } catch (e) { list.innerHTML = '<div class="empty">Het leaderboard is nu niet bereikbaar.</div>'; }
   };
   const paint = () => {
     ov.innerHTML = `<div class="teun-lb" role="dialog" aria-label="Leaderboard ${title}"><header><h3>🏆 ${title}</h3><button aria-label="Sluiten">&times;</button></header>

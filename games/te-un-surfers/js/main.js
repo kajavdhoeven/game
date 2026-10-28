@@ -737,7 +737,7 @@ function renderBoardList() {
     list.appendChild(li);
   });
   if (!rows.length) list.innerHTML = '<li><span></span><span>Nog geen scores. Wees de eerste!</span><span></span></li>';
-  $('boardNote').textContent = boardData && boardData.offline ? 'Geen verbinding met de online ranglijst. Je ziet alleen jouw eigen score.' : 'Online ranglijst. De score is dezelfde als in de game: afstand + 10 punten per munt, van je beste run.';
+  $('boardNote').textContent = boardData && boardData.offline ? 'Geen verbinding met de online leaderboard. Je ziet alleen jouw eigen score.' : 'Online leaderboard. De score is dezelfde als in de game: afstand + 10 punten per munt, van je beste run.';
 }
 async function openBoard(from) {
   boardFrom = from;
@@ -908,7 +908,7 @@ async function finishRun() {
   $('overRank').textContent = 'Score wordt opgeslagen...';
   const res = await submitScore(S.dist, S.coins);
   if (isRecord && sc >= 50000 && prevBest < 50000) toast('Profielfoto Te-Un 50K vrijgespeeld! Kies hem op je profiel.', 6000);
-  $('overRank').textContent = !loggedIn() ? 'Log in om met je score op de ranglijst te komen.' : res ? 'Je score staat op de online ranglijst.' : 'Geen verbinding: je score is lokaal bewaard.';
+  $('overRank').textContent = !loggedIn() ? 'Log in om met je score op het leaderboard te komen.' : res ? 'Je score staat op de online leaderboard.' : 'Geen verbinding: je score is lokaal bewaard.';
 }
 
 function startChase() {
