@@ -85,3 +85,5 @@ button:disabled { filter: grayscale(.8); opacity: .6; cursor: not-allowed; }
 @media (max-height: 640px) { .title-logo { max-height: 30vh; } }
 
 .ink.right { padding-right: 52px; }
+
+.top { padding-left: 124px; }

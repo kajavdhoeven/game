@@ -63,3 +63,7 @@ button:disabled { filter: grayscale(.8); opacity: .65; cursor: not-allowed; }
 .title-logo { display: block; width: min(600px, 88vw); height: auto; filter: drop-shadow(0 8px 14px rgba(0,30,90,.45)); }
 
 .lvl-badge { right: 56px; }
+
+button.small.play { background: linear-gradient(#ffe27a, #ffb81c); }
+
+.top { padding-left: 124px; }

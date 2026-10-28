@@ -42,7 +42,7 @@ export const DEFAULT_GAMES = [
   {
     id: 'te-un-drive', title: 'Te-Un Drive', category: 'racen', tags: [],
     tagline: 'Rijd je blokkenauto door 25 levels vol bruggen, gaten en spijkers.',
-    description: 'Rijd je blokkenauto over heuvels, trappen, houten bruggen en gaten vol water naar de finish. Pas op voor spijkers! Speel nieuwe auto\'s vrij: vanaf level 5 Hermano\'s fiets, vanaf level 15 de gouden regenboogauto en vanaf level 20 de tuinkabouterauto.',
+    description: 'Rijd je blokkenauto over heuvels, trappen, houten bruggen en gaten vol water naar de finish. Pas op voor spijkers! Je begint met Hermano\'s fiets en speelt nieuwe auto\'s vrij: de gele monstertruck na level 5, de gouden monstertruck na level 15 en de tuinkabouterauto na level 20. Let op de veerboten en de knoppen die bruggen laten uitschuiven.',
     controls: [
       ['→  of  D', 'Gas'], ['←  of  A', 'Remmen en achteruit'], ['R', 'Level opnieuw'], ['Esc  of  P', 'Pauze'],
       ['In de lucht', 'Gas tilt de neus op, rem duwt hem omlaag'], ['Telefoon', 'Knoppen onderin beeld'],

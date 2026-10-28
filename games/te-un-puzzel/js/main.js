@@ -546,7 +546,7 @@ initTutorial({
 });
 initDev([
   { label: 'Alle levels openen (leg- en schuifpuzzel)', run: () => { P.dev = true; save(); renderMenu(); return 'Alle levels open'; } },
-  { label: 'Alles als gehaald markeren (met profielfoto\'s)', run: () => { LEVELS.forEach((l) => { P.done[l.n] = P.done[l.n] || l.limit; P.fast[l.n] = P.fast[l.n] || Math.max(1, l.limit - 5); P.slide[l.n] = P.slide[l.n] || 60; }); save(); renderMenu(); return 'Alles gehaald'; } },
+  { label: 'Profielfoto\'s krijgen (alles als gehaald markeren)', run: () => { LEVELS.forEach((l) => { P.done[l.n] = P.done[l.n] || l.limit; P.fast[l.n] = P.fast[l.n] || Math.max(1, l.limit - 5); P.slide[l.n] = P.slide[l.n] || 60; }); save(); renderMenu(); return 'Alles gehaald'; } },
 ]);
 post('teun:ready');
 

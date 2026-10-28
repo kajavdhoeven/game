@@ -3,16 +3,21 @@ export const G = 12;
 const K = 3600, C = 150;
 
 export const CARS = {
-  truck: { id: 'truck', name: 'Monstertruck', r: 0.75, wb: 2.3, wy: -0.55, F: 34, vmax: 12, mu: 1.1, brake: 14, I: 1.1, roof: [[-1.3, 0.55, 0.3], [1.3, 0.55, 0.3], [0, 0.9, 0.3]], len: 3.8, unlock: 1, desc: 'Grote wielen, klimt overal over. Mooi om mee te beginnen.' },
-  bike: { id: 'bike', name: "Hermano's fiets", r: 0.5, wb: 1.7, wy: -0.35, F: 22, vmax: 14, mu: 1.0, brake: 12, I: 0.55, roof: [[-0.2, 1.0, 0.28], [0.5, 0.6, 0.25]], len: 2.2, unlock: 5, desc: 'Snel en wendbaar. De hele tijd in beeld: Hermano\'s!' },
-  gold: { id: 'gold', name: 'Gouden regenboogauto', r: 0.55, wb: 2.5, wy: -0.4, F: 30, vmax: 15, mu: 1.05, brake: 15, I: 1.7, roof: [[-1.1, 0.5, 0.3], [1.1, 0.5, 0.3], [0, 0.75, 0.3]], len: 3.6, unlock: 15, desc: 'Glimmend en razendsnel, met een regenboogspoor.' },
-  gnome: { id: 'gnome', name: 'Tuinkabouterauto', r: 0.7, wb: 2.4, wy: -0.5, F: 36, vmax: 13, mu: 1.2, brake: 16, I: 1.7, roof: [[-1.2, 0.6, 0.3], [1.2, 0.6, 0.3], [0, 1.7, 0.3]], len: 3.8, unlock: 20, desc: 'Een tuinkabouter op wielen. Zwaar en sterk.' },
+  // fiets: geen vering, wendbaar maar gevoelig voor bulten
+  bike: { id: 'bike', name: "Hermano's fiets", r: 0.5, wb: 1.7, wy: -0.35, F: 22, vmax: 14, mu: 1.0, brake: 12, I: 0.55, K: 3600, C: 150, T: 0, stab: 0, wheelie: 0.35, roof: [[-0.2, 1.0, 0.28], [0.5, 0.6, 0.25]], len: 2.2, unlock: 1, desc: "Geen vering en moeilijk over heuveltjes, maar snel. De hele tijd in beeld: Hermano's!" },
+  // monstertruck: fel geel, goede vering, flink gewicht
+  truck: { id: 'truck', name: 'Monstertruck', r: 0.85, wb: 2.5, wy: -0.7, F: 34, vmax: 12, mu: 1.1, brake: 14, I: 2.6, K: 40, C: 8, T: 0.6, stab: 8, wheelie: 1.6, roof: [[-1.3, 0.95, 0.3], [1.3, 0.95, 0.3], [0, 1.35, 0.3]], len: 3.8, unlock: 5, desc: 'Fel geel, grote wielen en goede vering. Vangt vallen op en rijdt over kleine obstakels.' },
+  // goud: zelfde model, veel meer acceleratie
+  gold: { id: 'gold', name: 'Gouden monstertruck', r: 0.85, wb: 2.5, wy: -0.7, F: 54, vmax: 16, mu: 1.1, brake: 16, I: 3.4, K: 40, C: 8, T: 0.6, stab: 12, wheelie: 1.2, roof: [[-1.3, 0.95, 0.3], [1.3, 0.95, 0.3], [0, 1.35, 0.3]], len: 3.8, unlock: 15, desc: 'Dezelfde truck, maar van goud en met een enorme acceleratie.' },
+  // kabouter: net zo snel als de truck, valt bijna niet om, Rolls-Royce-vering
+  gnome: { id: 'gnome', name: 'Tuinkabouterauto', r: 0.85, wb: 2.5, wy: -0.7, F: 36, vmax: 12, mu: 1.25, brake: 16, I: 5.5, K: 24, C: 11, T: 0.85, stab: 30, roof: [[-1.2, 0.95, 0.3], [1.2, 0.95, 0.3], [0, 2.0, 0.3]], len: 3.8, unlock: 20, desc: 'Zweeft als een Rolls-Royce over alles heen en valt bijna niet om.' },
 };
-export const CAR_ORDER = ['truck', 'bike', 'gold', 'gnome'];
+export const CAR_ORDER = ['bike', 'truck', 'gold', 'gnome'];
 
 export class Terrain {
   constructor(lines) {
     this.B = 4;
+    this.dyn = [];
     this.cells = new Map();
     for (const pts of lines) {
       for (let i = 1; i < pts.length; i++) {
@@ -25,12 +30,17 @@ export class Terrain {
       }
     }
   }
+  // bewegende platforms: elk [{x0,y0,x1,y1,vx,vy}] (alleen de bovenkant telt)
+  setDyn(list) {
+    this.dyn = list.map(({ x0, y0, x1, y1, vx, vy }) => {
+      const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy) || 1e-6;
+      return { ax: x0, ay: y0, bx: x1, by: y1, dx, dy, len2: len * len, nx: -dy / len, ny: dx / len, gvx: vx || 0, gvy: vy || 0 };
+    });
+  }
   query(px, py, r) {
     let best = null;
     const c0 = Math.floor((px - r) / this.B), c1 = Math.floor((px + r) / this.B);
-    for (let c = c0; c <= c1; c++) {
-      const list = this.cells.get(c);
-      if (!list) continue;
+    const scan = (list) => {
       for (const s of list) {
         const t = ((px - s.ax) * s.dx + (py - s.ay) * s.dy) / s.len2;
         let pen, nx, ny;
@@ -45,15 +55,17 @@ export class Terrain {
           if (dd >= r || dd < 1e-6) continue;
           pen = r - dd; nx = ddx / dd; ny = ddy / dd;
         }
-        if (!best || pen > best.pen) best = { pen, nx, ny };
+        if (!best || pen > best.pen) best = { pen, nx, ny, gvx: s.gvx || 0, gvy: s.gvy || 0 };
       }
-    }
+    };
+    for (let c = c0; c <= c1; c++) { const list = this.cells.get(c); if (list) scan(list); }
+    if (this.dyn.length) scan(this.dyn);
     return best;
   }
 }
 
 export function makeCar(id, x, y) {
-  return { id, x, y, a: 0, vx: 0, vy: 0, w: 0, spin: [0, 0], ang: [0, 0], ground: [false, false], N: [0, 0], vt: [0, 0], crash: null, air: 0 };
+  return { id, x, y, a: 0, vx: 0, vy: 0, w: 0, spin: [0, 0], ang: [0, 0], ground: [false, false], N: [0, 0], vt: [0, 0], comp: [0, 0], crash: null, air: 0, revT: 0, revV: 0 };
 }
 export const xf = (b, lx, ly) => {
   const c = Math.cos(b.a), s = Math.sin(b.a);
@@ -74,11 +86,15 @@ export function stepCar(b, terr, inp, dt) {
     const rx = c * lx - s * ly, ry = s * lx + c * ly;
     const q = terr.query(b.x + rx, b.y + ry, V.r);
     b.ground[i] = !!q;
-    if (!q) { b.N[i] = 0; continue; }
+    if (!q) { b.N[i] = 0; b.comp[i] += (0 - b.comp[i]) * Math.min(1, dt * 12); continue; }
     anyGround = true;
-    const vpx = b.vx - b.w * ry, vpy = b.vy + b.w * rx;
+    const vpx = b.vx - b.w * ry - q.gvx, vpy = b.vy + b.w * rx - q.gvy;
     const vn = vpx * q.nx + vpy * q.ny;
-    const Fn = Math.min(260, Math.max(0, K * q.pen - C * vn));
+    // vering: zacht veren binnen de veerweg T, daarna een harde aanslag
+    const T = V.T || 0;
+    const spring = q.pen <= T ? V.K * q.pen : V.K * T + (V.T ? 1400 : 3600) * Math.min(q.pen - T, 0.25);
+    const Fn = Math.min(260, Math.max(0, spring - V.C * vn));
+    b.comp[i] += (Math.min(q.pen, T + 0.15) - b.comp[i]) * Math.min(1, dt * 30);
     let Fx = q.nx * Fn, Fy = q.ny * Fn;
     const tx = q.ny, ty = -q.nx;
     const vt = vpx * tx + vpy * ty;
@@ -90,11 +106,26 @@ export function stepCar(b, terr, inp, dt) {
       else Ft -= Math.min(V.F * 0.45 * Math.max(0, 1 + vt / 4), V.mu * Fn + 3) * (i === 0 ? 1 : 0.35);
     }
     Ft -= vt * (gas ? 0.05 : 0.3);
+    // stilstaand zonder gas of rem: de auto blijft staan (en wordt meegenomen door een bewegend platform)
+    if (!gas && !brake && Math.abs(vt) < 1.5) Ft -= vt * 3;
     Fx += tx * Ft; Fy += ty * Ft;
     ax += Fx; ay += Fy;
     aw += (rx * Fy - ry * Fx) / V.I;
     b.N[i] = Fn; b.vt[i] = vt;
   }
+  // wheelie (zoals in Drive Mad): eerst achteruit rijden en dan gas geven tilt de voorkant op, zodat je over een obstakel komt
+  if (V.wheelie) {
+    if (b.vt[0] < -1 && (b.ground[0] || b.ground[1])) { b.revT = 1.0; b.revV = Math.max(b.revV, Math.min(4, -b.vt[0])); }
+    else if (b.revT > 0) b.revT -= dt;
+    else b.revV = 0;
+    if (gas && b.ground[0] && b.vt[0] > -1) {
+      const k = b.revT > 0 ? 4 + 2.5 * b.revV : 0.6;
+      // naar een wheelie-hoek van ongeveer 0,5 rad sturen, met demping zodat hij niet doorslaat
+      aw += V.wheelie * k * Math.max(-1, 1 - b.a / 0.5) - (b.revT > 0 ? b.w * 2.5 : 0);
+    }
+  }
+  // zwaar voertuig met laag zwaartepunt: komt terug rechtop
+  if (anyGround && V.stab) { const over = Math.max(0, Math.abs(b.a) - 0.45); aw -= V.stab * Math.sign(b.a) * Math.sin(over); }
   // in de lucht: gas laat de neus omhoog komen, remmen duwt hem omlaag (reactie van de wielen)
   if (!anyGround) {
     aw += ((gas ? 1 : 0) - (brake ? 1 : 0)) * 7;
@@ -134,5 +165,48 @@ export function crashTest(b, terr, level) {
     }
   }
   if (b.y < level.minY - 14) return 'water';
+  return null;
+}
+
+// ---- bewegende delen: veerboot (automatisch) en een brug die met een knop uitschuift
+const smooth = (u) => u * u * (3 - 2 * u);
+function ferryU(m, t) {
+  const ph = (t + m.phase) % 14;
+  if (ph < 3) return 0;
+  if (ph < 7) return smooth((ph - 3) / 4);
+  if (ph < 10) return 1;
+  return 1 - smooth((ph - 10) / 4);
+}
+export function ferryPos(m, t) {
+  const W = m.x1 - m.x0;
+  const xl = m.x0 + (W - m.len) * ferryU(m, t);
+  return xl;
+}
+export function bridgeProg(m, t, latched) {
+  const lt = latched && latched[m.id];
+  if (lt === undefined || lt === null) return 0;
+  return Math.min(1, Math.max(0, (t - lt) / 2.5));
+}
+// platforms op dit moment, voor de botsingen
+export function moverSegs(level, t, latched) {
+  const out = [];
+  for (const m of level.movers || []) {
+    if (m.kind === 'ferry') {
+      const xl = ferryPos(m, t), xl2 = ferryPos(m, t + 0.02);
+      out.push({ x0: xl, y0: m.y, x1: xl + m.len, y1: m.y, vx: (xl2 - xl) / 0.02, vy: 0 });
+    } else if (m.kind === 'bridgebtn') {
+      const p = bridgeProg(m, t, latched), p2 = bridgeProg(m, t + 0.02, latched);
+      if (p > 0.02) out.push({ x0: m.x0 - 1.5, y0: m.y, x1: m.x0 - 1.5 + (m.x1 - m.x0 + 3) * p, y1: m.y, vx: ((m.x1 - m.x0 + 3) * (p2 - p)) / 0.02, vy: 0 });
+    }
+  }
+  return out;
+}
+// staat de auto op een knop? Dan gaat het bijbehorende onderdeel aan.
+export function updateLatch(level, car, t, latched) {
+  for (const m of level.movers || []) {
+    if (m.kind !== 'bridgebtn' || latched[m.id] !== undefined) continue;
+    const onGround = car.ground[0] || car.ground[1];
+    if (onGround && car.x > m.bx0 && car.x < m.bx1) { latched[m.id] = t; return m.id; }
+  }
   return null;
 }

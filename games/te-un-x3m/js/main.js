@@ -211,51 +211,13 @@ function flipPopup(text) {
 }
 
 // ---- de bestuurder van de gouden vape hoest af en toe
-// een menselijker hoest: stemhebbende klank door klinkerfilters (formanten), met ademruis, drie keer en een kuchje erachter
-function cough() {
-  if (!audio() || !soundOn) return;
-  const t0 = actx.currentTime + 0.02;
-  const bursts = [[0, 0.3, 1], [0.42, 0.28, 0.85], [0.84, 0.4, 0.75]];
-  const noiseBuf = (d) => {
-    const n = Math.floor(actx.sampleRate * d), buf = actx.createBuffer(1, n, actx.sampleRate), data = buf.getChannelData(0);
-    for (let i = 0; i < n; i++) data[i] = Math.random() * 2 - 1;
-    return buf;
-  };
-  const voice = (start, dur, amp, pitch, vowel) => {
-    const t = t0 + start;
-    const out = actx.createGain();
-    out.gain.setValueAtTime(0.0001, t);
-    out.gain.exponentialRampToValueAtTime(0.5 * amp, t + 0.015);
-    out.gain.exponentialRampToValueAtTime(0.28 * amp, t + dur * 0.4);
-    out.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    out.connect(master);
-    const src = actx.createOscillator();
-    src.type = 'sawtooth';
-    src.frequency.setValueAtTime(pitch * 1.35, t);
-    src.frequency.exponentialRampToValueAtTime(pitch * 0.72, t + dur);
-    const wob = actx.createOscillator(), wg = actx.createGain();
-    wob.frequency.value = 17; wg.gain.value = pitch * 0.05; wob.connect(wg); wg.connect(src.frequency);
-    const air = actx.createBufferSource(); air.buffer = noiseBuf(dur + 0.05);
-    const ag = actx.createGain(); ag.gain.value = 0.55; air.connect(ag);
-    // klinkerfilters: 'ah' en 'eh'
-    const formants = vowel === 'eh' ? [[530, 5, 1], [1840, 8, 0.6], [2480, 8, 0.3]] : [[730, 5, 1], [1090, 7, 0.7], [2440, 8, 0.3]];
-    for (const [f, q, g] of formants) {
-      const bp = actx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = q;
-      const gg = actx.createGain(); gg.gain.value = g * 2.4;
-      src.connect(bp); ag.connect(bp); bp.connect(gg); gg.connect(out);
-    }
-    src.start(t); wob.start(t); air.start(t);
-    src.stop(t + dur + 0.05); wob.stop(t + dur + 0.05); air.stop(t + dur + 0.05);
-  };
-  bursts.forEach(([s, d, a], i) => voice(s, d, a, 150 - i * 12, i === 1 ? 'eh' : 'ah'));
-  voice(1.28, 0.22, 0.45, 120, 'eh'); // het kuchje achteraan
-}
+// (het hoestgeluid is weggehaald; alleen de animatie van de bestuurder blijft)
 function updateCough(dt, b) {
   const c = g.cough;
   if (c.t > 0) { c.t -= dt; return; }
   if (b.vid !== 'vape' || g.state !== 'run') return;
   c.next -= dt;
-  if (c.next <= 0) { c.t = 1.5; c.next = 8 + Math.random() * 7; cough(); }
+  if (c.next <= 0) { c.t = 1.5; c.next = 8 + Math.random() * 7; }
 }
 
 function anyInput() { const i = g.input; return i.gas || i.brake || i.left || i.right; }
@@ -420,7 +382,7 @@ initTutorial({
 initDev([
   { label: 'Alle levels en personages openen', run: () => { P.dev = true; save(); refreshAll(); return 'Alles open'; } },
   { label: '+100 sterren', run: () => { P.bonus = (P.bonus || 0) + 100; save(); refreshAll(); return `Nu ${freeStars()} sterren`; } },
-  { label: 'Alle levels met 3 sterren afmaken', run: () => { for (let n = 1; n <= LEVEL_COUNT; n++) { P.stars[n] = 3; if (!P.best[n]) P.best[n] = 60; } save(); refreshAll(); return 'Alle levels 3 sterren'; } },
+  { label: 'Profielfoto Te-Un Racer krijgen (alle levels 3 sterren)', run: () => { for (let n = 1; n <= LEVEL_COUNT; n++) { P.stars[n] = 3; if (!P.best[n]) P.best[n] = 60; } save(); refreshAll(); return 'Alle levels 3 sterren'; } },
 ]);
 
 // ---------------------------------------------------------------- hoofdlus

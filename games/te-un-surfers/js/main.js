@@ -1831,6 +1831,7 @@ initDev([
   { label: '+100.000 munten', run: () => devCoins(100000) },
   { label: '+1.000.000 munten', run: () => devCoins(1000000) },
   { label: 'Alles kopen (voertuigen, skins, kleding)', run: () => { Object.keys(PRICES).forEach((k) => { P.owned[k] = true; }); P.vehicle = P.vehicle || 'wheelchair'; save(); refreshMenuStats(); if (!$('shop').hidden) renderShop(); return 'Alles gekocht'; } },
+  { label: 'Profielfoto\'s krijgen (NS-trein en Te-Un 50K)', run: () => { Object.keys(PRICES).forEach((k) => { P.owned[k] = true; }); P.vehicle = P.vehicle || 'wheelchair'; P.best = Math.max(P.best, 50000); save(); refreshMenuStats(); return 'Alles gekocht en record 50.000: beide profielfoto\'s zijn vrij'; } },
   { label: 'Oneindig refill (tijdens een rit)', run: () => {
     if (S.mode !== 'playing' && S.mode !== 'intro') return 'Start eerst een rit';
     S.infRefill = true;

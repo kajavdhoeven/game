@@ -1,7 +1,7 @@
 // Te-Un Drive: menu, spelverloop, 3D-weergave en opslag.
 import * as THREE from 'three';
 import { makeLevel, LEVEL_COUNT } from './levels.js';
-import { Terrain, makeCar, stepCar, crashTest, CARS, CAR_ORDER } from './sim.js';
+import { Terrain, makeCar, stepCar, crashTest, CARS, CAR_ORDER, moverSegs, updateLatch } from './sim.js';
 import { buildWorld } from './world.js';
 import { createCar } from './cars3d.js';
 import { initDev, setDevVisible } from '/js/devmode.js';
@@ -12,7 +12,7 @@ const $ = (id) => document.getElementById(id);
 
 // ---------------------------------------------------------------- opslaan
 const KEY = 'teun-drive-v1';
-let P = { done: {}, car: 'truck', dev: false, updatedAt: 0 };
+let P = { done: {}, car: 'bike', dev: false, updatedAt: 0 };
 try { P = Object.assign(P, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* geen opslag */ }
 const snapshot = () => ({ done: P.done, car: P.car, dev: P.dev, updatedAt: P.updatedAt });
 const post = (type, extra = {}) => {
@@ -36,9 +36,10 @@ window.addEventListener('message', (e) => {
     else if ((d.updatedAt || 0) < (P.updatedAt || 0)) post('teun:save', { data: snapshot() });
   }
 });
+if (!CARS[P.car]) P.car = 'bike';
 const levelOpen = (n) => n === 1 || P.dev || !!P.done[n - 1];
 const carOpen = (id) => CARS[id].unlock <= 1 || P.dev || !!P.done[CARS[id].unlock];
-const prizeLevels = { 5: 'bike', 15: 'gold', 20: 'gnome' };
+const prizeLevels = { 5: 'truck', 15: 'gold', 20: 'gnome' };
 const fmt = (t) => t.toFixed(1);
 
 function toast(t, ms = 2400) {
@@ -143,13 +144,13 @@ let g = null, paused = false, hintT = 0;
 function startLevel(n) {
   if (g) { scene.remove(g.world.root); g.world.dispose(); scene.remove(g.car3d.root); }
   const level = makeLevel(n);
-  const id = carOpen(P.car) ? P.car : 'truck';
+  const id = carOpen(P.car) ? P.car : 'bike';
   const car = makeCar(id, level.startX, CARS[id].r + 0.8);
   const world = buildWorld(level);
   scene.add(world.root);
   const car3d = createCar(id);
   scene.add(car3d.root);
-  g = { n, level, terr: new Terrain([level.main, ...level.planks]), car, car3d, world, state: 'ready', t: 0, tl: 0, crashT: 0, cam: { x: car.x + 4, y: car.y + 1.5, shake: 0 }, input: { ...NOINP } };
+  g = { n, level, terr: new Terrain([level.main, ...level.planks]), car, car3d, world, state: 'ready', t: 0, tl: 0, latched: {}, crashT: 0, cam: { x: car.x + 4, y: car.y + 1.5, shake: 0 }, input: { ...NOINP } };
   plist.length = 0;
   setScreen('play');
   paused = false;
@@ -213,6 +214,9 @@ function update(dt) {
   const c = g.car;
   if (g.state === 'ready' && (g.input.gas || g.input.brake)) g.state = 'run';
   const inp = g.state === 'run' ? g.input : NOINP;
+  g.terr.setDyn(moverSegs(g.level, g.t, g.latched));
+  const lid = updateLatch(g.level, c, g.t, g.latched);
+  if (lid !== null) { toast('Klik! Een brug schuift uit', 2200); beep(660, 0.12, 'square', 0.15); beep(880, 0.15, 'square', 0.15, 0.1); }
   for (let i = 0; i < 8; i++) stepCar(c, g.terr, g.state === 'ready' ? NOINP : inp, dt / 8);
   if (g.state === 'run') {
     g.tl += dt;
@@ -236,6 +240,7 @@ function update(dt) {
   cam.x += (tx - cam.x) * Math.min(1, dt * 4); cam.y += (ty - cam.y) * Math.min(1, dt * 3);
   cam.shake = Math.max(0, cam.shake - dt);
   place();
+  g.world.updateMovers(g.t, g.latched);
   g.world.waters.forEach((w, i) => { w.position.y += Math.sin(g.t * 3 + i) * 0.0015; });
   g.world.clouds.forEach((cl, i) => { cl.position.x += dt * (0.4 + (i % 3) * 0.2); });
 }
@@ -323,8 +328,14 @@ function setPaused(v) {
 }
 $('btnPause').addEventListener('click', () => setPaused(true));
 $('pResume').addEventListener('click', () => setPaused(false));
-$('pRetry').addEventListener('click', () => startLevel(g.n));
-$('pMenu').addEventListener('click', () => { paused = false; setScreen('levels'); });
+$('pMenu').addEventListener('click', () => { paused = false; setScreen('menu'); });
+// in de garage: meteen verder spelen met het volgende level dat nog niet gehaald is
+$('gPlay').addEventListener('click', () => {
+  audio();
+  let n = 1;
+  while (n < LEVEL_COUNT && P.done[n] && levelOpen(n + 1)) n++;
+  startLevel(levelOpen(n) ? n : 1);
+});
 $('mPlay').addEventListener('click', () => { audio(); setScreen('levels'); });
 $('mGarage').addEventListener('click', () => { audio(); setScreen('garage'); });
 $('lBack').addEventListener('click', () => setScreen('menu'));
@@ -339,9 +350,10 @@ initTutorial({
   steps: [
     { icon: '🚙', title: 'Rijd naar de finish', lines: ['Rij je blokkenauto over heuvels, trappen, houten bruggen en gaten naar de finishvlag. Elk level is net wat lastiger.'] },
     { icon: '🎮', title: 'Zo bestuur je', lines: ['<kbd>→</kbd> of <kbd>D</kbd>: gas &nbsp; <kbd>←</kbd> of <kbd>A</kbd>: remmen en achteruit', 'Niet te hard en niet te zacht: neem snelheid voor een sprong, maar blijf op je wielen.', 'Op een telefoon gebruik je de knoppen GAS en REM onderin beeld.'] },
-    { icon: '🛞', title: 'In de lucht', lines: ['Tijdens een sprong tilt <b>gas</b> de neus van je auto omhoog en duwt <b>rem</b> hem omlaag. Zo kom je netjes op je wielen terecht.'] },
+    { icon: '🛞', title: 'In de lucht en wheelies', lines: ['Tijdens een sprong tilt <b>gas</b> de neus van je auto omhoog en duwt <b>rem</b> hem omlaag. Zo kom je netjes op je wielen terecht.', 'Zit je vast voor een obstakel? Rij eerst een stukje <b>achteruit</b> en geef dan <b>gas</b>: je doet een wheelie en komt er makkelijk overheen. Dat werkt met alle auto\'s behalve de tuinkabouterauto.'] },
     { icon: '💥', title: 'Wanneer ga je af?', lines: ['Je verliest als je op je dak landt, in het water valt of op spijkers rijdt. Dan begin je meteen opnieuw. Met <kbd>R</kbd> start je zelf opnieuw.'] },
-    { icon: '🎁', title: 'Nieuwe auto\'s', lines: ['Haal <b>level 5</b> voor Hermano\'s fiets, <b>level 15</b> voor de gouden regenboogauto en <b>level 20</b> voor de tuinkabouterauto. Kies ze in de garage. Bij Hermano\'s fiets staat Hermano\'s groot in beeld!'] },
+    { icon: '🛠️', title: 'Bruggen en bewegende delen', lines: ['Soms vaar je met een <b>veerboot</b> over het water: wacht tot hij bij je is, rij er rustig op, blijf in het midden staan en rij er aan de overkant af. Soms ligt er een <b>rode knop</b>: rij erover heen en een <b>brug schuift uit</b> over het water.'] },
+    { icon: '🎁', title: 'Nieuwe auto\'s', lines: ['Je begint met <b>Hermano\'s fiets</b>: snel, maar zonder vering, dus pas op voor heuveltjes. Haal <b>level 5</b> voor de gele <b>monstertruck</b> met goede vering, <b>level 15</b> voor de <b>gouden monstertruck</b> met enorme acceleratie en <b>level 20</b> voor de <b>tuinkabouterauto</b>: bijna niet te laten omvallen en met Rolls-Royce-vering. Kies ze in de garage.'] },
   ],
 });
 

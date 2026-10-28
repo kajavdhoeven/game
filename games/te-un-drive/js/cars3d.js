@@ -50,25 +50,47 @@ function bigWheel(r, width, rim, z) {
   return g;
 }
 
-function buildTruck() {
+// monstertruck: hoge opbouw, enorme wielen en zichtbare vering (schokdempers met veer)
+function buildTruck(pal = {}) {
+  const P = { body: '#ffe600', body2: '#ffc800', cab: '#ffe600', dark: '#2b2f38', glass: '#7fd6ff', stripe: '#16181c', rim: '#c9ced6', ...pal };
+  const em = pal.emissive ? { emissive: new THREE.Color(pal.emissive) } : undefined;
   const g = new THREE.Group();
   const V = CARS.truck;
-  box(g, 3.7, 0.5, 1.5, '#4b5563', 0, -0.1, 0);
-  box(g, 1.9, 0.75, 2.0, '#ffd23a', -0.85, 0.42, 0); // laadbak
-  box(g, 1.7, 0.12, 2.0, '#e5b800', -0.85, 0.82, 0);
-  box(g, 1.4, 0.8, 1.9, '#d1d5db', 0.75, 0.95, 0); // cabine
-  box(g, 1.3, 0.35, 1.94, '#9be7ff', 0.8, 1.05, 0, { transparent: true, opacity: 0.85 });
-  box(g, 1.2, 0.65, 2.0, '#ffd23a', 1.8, 0.35, 0); // motorkap
-  box(g, 0.12, 0.3, 1.7, '#111827', 2.43, 0.3, 0); // grille
-  box(g, 0.1, 0.18, 0.4, '#fff6b0', 2.45, 0.55, 0.7);
-  box(g, 0.1, 0.18, 0.4, '#fff6b0', 2.45, 0.55, -0.7);
-  // rolbeugel achterop, zoals op het plaatje
-  box(g, 0.12, 1.1, 0.12, '#4b5563', -1.7, 1.0, 0.85);
-  box(g, 0.12, 1.1, 0.12, '#4b5563', -1.7, 1.0, -0.85);
-  box(g, 0.12, 0.12, 1.82, '#4b5563', -1.7, 1.55, 0);
-  const w0 = bigWheel(V.r, 0.7, '#9ca3af', 1.05), w1 = bigWheel(V.r, 0.7, '#9ca3af', 1.05);
+  // chassis en assen
+  box(g, 3.9, 0.28, 0.5, '#3d434d', 0, -0.35, 0.55);
+  box(g, 3.9, 0.28, 0.5, '#3d434d', 0, -0.35, -0.55);
+  // onderstel + carrosserie
+  box(g, 3.5, 0.6, 2.0, P.body, 0, 0.2, 0, em);
+  box(g, 3.5, 0.12, 2.02, P.stripe, 0, 0.0, 0);
+  box(g, 1.35, 0.5, 1.9, P.body, 1.4, 0.7, 0, em); // motorkap
+  box(g, 1.1, 0.12, 0.7, P.stripe, 1.4, 1.0, 0); // luchtinlaat
+  box(g, 1.6, 0.85, 1.9, P.cab, -0.3, 0.95, 0, em); // cabine
+  box(g, 1.62, 0.12, 1.94, P.stripe, -0.3, 1.42, 0); // dak
+  box(g, 1.2, 0.4, 1.94, P.glass, -0.15, 1.05, 0, { transparent: true, opacity: 0.9 }); // ruiten
+  box(g, 0.06, 0.4, 1.7, P.glass, 0.52, 1.05, 0, { transparent: true, opacity: 0.9 }); // voorruit
+  box(g, 1.3, 0.55, 1.95, P.body2, -1.5, 0.55, 0, em); // laadbak
+  // lichtbalk, bumpers, koplampen
+  box(g, 0.2, 0.18, 1.5, '#ff8a00', -0.2, 1.55, 0);
+  box(g, 0.2, 0.4, 2.0, P.dark, 2.15, 0.15, 0);
+  box(g, 0.1, 0.22, 0.5, '#fff6b0', 2.1, 0.7, 0.65);
+  box(g, 0.1, 0.22, 0.5, '#fff6b0', 2.1, 0.7, -0.65);
+  box(g, 0.12, 0.3, 1.0, P.dark, 2.08, 0.5, 0);
+  // rolbeugel in de bak
+  [0.85, -0.85].forEach((z) => box(g, 0.1, 0.8, 0.1, P.dark, -1.9, 1.0, z));
+  box(g, 0.1, 0.1, 1.8, P.dark, -1.9, 1.4, 0);
+  const w0 = bigWheel(V.r, 0.85, P.rim, 1.3), w1 = bigWheel(V.r, 0.85, P.rim, 1.3);
   g.add(w0, w1);
-  return { g, wheels: [w0, w1] };
+  // vering: per wiel twee schokdempers met een rode veer, tussen carrosserie en naaf
+  const shocks = [];
+  [-1, 1].forEach((side, i) => [-0.75, 0.75].forEach((z) => {
+    const sh = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1, 8), M('#cfd4db'));
+    const spring = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 1, 10), M('#e63946'));
+    sh.add(body, spring);
+    g.add(sh);
+    shocks.push({ sh, spring, i, z, mx: side * 1.05, my: 0.25 });
+  }));
+  return { g, wheels: [w0, w1], shocks };
 }
 
 function buildBike() {
@@ -121,21 +143,14 @@ function buildBike() {
 }
 
 function buildGold() {
-  const g = new THREE.Group();
-  const V = CARS.gold;
-  box(g, 3.8, 0.55, 1.9, '#ffcf33', 0, 0, 0, { emissive: new THREE.Color('#5a4100') });
-  box(g, 2.0, 0.55, 1.7, '#ffe27a', -0.15, 0.55, 0, { emissive: new THREE.Color('#5a4100') });
-  box(g, 1.7, 0.4, 1.74, '#9be7ff', 0.05, 0.6, 0, { transparent: true, opacity: 0.85 });
-  box(g, 0.35, 0.5, 1.9, '#ffcf33', -1.85, 0.5, 0);
-  box(g, 0.1, 0.25, 0.5, '#fff6b0', 1.92, 0.12, 0.65);
-  box(g, 0.1, 0.25, 0.5, '#fff6b0', 1.92, 0.12, -0.65);
+  const r = buildTruck({ body: '#ffcf33', body2: '#ffbf1f', cab: '#ffe27a', dark: '#6b4a00', stripe: '#8a5a00', rim: '#ffcf33', emissive: '#5a4100', glass: '#bff1ff' });
+  // regenboogstrepen op de zijkant
   const stripes = [];
   ['#ff3b3b', '#ff9a1f', '#ffe14a', '#3ed66a', '#3b8bff', '#a55bff'].forEach((c, i) => {
-    [-1, 1].forEach((s) => { const m = box(g, 3.5, 0.07, 0.04, c, 0, 0.2 - i * 0.075, s * 0.96); stripes.push(m); });
+    [-1, 1].forEach((s) => { const m = box(r.g, 3.3, 0.07, 0.04, c, 0, 0.45 - i * 0.075, s * 1.03); stripes.push(m); });
   });
-  const w0 = bigWheel(V.r, 0.45, '#ffcf33', 1.0), w1 = bigWheel(V.r, 0.45, '#ffcf33', 1.0);
-  g.add(w0, w1);
-  return { g, wheels: [w0, w1], stripes };
+  r.stripes = stripes;
+  return r;
 }
 
 function buildGnome() {
@@ -172,16 +187,32 @@ export function createCar(id) {
   const root = new THREE.Group();
   const b = id === 'truck' ? buildTruck() : id === 'bike' ? buildBike() : id === 'gold' ? buildGold() : buildGnome();
   root.add(b.g);
-  b.wheels[0].position.set(-V.wb / 2, V.wy, 0);
-  b.wheels[1].position.set(V.wb / 2, V.wy, 0);
   b.g.traverse((o) => { if (o.isMesh) o.castShadow = false; });
   const api = {
     root, id,
     update(car, t) {
       root.position.set(car.x, car.y, 0);
       root.rotation.z = car.a;
+      const c0 = car.comp[0] || 0, c1 = car.comp[1] || 0;
+      b.wheels[0].position.set(-V.wb / 2, V.wy + c0, 0);
+      b.wheels[1].position.set(V.wb / 2, V.wy + c1, 0);
       b.wheels[0].rotation.z = -car.ang[0];
       b.wheels[1].rotation.z = -car.ang[1];
+      if (b.shocks) {
+        for (const k of b.shocks) {
+          const hx = k.i ? V.wb / 2 : -V.wb / 2, hy = V.wy + (k.i ? c1 : c0);
+          const dx = hx - k.mx * (k.i ? 1 : -1) * -1, dy = hy - k.my;
+          void dx;
+          const mx = (k.i ? 1 : -1) * 1.05, my = k.my;
+          const ddx = hx - mx, ddy = hy - my, len = Math.hypot(ddx, ddy);
+          k.sh.position.set((hx + mx) / 2, (hy + my) / 2, k.z);
+          k.sh.rotation.z = Math.atan2(ddy, ddx) - Math.PI / 2;
+          k.sh.children[0].scale.y = len;
+          k.sh.children[1].scale.y = len * 0.6;
+          k.sh.children[1].position.y = len * 0.12;
+          void dy;
+        }
+      }
       if (b.flag) { b.flag.rotation.y = Math.sin(t * 8) * 0.25; b.flag.scale.x = 0.9 + Math.sin(t * 8) * 0.05; }
       if (b.stripes) b.stripes.forEach((m, i) => m.material.color.setHSL(((t * 0.6 + i * 0.07) % 1), 1, 0.55));
       if (b.hat) b.hat.rotation.z = Math.sin(t * 6) * 0.04;

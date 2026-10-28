@@ -1,5 +1,7 @@
 // De 3D-wereld: terrein, bruggen, water, spijkers, finish en een vrolijke achtergrond.
 import * as THREE from 'three';
+import { levelHeight } from './levels.js';
+import { ferryPos, bridgeProg } from './sim.js';
 
 const M = (c, opts = {}) => new THREE.MeshLambertMaterial({ color: c, ...opts });
 const DEPTH = 6;
@@ -104,6 +106,59 @@ export function buildWorld(level) {
     }
   }
 
+  // ----- bewegende delen: veerboot en brug met knop
+  const movers = [];
+  for (const m of level.movers || []) {
+    if (m.kind === 'ferry') {
+      const plank = new THREE.Mesh(new THREE.BoxGeometry(m.len, 0.5, 4.8), M('#b8666a'));
+      const top = new THREE.Mesh(new THREE.BoxGeometry(m.len, 0.1, 4.9), M('#ffd0b8'));
+      top.position.y = 0.28;
+      const g = new THREE.Group();
+      g.add(plank, top);
+      // pijlen aan de zijkant
+      const arrow = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.15, 0.4), M('#ffd23a'));
+      arrow.position.set(0, 0.34, 2.2); g.add(arrow);
+      const a2 = arrow.clone(); a2.position.z = -2.2; g.add(a2);
+      root.add(g);
+      movers.push({ m, g });
+    } else {
+      const g = new THREE.Group();
+      const g2 = new THREE.BoxGeometry(1, 0.5, 4.8); g2.translate(0.5, 0, 0);
+      const plank = new THREE.Mesh(g2, M('#b8666a'));
+      const g3 = new THREE.BoxGeometry(1, 0.1, 4.9); g3.translate(0.5, 0.28, 0);
+      const top = new THREE.Mesh(g3, M('#ffd0b8'));
+      g.add(plank, top);
+      root.add(g);
+      const gy = levelHeight(level, (m.bx0 + m.bx1) / 2);
+      const btnMat = new THREE.MeshBasicMaterial({ color: '#ff3b3b' });
+      const btn = new THREE.Mesh(new THREE.BoxGeometry(m.bx1 - m.bx0, 0.18, 3.8), btnMat);
+      btn.position.set((m.bx0 + m.bx1) / 2, gy + 0.02, 0);
+      root.add(btn);
+      const ring = new THREE.Mesh(new THREE.BoxGeometry(m.bx1 - m.bx0 + 0.5, 0.1, 4.2), M('#2b2f38'));
+      ring.position.set((m.bx0 + m.bx1) / 2, gy - 0.04, 0);
+      root.add(ring);
+      // bordje met een uitroepteken
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2, 0.2), M('#2b2f38'));
+      post.position.set(m.bx0 - 0.6, gy + 1, -2.6); root.add(post);
+      const sign = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, 0.15), new THREE.MeshBasicMaterial({ color: '#ffd23a' }));
+      sign.position.set(m.bx0 - 0.6, gy + 2.2, -2.6); root.add(sign);
+      movers.push({ m, g, btnMat });
+    }
+  }
+  const updateMovers = (t, latched) => {
+    for (const o of movers) {
+      const { m, g } = o;
+      if (m.kind === 'ferry') g.position.set(ferryPos(m, t) + m.len / 2, m.y - 0.3, 0);
+      else {
+        const p = bridgeProg(m, t, latched);
+        g.visible = p > 0.02;
+        g.position.set(m.x0 - 1.5, m.y - 0.3, 0);
+        g.scale.x = Math.max(0.01, (m.x1 - m.x0 + 3) * p);
+        o.btnMat.color.set(latched && latched[m.id] !== undefined ? '#3ed66a' : '#ff3b3b');
+      }
+    }
+  };
+
   // ----- finishpoort
   {
     let fy = 0;
@@ -151,5 +206,5 @@ export function buildWorld(level) {
     bg.add(c); clouds.push(c);
   }
   root.add(bg);
-  return { root, waters, clouds, dispose() { root.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); } };
+  return { root, waters, clouds, updateMovers, dispose() { root.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); } };
 }
