@@ -24,7 +24,7 @@ export const app = {
 function buildShell() {
   $('#app').innerHTML = `
   <header class="top">
-    <a class="logo" href="#/" aria-label="Te-Un Games, naar home">${logoSVG()}<span>Te-Un <b>Games</b></span></a>
+    <a class="logo" href="/" aria-label="Te-Un Games, naar home">${logoSVG()}<span>Te-Un <b>Games</b></span></a>
     <form class="search" id="search" role="search" autocomplete="off">
       ${icon('search', 18)}<input id="searchInput" type="search" placeholder="Zoek een game..." aria-label="Zoek een game" enterkeyhint="search">
     </form>
@@ -35,25 +35,29 @@ function buildShell() {
   </header>
   <aside class="rail" aria-label="Menu">
     <nav>
-      <a href="#/" data-nav="home">${icon('home')}<span>Home</span></a>
-      <a href="#/popular" data-nav="popular">${icon('flame')}<span>Populair</span></a>
-      <a href="#/new" data-nav="new">${icon('spark')}<span>Nieuw</span></a>
-      <a href="#/favorites" data-nav="favorites">${icon('heart')}<span>Favorieten</span></a>
+      <a href="/" data-nav="home">${icon('home')}<span>Home</span></a>
+      <a href="/popular" data-nav="popular">${icon('flame')}<span>Populair</span></a>
+      <a href="/new" data-nav="new">${icon('spark')}<span>Nieuw</span></a>
+      <a href="/favorites" data-nav="favorites">${icon('heart')}<span>Favorieten</span></a>
       <div class="rail-sep">Categorieën</div>
-      ${CATEGORIES.map((c) => `<a href="#/c/${c.id}" data-nav="c/${c.id}"><i class="em">${categoryIcon(c.id)}</i><span>${esc(c.name)}</span></a>`).join('')}
+      ${CATEGORIES.map((c) => `<a href="/c/${c.id}" data-nav="c/${c.id}"><i class="em">${categoryIcon(c.id)}</i><span>${esc(c.name)}</span></a>`).join('')}
     </nav>
     <div class="rail-foot"><div class="rail-teun">${teunSVG({ cls: 'idle' })}</div><small>${SITE_DOMAIN}</small></div>
   </aside>
   <main id="view" tabindex="-1"></main>
   <nav class="bottom-nav" aria-label="Snelmenu">
-    <a href="#/" data-nav="home">${icon('home', 22)}<span>Home</span></a>
-    <a href="#/categories" data-nav="categories">${icon('grid', 22)}<span>Categorieën</span></a>
-    <a href="#/favorites" data-nav="favorites">${icon('heart', 22)}<span>Favorieten</span></a>
-    <a href="#/profile" data-nav="profile">${icon('user', 22)}<span>Profiel</span></a>
+    <a href="/" data-nav="home">${icon('home', 22)}<span>Home</span></a>
+    <a href="/categories" data-nav="categories">${icon('grid', 22)}<span>Categorieën</span></a>
+    <a href="/favorites" data-nav="favorites">${icon('heart', 22)}<span>Favorieten</span></a>
+    <a href="/profile" data-nav="profile">${icon('user', 22)}<span>Profiel</span></a>
   </nav>`;
   const si = $('#searchInput');
-  $('#search').addEventListener('submit', (e) => { e.preventDefault(); location.hash = '#/search/' + encodeURIComponent(si.value.trim()); });
-  si.addEventListener('input', () => { if (si.value.trim().length >= 2) location.replace('#/search/' + encodeURIComponent(si.value.trim())); else if (!si.value.trim() && location.hash.startsWith('#/search')) location.replace('#/'); });
+  $('#search').addEventListener('submit', (e) => { e.preventDefault(); go('/search/' + encodeURIComponent(si.value.trim())); });
+  si.addEventListener('input', () => {
+    const q = si.value.trim();
+    if (q.length >= 2) go('/search/' + encodeURIComponent(q), true);
+    else if (!q && location.pathname.startsWith('/search')) go('/', true);
+  });
   $('#btnTheme').addEventListener('click', (e) => { e.stopPropagation(); togglePop('themePop'); });
   paintThemePop();
   paintAccount();
@@ -86,9 +90,9 @@ function paintAccount() {
   const p = state.profile || { username: '...', avatar: 'teun' };
   w.innerHTML = `<button id="btnAccount" class="avatar-btn" aria-label="Mijn account"><span class="avatar sm">${avatarSVG(p.avatar)}</span><span class="an">${esc(p.username)}</span></button>
     <div class="popover right" id="accPop" hidden>
-      <a class="pop-item" href="#/profile"><span class="sw plain">${icon('user')}</span><span><b>Mijn profiel</b><small>Pictogram, thema en voortgang</small></span></a>
-      <a class="pop-item" href="#/favorites"><span class="sw plain">${icon('heart')}</span><span><b>Favorieten</b><small>Games die je leuk vindt</small></span></a>
-      ${p.is_admin ? `<a class="pop-item" href="#/admin"><span class="sw plain">${icon('shield')}</span><span><b>Beheer</b><small>Dashboard</small></span></a>` : ''}
+      <a class="pop-item" href="/profile"><span class="sw plain">${icon('user')}</span><span><b>Mijn profiel</b><small>Pictogram, thema en voortgang</small></span></a>
+      <a class="pop-item" href="/favorites"><span class="sw plain">${icon('heart')}</span><span><b>Favorieten</b><small>Games die je leuk vindt</small></span></a>
+      ${p.is_admin ? `<a class="pop-item" href="/admin"><span class="sw plain">${icon('shield')}</span><span><b>Beheer</b><small>Dashboard</small></span></a>` : ''}
       <button class="pop-item" id="accTour"><span class="sw plain">${teunSVG({ crop: 'face' })}</span><span><b>Rondleiding</b><small>Met Te-Un</small></span></button>
       <button class="pop-item" id="accOut"><span class="sw plain">${icon('logout')}</span><span><b>Uitloggen</b></span></button>
     </div>`;
@@ -222,7 +226,7 @@ function openAuth(mode = 'login', msg = '') {
 // ------------------------------------------------------------------ rondleiding
 function runTour() {
   $$('.popover').forEach((p) => { p.hidden = true; });
-  if (location.hash && !/^#\/?$/.test(location.hash)) location.hash = '#/';
+  if (location.pathname !== '/') go('/');
   setTimeout(() => startTour({
     theme: document.documentElement.dataset.theme,
     onDone: async () => {
@@ -241,12 +245,47 @@ function maybeFirstTour() {
 }
 
 // ------------------------------------------------------------------ routes
+// Echte adressen (History API) in plaats van #-links, zodat Google elke pagina apart kan indexeren.
+function go(path, replace = false) {
+  if (path === location.pathname + location.search) { route(); return; }
+  if (replace) history.replaceState(null, '', path); else history.pushState(null, '', path);
+  route();
+}
+app.go = go;
+
+function onLinkClick(e) {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const a = e.target.closest && e.target.closest('a[href]');
+  if (!a || a.target === '_blank' || a.hasAttribute('download')) return;
+  const u = new URL(a.href, location.href);
+  if (u.origin !== location.origin) return;
+  if (/^\/(games|assets|api|vendor)\//.test(u.pathname)) return; // echte bestanden en de games zelf
+  e.preventDefault();
+  go(u.pathname + u.search);
+}
+
+// zoekmachine-gegevens per pagina bijwerken (ook handig bij delen en voor Google's renderer)
+function setMeta({ title, description, path, image, noindex }) {
+  const abs = (p) => location.origin + p;
+  const set = (sel, attr, val) => { const n = document.querySelector(sel); if (n) n.setAttribute(attr, val); };
+  document.title = title;
+  set('meta[name="description"]', 'content', description);
+  set('link[rel="canonical"]', 'href', abs(path));
+  set('meta[property="og:title"]', 'content', title);
+  set('meta[property="og:description"]', 'content', description);
+  set('meta[property="og:url"]', 'content', abs(path));
+  if (image) set('meta[property="og:image"]', 'content', image.startsWith('http') ? image : abs(image));
+  set('meta[name="twitter:title"]', 'content', title);
+  set('meta[name="twitter:description"]', 'content', description);
+  set('meta[name="robots"]', 'content', noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large');
+}
+
 const live = () => state.games.filter((g) => g.published);
 
 async function route() {
   leaveGame();
   const view = $('#view');
-  const raw = location.hash.replace(/^#\/?/, '');
+  const raw = location.pathname.replace(/^\/+|\/+$/g, '');
   const [path, ...rest] = raw.split('/');
   const arg = decodeURIComponent(rest.join('/') || '');
   let nav = 'home';
@@ -272,13 +311,30 @@ async function route() {
   view.innerHTML = '';
   view.appendChild(content);
   view.appendChild(footer());
-  document.title = title === 'Te-Un Games' ? 'Te-Un Games - gratis online games met Te-Un de kabouter' : `${title} | Te-Un Games`;
+  seoFor(path, arg, title);
   $$('[data-nav]').forEach((a) => a.classList.toggle('on', a.dataset.nav === nav));
   const si = $('#searchInput');
   if (path !== 'search' && si.value) si.value = '';
   window.scrollTo(0, 0);
   view.focus({ preventScroll: true });
   if (path !== 'admin') mountEggs(document.documentElement.dataset.theme, view);
+}
+
+function seoFor(path, arg, title) {
+  const base = { title: 'Te-Un Games - gratis online games met Te-Un de kabouter', description: 'Speel gratis online games op Te-Un Games. Ren, spring en vlieg samen met Te-Un de kabouter in Te-Un Surfers. Zonder download, op je computer of telefoon.', path: '/', image: '/assets/header.jpg' };
+  if (path === 'g') {
+    const g = state.games.find((x) => x.id === arg);
+    if (g) return setMeta({ title: `${g.title} - gratis online spelen | Te-Un Games`, description: (g.tagline ? g.tagline + ' ' : '') + (g.description || '').slice(0, 130), path: `/g/${g.id}`, image: g.hero || g.thumb || base.image });
+    return setMeta({ ...base, title: 'Game niet gevonden | Te-Un Games', path: location.pathname, noindex: true });
+  }
+  if (path === 'c') {
+    const c = CATEGORIES.find((x) => x.id === arg);
+    if (c) return setMeta({ ...base, title: `${c.name} games - gratis online spelen | Te-Un Games`, description: `${c.blurb} Speel gratis ${c.name.toLowerCase()} games op Te-Un Games.`, path: `/c/${c.id}` });
+  }
+  const pages = { popular: ['Populaire games', 'De meest gespeelde en geliefde games van Te-Un Games.', '/popular'], new: ['Nieuwe games', 'De nieuwste games op Te-Un Games.', '/new'], categories: ['Alle categorieën', 'Bekijk alle game-categorieën van Te-Un Games: actie, arcade, avontuur, puzzel, racen en meer.', '/categories'] };
+  if (pages[path]) return setMeta({ ...base, title: `${pages[path][0]} | Te-Un Games`, description: pages[path][1], path: pages[path][2] });
+  if (['search', 'profile', 'admin', 'favorites'].includes(path)) return setMeta({ ...base, title: `${title} | Te-Un Games`, path: location.pathname, noindex: true });
+  setMeta(base);
 }
 
 function renderSearch(q) {
@@ -296,7 +352,7 @@ function renderCategoryIndex() {
   const grid = el('<div class="cat-grid page"></div>');
   CATEGORIES.forEach((c) => {
     const n = live().filter((g) => g.category === c.id || (g.tags || []).includes(c.id)).length;
-    grid.appendChild(el(`<a class="cat-card" href="#/c/${c.id}" style="--c1:${c.color[0]};--c2:${c.color[1]}"><span class="cat-emoji">${categoryIcon(c.id)}</span><b>${esc(c.name)}</b><small>${n} game${n === 1 ? '' : 's'}</small></a>`));
+    grid.appendChild(el(`<a class="cat-card" href="/c/${c.id}" style="--c1:${c.color[0]};--c2:${c.color[1]}"><span class="cat-emoji">${categoryIcon(c.id)}</span><b>${esc(c.name)}</b><small>${n} game${n === 1 ? '' : 's'}</small></a>`));
   });
   f.appendChild(grid);
   void gameTile;
@@ -315,8 +371,11 @@ async function boot() {
   buildShell();
   try { await api.init(); } catch (e) { console.warn('Backend start mislukt:', e.message); }
   api.onAuth(async () => { const before = state.user && state.user.id; if ((api.getUser() && api.getUser().id) !== before) { await refreshUser(); route(); } });
+  // oude #-links (bijv. #/g/te-un-surfers) netjes omzetten naar echte adressen
+  if (/^#\/./.test(location.hash)) history.replaceState(null, '', location.hash.slice(1));
   await Promise.all([reloadGames(), refreshUser()]);
-  window.addEventListener('hashchange', route);
+  window.addEventListener('popstate', route);
+  document.addEventListener('click', onLinkClick);
   await route();
   $('#boot').classList.add('done');
   setTimeout(() => $('#boot').remove(), 600);

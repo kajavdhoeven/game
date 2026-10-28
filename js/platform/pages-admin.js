@@ -28,7 +28,7 @@ export async function renderAdmin(app) {
   const f = document.createDocumentFragment();
   if (!app.state.profile || !app.state.profile.is_admin) {
     f.appendChild(el(`<div class="empty"><div class="empty-teun">${teunSVG({ cls: 'idle' })}</div><h3>Alleen voor de beheerder</h3>
-      <p>Log in met het beheerdersaccount om dit dashboard te zien.</p><a class="btn primary" href="#/">Terug naar home</a></div>`));
+      <p>Log in met het beheerdersaccount om dit dashboard te zien.</p><a class="btn primary" href="/">Terug naar home</a></div>`));
     return f;
   }
   const page = el('<div class="admin"><div class="admin-load">Dashboard laden...</div></div>');
@@ -60,7 +60,7 @@ export async function renderAdmin(app) {
       <div class="admin-grid">
         <section class="card top-game">
           <h3>Meest gespeelde game</h3>
-          ${top ? `<div class="tg"><div class="tg-img" style="background-image:url('${esc(top.thumb)}')"></div><div><b>${esc(top.title)}</b><p>${fmt(top.plays)} keer gespeeld · ${fmt(top.likes)} likes</p><a class="btn ghost small" href="#/g/${esc(top.id)}">Bekijk</a></div></div>` : '<p class="muted">Nog geen games.</p>'}
+          ${top ? `<div class="tg"><div class="tg-img" style="background-image:url('${esc(top.thumb)}')"></div><div><b>${esc(top.title)}</b><p>${fmt(top.plays)} keer gespeeld · ${fmt(top.likes)} likes</p><a class="btn ghost small" href="/g/${esc(top.id)}">Bekijk</a></div></div>` : '<p class="muted">Nog geen games.</p>'}
         </section>
         <section class="card"><h3>Gespeeld per dag <span class="muted">laatste 14 dagen</span></h3>${line(ov.plays_per_day || [])}</section>
         <section class="card"><h3>Meest gespeeld</h3>${bars(byPlays.map((g) => ({ label: g.title, value: g.plays })))}</section>

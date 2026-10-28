@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /profile
+Disallow: /favorites
+Disallow: /search/
+Disallow: /api/
+
+Sitemap: https://te-ungames.nl/sitemap.xml

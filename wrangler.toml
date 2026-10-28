@@ -5,7 +5,14 @@ compatibility_date = "2025-01-01"
 [assets]
 directory = "./"
 binding = "ASSETS"
-run_worker_first = ["/api/*"]
+# Deze adressen gaan eerst door de Worker (zoekmachine-gegevens, sitemap, ranglijst)
+run_worker_first = ["/", "/api/*", "/g/*", "/c/*", "/popular", "/new", "/categories", "/favorites", "/profile", "/admin", "/search/*", "/sitemap.xml"]
+
+[vars]
+SITE_URL = "https://te-ungames.nl"
+SUPABASE_URL = "https://ylzfhfjggaczlomummmr.supabase.co"
+# publieke anon-sleutel (bedoeld om openbaar te zijn)
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsemZoZmpnZ2FjemxvbXVtbW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxOTA2MDYsImV4cCI6MjEwODc2NjYwNn0.lwqI5D2fPlEyr940PqDaNUHAryekCoq4idY4C0EwECA"
 
 [[durable_objects.bindings]]
 name = "LEADERBOARD"

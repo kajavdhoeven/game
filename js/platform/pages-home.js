@@ -8,7 +8,8 @@ const soonOf = (cat) => COMING_SOON.filter((s) => s.category === cat).map((s) =>
 export function renderHome(app) {
   const { games, user } = app.state;
   const f = document.createDocumentFragment();
-  f.appendChild(el('<a class="banner" href="#/" aria-label="Te-Un Games"><img src="/assets/header.jpg" alt="Te-Un Games" width="1600" height="639" fetchpriority="high"></a>'));
+  f.appendChild(el('<a class="banner" href="/" aria-label="Te-Un Games"><img src="/assets/header.jpg" alt="Te-Un Games" width="1600" height="639" fetchpriority="high"></a>'));
+  f.appendChild(el('<h1 class="sr-only">Te-Un Games: gratis online games met Te-Un de kabouter</h1>'));
   const live = games.filter((g) => g.published);
   const featured = live.find((g) => g.featured) || live[0];
   if (featured) f.appendChild(hero(featured, app.state));
@@ -18,7 +19,7 @@ export function renderHome(app) {
   const grid = cats.querySelector('.cat-grid');
   CATEGORIES.forEach((c) => {
     const n = live.filter((g) => g.category === c.id || (g.tags || []).includes(c.id)).length;
-    const a = el(`<a class="cat-card" href="#/c/${c.id}" style="--c1:${c.color[0]};--c2:${c.color[1]}">
+    const a = el(`<a class="cat-card" href="/c/${c.id}" style="--c1:${c.color[0]};--c2:${c.color[1]}">
       <span class="cat-emoji">${categoryIcon(c.id)}</span><b>${esc(c.name)}</b><small>${n ? n + ' game' + (n > 1 ? 's' : '') + ' · ' : ''}${soonOf(c.id).length ? soonOf(c.id).length + ' binnenkort' : ''}</small></a>`);
     grid.appendChild(a);
   });
@@ -33,7 +34,7 @@ export function renderHome(app) {
 
   CATEGORIES.slice(0, 4).forEach((c) => {
     const items = [...live.filter((g) => g.category === c.id || (g.tags || []).includes(c.id)), ...soonOf(c.id)];
-    if (items.length) f.appendChild(sectionRow(`${categoryIcon(c.id)} ${esc(c.name)}`, items, { href: `#/c/${c.id}` }));
+    if (items.length) f.appendChild(sectionRow(`${categoryIcon(c.id)} ${esc(c.name)}`, items, { href: `/c/${c.id}` }));
   });
 
   // wie is Te-Un?
@@ -63,7 +64,7 @@ export function renderCategory(app, id) {
     <div class="cat-hero-body"><span class="cat-big">${categoryIcon(id)}</span><div><h1>${esc(c.name)}</h1><p>${esc(c.blurb || '')}</p></div></div>
     <div class="cat-hero-teun">${teunSVG({ cls: 'wave' })}</div></section>`));
   const nav = el('<div class="cat-pills"></div>');
-  CATEGORIES.forEach((k) => nav.appendChild(el(`<a class="pill ${k.id === id ? 'on' : ''}" href="#/c/${k.id}">${categoryIcon(k.id)} ${esc(k.name)}</a>`)));
+  CATEGORIES.forEach((k) => nav.appendChild(el(`<a class="pill ${k.id === id ? 'on' : ''}" href="/c/${k.id}">${categoryIcon(k.id)} ${esc(k.name)}</a>`)));
   wrap.appendChild(nav);
   const g = el('<section class="grid-games" data-egg-zone></section>');
   items.forEach((x) => g.appendChild(gameTile(x)));

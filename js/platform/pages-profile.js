@@ -72,7 +72,7 @@ export async function renderProfile(app) {
     if (!mine.length) box.innerHTML = '<p class="muted">Je hebt nog niets gespeeld. Probeer Te-Un Surfers!</p>';
     mine.forEach((g) => {
       const d = prog[g.id] || {};
-      box.appendChild(el(`<a class="mygame" href="#/g/${esc(g.id)}"><div class="mg-img" style="background-image:url('${esc(g.thumb)}')"></div>
+      box.appendChild(el(`<a class="mygame" href="/g/${esc(g.id)}"><div class="mg-img" style="background-image:url('${esc(g.thumb)}')"></div>
         <div><b>${esc(g.title)}</b><small>${d.best != null ? `Record ${fmt(d.best)} · ${fmt(d.coins)} munten · ${fmt(d.runs)} rondes` : 'Nog niet gespeeld'}</small></div>
         ${app.state.likes.has(g.id) ? `<span class="liked-mark">${icon('heart', 18)}</span>` : ''}</a>`));
     });
@@ -81,7 +81,7 @@ export async function renderProfile(app) {
 
   const misc = el(`<section class="card misc"><h3>Overig</h3>
     <div class="misc-row"><span>Verborgen dingen gevonden: <b>${eggsFound()}</b></span></div>
-    <div class="misc-actions"><button class="btn ghost small" id="mTour">Rondleiding opnieuw</button>${user ? '<button class="btn ghost small" id="mOut">Uitloggen</button>' : ''}${profile && profile.is_admin ? '<a class="btn primary small" href="#/admin">Beheer</a>' : ''}</div></section>`);
+    <div class="misc-actions"><button class="btn ghost small" id="mTour">Rondleiding opnieuw</button>${user ? '<button class="btn ghost small" id="mOut">Uitloggen</button>' : ''}${profile && profile.is_admin ? '<a class="btn primary small" href="/admin">Beheer</a>' : ''}</div></section>`);
   misc.querySelector('#mTour').onclick = () => app.startTour();
   const out = misc.querySelector('#mOut');
   if (out) out.onclick = () => app.signOut();

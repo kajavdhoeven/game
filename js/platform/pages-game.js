@@ -12,13 +12,13 @@ export async function renderGame(app, id) {
   const g = app.state.games.find((x) => x.id === id);
   const f = document.createDocumentFragment();
   if (!g) {
-    f.appendChild(el('<div class="empty"><h3>Deze game bestaat niet (meer)</h3><p><a class="btn primary" href="#/">Terug naar home</a></p></div>'));
+    f.appendChild(el('<div class="empty"><h3>Deze game bestaat niet (meer)</h3><p><a class="btn primary" href="/">Terug naar home</a></p></div>'));
     return f;
   }
   const cat = catById(g.category);
   const liked = app.state.likes.has(g.id);
   const page = el(`<div class="game-page">
-    <nav class="crumbs"><a href="#/">Home</a> &rsaquo; <a href="#/c/${esc(g.category)}">${esc(cat.name)}</a> &rsaquo; <b>${esc(g.title)}</b></nav>
+    <nav class="crumbs"><a href="/">Home</a> &rsaquo; <a href="/c/${esc(g.category)}">${esc(cat.name)}</a> &rsaquo; <b>${esc(g.title)}</b></nav>
     <div class="game-layout">
       <div class="player-col">
         <div class="player" id="player" style="--poster:url('${esc(g.hero || g.thumb)}')">
@@ -29,7 +29,7 @@ export async function renderGame(app, id) {
             <small>Gratis, zonder download</small></div></div>
         </div>
         <div class="player-bar">
-          <div class="pb-title"><b>${esc(g.title)}</b><span class="muted">${esc(cat.name)}</span></div>
+          <div class="pb-title"><h1>${esc(g.title)} <small>gratis online spelen</small></h1><span class="muted">${esc(cat.name)}</span></div>
           <div class="pb-actions">
             <button class="btn ghost small ${liked ? 'liked' : ''}" id="btnLike">${icon('heart', 18)} <span id="likeCount">${fmt(g.likes)}</span></button>
             <button class="btn ghost small" id="btnShare">${icon('share', 18)} Delen</button>
@@ -42,7 +42,7 @@ export async function renderGame(app, id) {
           <h3>Over deze game</h3>
           <p>${esc(g.description)}</p>
           <div class="stat-row"><span>${icon('play', 16)} <b>${fmt(g.plays)}</b> keer gespeeld</span><span>${icon('heart', 16)} <b id="likeCount2">${fmt(g.likes)}</b> likes</span></div>
-          <div class="tags">${[g.category, ...(g.tags || [])].map((t) => `<a class="pill" href="#/c/${esc(t)}">${esc(catById(t).name)}</a>`).join('')}</div>
+          <div class="tags">${[g.category, ...(g.tags || [])].map((t) => `<a class="pill" href="/c/${esc(t)}">${esc(catById(t).name)}</a>`).join('')}</div>
         </div>
         <div class="card" id="progressCard"></div>
         <div class="card"><h3>Besturing</h3><ul class="controls">${(g.controls || []).map(([k, v]) => `<li><kbd>${esc(k)}</kbd><span>${esc(v)}</span></li>`).join('') || '<li><span>Zie in de game.</span></li>'}</ul></div>

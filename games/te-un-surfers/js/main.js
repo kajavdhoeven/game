@@ -1688,6 +1688,31 @@ window.addEventListener('blur', () => {
   (trainPool[t + 1] ||= []).push(createTrain(t, 1, rand));
 });
 
+// ---- developer-modus: 12x snel klikken op je munten geeft 1 miljoen munten om alles te testen
+function devTaps(target, onGrant) {
+  let n = 0;
+  let t = 0;
+  target.style.cursor = 'pointer';
+  target.addEventListener('click', () => {
+    const now = performance.now();
+    n = now - t > 2000 ? 1 : n + 1;
+    t = now;
+    if (n >= 12) {
+      n = 0;
+      P.coins += 1000000;
+      save();
+      audio.unlock();
+      audio.powerup();
+      toast('Developer-modus: +1.000.000 munten!', 2600);
+      onGrant();
+    }
+  });
+}
+devTaps($('menuCoins').parentElement, () => refreshMenuStats());
+devTaps($('shopCoins').parentElement, () => renderShop());
+devTaps(ui.coinBox, () => { lastVehKey = ''; });
+ui.coinBox.style.pointerEvents = 'auto';
+
 updateSoundIcon();
 goMenu();
 initBridge({

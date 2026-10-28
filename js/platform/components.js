@@ -14,7 +14,7 @@ export function gameTile(g, { wide = false } = {}) {
       <div class="tile-over"><b>${esc(g.title)}</b><span>${esc(cat.name)}</span></div>
     </div>`);
   }
-  return el(`<a class="tile ${wide ? 'wide' : ''}" href="#/g/${esc(g.id)}" aria-label="${esc(g.title)}">
+  return el(`<a class="tile ${wide ? 'wide' : ''}" href="/g/${esc(g.id)}" aria-label="${esc(g.title)}">
     <div class="tile-img" style="background-image:url('${esc(g.thumb)}')"></div>
     ${isNew(g) ? '<span class="badge new">Nieuw</span>' : ''}
     <div class="tile-over"><b>${esc(g.title)}</b><span>${esc(cat.name)}</span></div>
@@ -37,10 +37,10 @@ export function hero(g, state) {
     <div class="hero-bg"></div><div class="hero-shade"></div>
     <div class="hero-body">
       <span class="chip">${categoryIcon(g.category)} ${esc(cat.name)}</span>
-      <h1>${esc(g.title)}</h1>
+      <h2 class="hero-title">${esc(g.title)}</h2>
       <p>${esc(g.tagline || g.description)}</p>
       <div class="hero-actions">
-        <a class="btn primary big" href="#/g/${esc(g.id)}">${icon('play', 20)} Speel nu</a>
+        <a class="btn primary big" href="/g/${esc(g.id)}">${icon('play', 20)} Speel nu</a>
         <span class="hero-stats"><b>${icon('heart', 16)} ${fmt(g.likes)}</b><b>${icon('play', 16)} ${fmt(g.plays)}x gespeeld</b></span>
       </div>
     </div>
