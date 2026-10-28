@@ -12,8 +12,9 @@ const rand = (a, b) => a + Math.random() * (b - a);
 
 // ---------------------------------------------------------------- opslaan + platform
 const KEY = 'teun-puzzel-v1';
-let P = { done: {}, fast: {}, updatedAt: 0 };
+let P = { done: {}, fast: {}, slide: {}, updatedAt: 0 };
 try { P = Object.assign(P, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* geen opslag */ }
+const snapshot = () => ({ done: P.done, fast: P.fast, slide: P.slide, updatedAt: P.updatedAt });
 const post = (type, extra = {}) => {
   if (window.parent === window) return;
   try { window.parent.postMessage({ type, game: GAME_ID, ...extra }, location.origin); } catch (e) { /* geen ouder */ }
@@ -23,7 +24,7 @@ function save(quiet) {
   if (!quiet) P.updatedAt = Date.now();
   try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) { /* geen opslag */ }
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => post('teun:save', { data: { done: P.done, fast: P.fast, updatedAt: P.updatedAt } }), 500);
+  saveTimer = setTimeout(() => post('teun:save', { data: snapshot() }), 500);
 }
 window.addEventListener('message', (e) => {
   if (e.origin !== location.origin) return;
@@ -34,12 +35,14 @@ window.addEventListener('message', (e) => {
     if ((d.updatedAt || 0) > (P.updatedAt || 0)) {
       P.done = Object.assign({}, d.done || {});
       P.fast = Object.assign({}, d.fast || {});
+      P.slide = Object.assign({}, d.slide || {});
       P.updatedAt = d.updatedAt;
       save(true);
       renderMenu();
-    } else if ((d.updatedAt || 0) < (P.updatedAt || 0)) post('teun:save', { data: { done: P.done, fast: P.fast, updatedAt: P.updatedAt } });
+    } else if ((d.updatedAt || 0) < (P.updatedAt || 0)) post('teun:save', { data: snapshot() });
   }
 });
+const allSlide = () => LEVELS.every((l) => P.slide && P.slide[l.n]);
 const allFast = () => LEVELS.every((l) => P.fast && P.fast[l.n]);
 const fmtTime = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
@@ -343,22 +346,33 @@ function puzzleBadge() {
 }
 
 // ---------------------------------------------------------------- menu
+let menuMode = 'jig';
 function renderMenu() {
   const box = $('levels');
   box.innerHTML = '';
+  $('modeJig').classList.toggle('on', menuMode === 'jig');
+  $('modeSlide').classList.toggle('on', menuMode === 'slide');
+  $('menuSub').textContent = menuMode === 'jig' ? 'Sleep de stukjes naar de juiste plek. Elke puzzel heeft een tijdslimiet.' : 'Schuif de vakjes tot de foto weer klopt. Geen tijdslimiet, neem de tijd.';
   LEVELS.forEach((l) => {
-    const open = l.n === 1 || P.done[l.n - 1];
+    const slide = menuMode === 'slide';
+    const open = slide ? (l.n === 1 || P.slide[l.n - 1]) : (l.n === 1 || P.done[l.n - 1]);
     const b = document.createElement('button');
-    b.className = 'lv' + (P.fast && P.fast[l.n] ? ' done' : '');
+    const ok = slide ? P.slide[l.n] : P.fast && P.fast[l.n];
+    b.className = 'lv' + (ok ? ' done' : '');
     b.disabled = !open;
-    b.innerHTML = `<img src="${l.img}" alt="" draggable="false"><div class="meta"><b>Level ${l.n}</b><small>${l.cols * l.rows} stukjes${l.rotate ? ', draaien' : ''}</small><small>Tijdslimiet ${fmtTime(l.limit)}${P.fast && P.fast[l.n] ? ' · gehaald in ' + fmtTime(P.fast[l.n]) : P.done[l.n] ? ' · af, maar te langzaam' : ''}</small></div>`;
-    b.addEventListener('click', () => startLevel(l.n));
+    const info = slide
+      ? `<small>${l.sc}x${l.sr} vakjes</small><small>${P.slide[l.n] ? 'Gehaald in ' + fmtTime(P.slide[l.n]) : 'Geen tijdslimiet'}</small>`
+      : `<small>${l.cols * l.rows} stukjes${l.rotate ? ', draaien' : ''}</small><small>Tijdslimiet ${fmtTime(l.limit)}${P.fast && P.fast[l.n] ? ' · gehaald in ' + fmtTime(P.fast[l.n]) : P.done[l.n] ? ' · af, maar te langzaam' : ''}</small>`;
+    b.innerHTML = `<img src="${l.img}" alt="" draggable="false"><div class="meta"><b>Level ${l.n}</b>${info}</div>`;
+    b.addEventListener('click', () => (slide ? startSlide(l.n) : startLevel(l.n)));
     box.appendChild(b);
   });
 }
 function toMenu() {
   if (cur) clearInterval(cur.tick);
   cur = null;
+  if (sl) { clearInterval(sl.tick); sl = null; }
+  $('slide').hidden = true;
   $('play').hidden = true;
   $('win').hidden = true;
   $('menu').hidden = false;
@@ -367,7 +381,10 @@ function toMenu() {
 
 $('back').addEventListener('click', toMenu);
 $('winMenu').addEventListener('click', toMenu);
-$('winNext').addEventListener('click', () => startLevel(cur.level.n + 1));
+$('winNext').addEventListener('click', () => (sl ? startSlide(sl.level.n + 1) : startLevel(cur.level.n + 1)));
+$('modeJig').addEventListener('click', () => { menuMode = 'jig'; renderMenu(); });
+$('modeSlide').addEventListener('click', () => { menuMode = 'slide'; renderMenu(); });
+$('sBack').addEventListener('click', toMenu);
 $('btnSpread').addEventListener('click', () => { if (cur && !cur.over) scatter(); });
 const peek = (on) => { $('peek').hidden = !on; $('btnPeek').setAttribute('aria-pressed', String(on)); };
 $('btnPeek').addEventListener('click', () => peek($('peek').hidden));
@@ -383,8 +400,129 @@ window.addEventListener('resize', () => {
   rt = setTimeout(() => { if (cur && !cur.over && !cur.t0) startLevel(cur.level.n); }, 400);
 });
 
+// ---------------------------------------------------------------- schuifpuzzel
+// vakjes schuiven naar het lege vak rechtsonder; de opstelling wordt geschud met echte zetten, dus hij is altijd op te lossen
+let sl = null;
+for (const l of LEVELS) { l.sc = [3, 4, 5, 6][l.n - 1]; l.sr = [3, 4, 5, 6][l.n - 1]; }
+
+async function startSlide(n) {
+  const level = LEVELS[n - 1];
+  $('menu').hidden = true;
+  $('slide').hidden = false;
+  $('win').hidden = true;
+  $('sName').textContent = `Level ${n}`;
+  $('sPeek').setAttribute('aria-pressed', 'false');
+  $('sPeekImg').hidden = true;
+  $('sPeekImg').src = level.img;
+  const img = await loadImg(level.img);
+  const stage = $('sStage');
+  const pad = 12, ar = img.naturalWidth / img.naturalHeight;
+  let bw = stage.clientWidth - pad * 2, bh = bw / ar;
+  if (bh > stage.clientHeight - pad * 2) { bh = stage.clientHeight - pad * 2; bw = bh * ar; }
+  const board = $('sBoard');
+  Object.assign(board.style, { width: bw + 'px', height: bh + 'px', left: (stage.clientWidth - bw) / 2 + 'px', top: (stage.clientHeight - bh) / 2 + 'px' });
+  board.innerHTML = '';
+  const cols = level.sc, rows = level.sr, total = cols * rows;
+  const arr = Array.from({ length: total }, (_, i) => i); // arr[positie] = vakje
+  // schudden met willekeurige zetten
+  let empty = total - 1, prev = -1;
+  for (let i = 0; i < total * 40; i++) {
+    const opts = [];
+    const r = Math.floor(empty / cols), c = empty % cols;
+    if (r > 0) opts.push(empty - cols);
+    if (r < rows - 1) opts.push(empty + cols);
+    if (c > 0) opts.push(empty - 1);
+    if (c < cols - 1) opts.push(empty + 1);
+    const cand = opts.filter((o) => o !== prev);
+    const mv = cand[(Math.random() * cand.length) | 0];
+    arr[empty] = arr[mv]; arr[mv] = total - 1; prev = empty; empty = mv;
+  }
+  if (arr.every((v, i) => v === i)) { arr[empty] = arr[empty - 1]; arr[empty - 1] = total - 1; empty -= 1; }
+  const tiles = [];
+  for (let id = 0; id < total; id++) {
+    const d = document.createElement('div');
+    d.className = 'sl-tile' + (id === total - 1 ? ' empty' : '');
+    const c = id % cols, r = Math.floor(id / cols);
+    Object.assign(d.style, { width: 100 / cols + '%', height: 100 / rows + '%', backgroundImage: `url(${level.img})`, backgroundSize: `${cols * 100}% ${rows * 100}%`, backgroundPosition: `${cols > 1 ? (c / (cols - 1)) * 100 : 0}% ${rows > 1 ? (r / (rows - 1)) * 100 : 0}%` });
+    d.addEventListener('pointerdown', (e) => { e.preventDefault(); slideTap(id); });
+    board.appendChild(d); tiles[id] = d;
+  }
+  clearInterval(sl && sl.tick);
+  sl = { level, cols, rows, total, arr, tiles, empty, moves: 0, t0: 0, over: false, tick: null };
+  slidePaint();
+  sl.tick = setInterval(() => { if (sl && sl.t0 && !sl.over) $('sClock').textContent = fmtTime((performance.now() - sl.t0) / 1000); }, 250);
+  $('sMoves').textContent = '0 zetten';
+  $('sClock').textContent = '0:00';
+}
+function slidePaint() {
+  const { cols, rows, arr, tiles } = sl;
+  arr.forEach((id, pos) => {
+    const t = tiles[id];
+    t.style.left = (pos % cols) * (100 / cols) + '%';
+    t.style.top = Math.floor(pos / cols) * (100 / rows) + '%';
+  });
+}
+function slideTap(id) {
+  if (!sl || sl.over) return;
+  const pos = sl.arr.indexOf(id);
+  slideFrom(pos);
+}
+// schuift het vakje op positie 'pos' (en alles tussen hem en het lege vak) richting het lege vak
+function slideFrom(pos) {
+  const { cols, rows, arr } = sl;
+  const e = arr.indexOf(sl.total - 1);
+  const pr = Math.floor(pos / cols), pc = pos % cols, er = Math.floor(e / cols), ec = e % cols;
+  if (pos === e || (pr !== er && pc !== ec)) return;
+  const step = pr === er ? (pc < ec ? 1 : -1) : (pr < er ? cols : -cols);
+  let cur2 = e;
+  while (cur2 !== pos) { arr[cur2] = arr[cur2 - step]; cur2 -= step; }
+  arr[pos] = sl.total - 1;
+  void rows;
+  if (!sl.t0) sl.t0 = performance.now();
+  sl.moves++;
+  $('sMoves').textContent = sl.moves + (sl.moves === 1 ? ' zet' : ' zetten');
+  beep(520 + Math.random() * 60, 0.05, 'triangle', 0.08);
+  slidePaint();
+  if (arr.every((v, i) => v === i)) slideWin();
+}
+function slideWin() {
+  sl.over = true;
+  clearInterval(sl.tick);
+  const t = (performance.now() - sl.t0) / 1000;
+  const n = sl.level.n, wasAll = allSlide();
+  const sec = Math.max(1, Math.round(t));
+  P.slide[n] = P.slide[n] ? Math.min(P.slide[n], sec) : sec;
+  save();
+  sl.tiles[sl.total - 1].classList.add('show');
+  setTimeout(() => {
+    sndWin();
+    $('winTitle').textContent = `Schuifpuzzel ${n} af!`;
+    $('winText').innerHTML = `Tijd: <b>${fmtTime(t)}</b> in <b>${sl.moves}</b> zetten`;
+    const box = $('winReward');
+    const unlocked = allSlide() && !wasAll;
+    box.hidden = !unlocked;
+    if (unlocked) box.innerHTML = `${puzzleBadge()}Alle 4 de schuifpuzzels gehaald! Je hebt een nieuwe profielfoto: Schuif-Te-Un.`;
+    $('winNext').hidden = n >= LEVELS.length;
+    $('winNext').textContent = `Level ${n + 1}`;
+    $('win').hidden = false;
+  }, 800);
+}
+const SLIDE_KEYS = { ArrowLeft: 1, ArrowRight: -1, ArrowUp: 'd', ArrowDown: 'u' };
+addEventListener('keydown', (e) => {
+  if (!sl || sl.over || $('slide').hidden || !(e.key in SLIDE_KEYS)) return;
+  const { cols, arr } = sl, em = arr.indexOf(sl.total - 1);
+  const k = SLIDE_KEYS[e.key];
+  const from = k === 1 ? em + 1 : k === -1 ? em - 1 : k === 'd' ? em + cols : em - cols;
+  const okH = (k === 1 && em % cols < cols - 1) || (k === -1 && em % cols > 0);
+  const okV = (k === 'd' && em + cols < sl.total) || (k === 'u' && em - cols >= 0);
+  if (okH || okV) { e.preventDefault(); slideFrom(from); }
+});
+$('sPeek').addEventListener('click', () => { const on = $('sPeekImg').hidden; $('sPeekImg').hidden = !on; $('sPeek').setAttribute('aria-pressed', String(on)); });
+
 // test- en ontwikkelhulp
 window.__puz = {
+  get sl() { return sl; }, startSlide,
+  slideSolve() { sl.arr.forEach((_, i) => { sl.arr[i] = i; }); slidePaint(); sl.moves++; slideWin(); },
   get cur() { return cur; }, P, startLevel,
   solve() { cur.pieces.filter((p) => !p.placed).forEach(place); },
   solveAllButOne() { const l = cur.pieces.filter((p) => !p.placed); l.slice(1).forEach(place); },

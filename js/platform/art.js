@@ -61,6 +61,7 @@ export function avatarSVG(kind = 'teun') {
   if (kind === 'puzzle') return `<div class="av-face">${teunSVG({ crop: 'face' })}${PIECE_BADGE}</div>`;
   if (kind === 'teun50k') return `<div class="av-face">${teunSVG({ crop: 'face' })}${MEDAL_BADGE}</div>`;
   if (kind === 'racer') return racerAvatar();
+  if (kind === 'slider') return sliderAvatar();
   return `<div class="av-face">${teunSVG({ crop: 'face' })}</div>`;
 }
 
@@ -85,6 +86,18 @@ function trainAvatar() {
 const PIECE_BADGE = `<svg class="av-piece" viewBox="0 0 64 64" aria-hidden="true"><path d="M8 16h15a8 8 0 1 1 18 0h15v15a8 8 0 1 0 0 18v15H41a8 8 0 1 0-18 0H8V49a8 8 0 1 0 0-18z" fill="#ffc917" stroke="#0b3a99" stroke-width="4" stroke-linejoin="round"/><path d="M18 24h10M18 30h6" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"/></svg>`;
 // gouden 50K-medaille (profielfoto voor 50.000 punten in Te-Un Surfers)
 const MEDAL_BADGE = `<svg class="av-piece" viewBox="0 0 64 64" aria-hidden="true"><path d="M20 4h10l4 14H24zM44 4H34l-4 14h10z" fill="#d7191f" stroke="#7a0d12" stroke-width="2"/><circle cx="32" cy="40" r="20" fill="#ffc917" stroke="#8a5a00" stroke-width="4"/><circle cx="32" cy="40" r="14" fill="none" stroke="#fff3b0" stroke-width="2"/><text x="32" y="46" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="15" fill="#8a5a00">50K</text></svg>`;
+// Te-Un als schuifpuzzel: 3x3 vakjes met een leeg vak en een paar verkeerd geschoven vakjes
+function sliderAvatar() {
+  const order = [1, 0, 2, 3, 7, 5, 6, null, 4]; // positie -> welk stukje van het plaatje (null = leeg vak)
+  const cells = order.map((src, pos) => {
+    const pos_ = `left:${(pos % 3) * 33.34}%;top:${Math.floor(pos / 3) * 33.34}%`;
+    if (src === null) return `<div class="st empty" style="${pos_}"></div>`;
+    const sx = (src % 3) * 50, sy = Math.floor(src / 3) * 50;
+    return `<div class="st" style="${pos_}"><div class="si" style="left:-${sx * 2}%;top:-${sy * 2}%">${teunSVG({ crop: 'face' })}</div></div>`;
+  });
+  return `<div class="av-face slide">${cells.join('')}</div>`;
+}
+
 // Te-Un Racer: motorhelm met klep en bril
 function racerAvatar() {
   return `<svg class="avsvg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Te-Un Racer">
@@ -107,6 +120,7 @@ export const AVATARS = [
   { id: 'train', name: 'NS-trein', desc: 'Een gele trein', unlock: { game: 'te-un-surfers', how: 'Koop alles in de winkel van Te-Un Surfers', check: (d) => SURFERS_ALL.every((k) => d.owned && d.owned[k]) } },
   { id: 'teun50k', name: 'Te-Un 50K', desc: 'Te-Un met gouden medaille', unlock: { game: 'te-un-surfers', how: 'Haal 50.000 punten in Te-Un Surfers', check: (d) => (d.best || 0) >= 50000 } },
   { id: 'puzzle', name: 'Puzzel-Te-Un', desc: 'Te-Un met puzzelstukje', unlock: { game: 'te-un-puzzel', how: 'Maak alle 4 de levels van Te-Un Puzzel af binnen de tijd (30 sec, 1 min, 2,5 min en 10 min)', check: (d) => [1, 2, 3, 4].every((n) => d.fast && d.fast[n]) } },
+  { id: 'slider', name: 'Schuif-Te-Un', desc: 'Te-Un als schuifpuzzel, met een paar verkeerd geschoven vakjes', unlock: { game: 'te-un-puzzel', how: 'Maak alle 4 de levels van de schuifpuzzel in Te-Un Puzzel af', check: (d) => [1, 2, 3, 4].every((n) => d.slide && d.slide[n]) } },
   { id: 'racer', name: 'Te-Un Racer', desc: 'Te-Un met motorhelm', unlock: { game: 'te-un-x3m', how: 'Haal 3 sterren op alle 25 levels van Te-Un X3M', check: (d) => Array.from({ length: 25 }, (_, i) => i + 1).every((n) => (d.stars && d.stars[n]) >= 3) } },
 ];
 

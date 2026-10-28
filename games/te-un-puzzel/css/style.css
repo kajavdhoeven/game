@@ -60,3 +60,14 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: radial-gradi
 
 .info #clock.late, #clock.late { color: #ff6b5e; }
 .lv .meta small + small { opacity: .9; font-size: 13px; }
+
+.modes { display: flex; gap: 8px; background: rgba(255,255,255,.1); padding: 5px; border-radius: 999px; }
+.modes button { font-family: inherit; font-weight: 600; font-size: 17px; color: #fff; background: none; border: 0; border-radius: 999px; padding: 9px 22px; cursor: pointer; }
+.modes button.on { background: var(--sun); color: var(--navy); }
+#slide { touch-action: none; }
+#sStage { position: relative; flex: 1; overflow: hidden; }
+#sBoard { position: absolute; background: rgba(0,0,0,.35); border-radius: 6px; box-shadow: 0 0 0 3px rgba(255,255,255,.35), 0 12px 30px rgba(0,0,0,.4); overflow: hidden; }
+.sl-tile { position: absolute; background-repeat: no-repeat; box-shadow: inset 0 0 0 1.5px rgba(0,0,0,.45), inset 0 0 0 3px rgba(255,255,255,.18); transition: left .14s ease-out, top .14s ease-out; cursor: pointer; }
+.sl-tile.empty { opacity: 0; pointer-events: none; transition: left .14s ease-out, top .14s ease-out, opacity .6s; }
+.sl-tile.empty.show { opacity: 1; }
+#sPeekImg { position: absolute; right: 10px; top: 10px; max-width: 40%; max-height: 40%; border-radius: 10px; border: 3px solid #fff; box-shadow: 0 8px 24px rgba(0,0,0,.5); pointer-events: none; z-index: 20; }

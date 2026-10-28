@@ -17,8 +17,8 @@ export const DEFAULT_GAMES = [
   },
   {
     id: 'te-un-puzzel', title: 'Te-Un Puzzel', category: 'puzzel', tags: [],
-    tagline: 'Vier legpuzzels met Te-Un, elk met een tijdslimiet.',
-    description: 'Sleep de door elkaar liggende stukjes naar de juiste plek en maak de afbeelding af. Level 1 is rustig, level 4 is serieus moeilijk: 54 stukjes die je ook nog moet draaien. Elk level heeft een tijdslimiet: 30 seconden, 1 minuut, 2,5 minuut en 10 minuten.',
+    tagline: 'Vier legpuzzels en vier schuifpuzzels met Te-Un.',
+    description: 'Sleep de door elkaar liggende stukjes naar de juiste plek en maak de afbeelding af. Level 1 is rustig, level 4 is serieus moeilijk: 54 stukjes die je ook nog moet draaien. Elk level heeft een tijdslimiet: 30 seconden, 1 minuut, 2,5 minuut en 10 minuten. Daarnaast is er een schuifpuzzel zonder tijdslimiet.',
     controls: [
       ['Slepen', 'Een stukje verplaatsen, het klikt vast op zijn plek'],
       ['Tikken', 'Een stukje draaien (level 4)'],

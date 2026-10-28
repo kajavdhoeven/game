@@ -383,3 +383,9 @@ body.pfs-lock { overflow: hidden; }
 .reward b { display: block; font-size: 15px; }
 .reward small { color: var(--muted, rgba(255,255,255,.7)); font-size: 13px; }
 .reward.open b { color: #7be0a0; }
+
+.av-face.slide { position: relative; overflow: hidden; background: #0b1a40; }
+.av-face.slide .st { position: absolute; width: 33.34%; height: 33.34%; overflow: hidden; background: #123a7a; box-shadow: inset 0 0 0 1px rgba(11,26,64,.85); }
+.av-face.slide .st.empty { background: #0b1a40; }
+.av-face.slide .si { position: absolute; width: 300%; height: 300%; }
+.av-face.slide .si svg { width: 100%; height: 100%; }

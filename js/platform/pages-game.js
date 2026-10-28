@@ -98,7 +98,7 @@ export async function renderGame(app, id) {
     }
     if (g.id === 'te-un-puzzel') {
       const dn = [1, 2, 3, 4].filter((n) => d.done && d.done[n]).length;
-      box.innerHTML = `<h3>Jouw voortgang</h3><div class="prog-grid"><div><b>${dn}/4</b><small>Levels af</small></div><div><b>${[1, 2, 3, 4].filter((n) => d.fast && d.fast[n]).length}/4</b><small>Binnen de tijd</small></div></div>`;
+      box.innerHTML = `<h3>Jouw voortgang</h3><div class="prog-grid"><div><b>${dn}/4</b><small>Levels af</small></div><div><b>${[1, 2, 3, 4].filter((n) => d.fast && d.fast[n]).length}/4</b><small>Binnen de tijd</small></div><div><b>${[1, 2, 3, 4].filter((n) => d.slide && d.slide[n]).length}/4</b><small>Schuifpuzzels</small></div></div>`;
       return;
     }
     const veh = Object.keys(d.owned || {}).filter((k) => ['wheelchair', 'cow', 'train'].includes(k)).length;

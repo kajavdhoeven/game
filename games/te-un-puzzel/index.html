@@ -17,7 +17,8 @@
 <body>
   <main id="menu" class="screen">
     <h1 class="title"><img class="title-logo" src="/assets/te-un-puzzel-logo.png" alt="Te-Un Puzzel" width="682" height="650"></h1>
-    <p class="sub">Sleep de stukjes naar de juiste plek. Elke puzzel heeft een tijdslimiet.</p>
+    <p id="menuSub" class="sub">Sleep de stukjes naar de juiste plek. Elke puzzel heeft een tijdslimiet.</p>
+    <div class="modes"><button id="modeJig" class="on">Legpuzzel</button><button id="modeSlide">Schuifpuzzel</button></div>
     <div id="levels" class="levels"></div>
   </main>
 
@@ -36,6 +37,15 @@
       <div id="pieces"></div>
       <img id="peek" alt="Voorbeeld van de puzzel" draggable="false" hidden>
     </div>
+  </section>
+
+  <section id="slide" class="screen" hidden>
+    <header class="bar">
+      <button id="sBack" class="btn" aria-label="Terug naar het menu">&#8592; Menu</button>
+      <div class="info"><b id="sName">Level 1</b><span id="sMoves">0 zetten</span><span id="sClock">0:00</span></div>
+      <div class="tools"><button id="sPeek" class="btn ghost" aria-pressed="false">Voorbeeld</button></div>
+    </header>
+    <div id="sStage"><div id="sBoard"></div><img id="sPeekImg" alt="Voorbeeld van de puzzel" draggable="false" hidden></div>
   </section>
 
   <div id="win" class="overlay" hidden>
