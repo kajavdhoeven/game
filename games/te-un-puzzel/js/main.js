@@ -1,5 +1,6 @@
 // Te-Un Puzzel: vier legpuzzels. Alles wordt in de browser getekend, er is geen build nodig.
 import { initDev } from '/js/devmode.js';
+import { initTutorial } from '/js/tutorial.js';
 const GAME_ID = 'te-un-puzzel';
 const LEVELS = [
   { n: 1, name: 'Te-Un', img: 'img/level1.jpg', cols: 3, rows: 4, ghost: 0.28, rotate: false, limit: 30 },
@@ -530,8 +531,29 @@ window.__puz = {
 };
 
 renderMenu();
+initTutorial({
+  id: 'te-un-puzzel', title: 'Te-Un Puzzel',
+  steps: [
+    { icon: '🧩', title: 'Twee soorten puzzels', lines: ['Kies bovenin het menu tussen de <b>legpuzzel</b> en de <b>schuifpuzzel</b>. Beide hebben vier levels met dezelfde foto\'s, van makkelijk naar moeilijk. Een volgend level gaat open als je het vorige hebt gehaald.'] },
+    { icon: '👆', title: 'Legpuzzel', lines: ['De stukjes liggen door elkaar. <b>Sleep</b> een stukje naar de juiste plek op het bord, dan klikt het vast. In level 4 moet je een stukje ook <b>draaien</b>: tik erop.', 'Hulp nodig? <b>Voorbeeld</b> toont de foto, <b>Randen</b> maakt de middenstukjes doorzichtig en <b>Spreiden</b> legt de stukjes netjes uit elkaar.'] },
+    { icon: '⏱️', title: 'Tijdslimiet', lines: ['Bij de legpuzzel is er een tijdslimiet: level 1 <b>30 seconden</b>, level 2 <b>1 minuut</b>, level 3 <b>2,5 minuut</b> en level 4 <b>10 minuten</b>. De klok start zodra je een stukje aanraakt. Je kunt ook te laat klaar zijn, maar dan telt het niet mee voor de profielfoto.'] },
+    { icon: '🔀', title: 'Schuifpuzzel', lines: ['Tik op een vakje naast het lege vak om het te verschuiven (op de computer kan het ook met de <kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd> pijltjes). Schuif tot de foto weer klopt. Hier is <b>geen tijdslimiet</b>, neem rustig de tijd.'] },
+    { icon: '🏅', title: 'Profielfoto\'s', lines: ['Haal alle 4 de legpuzzels <b>binnen de tijd</b> voor de profielfoto Puzzel-Te-Un. Haal alle 4 de schuifpuzzels voor de profielfoto Schuif-Te-Un.'] },
+  ],
+});
 initDev([
   { label: 'Alle levels openen (leg- en schuifpuzzel)', run: () => { P.dev = true; save(); renderMenu(); return 'Alle levels open'; } },
   { label: 'Alles als gehaald markeren (met profielfoto\'s)', run: () => { LEVELS.forEach((l) => { P.done[l.n] = P.done[l.n] || l.limit; P.fast[l.n] = P.fast[l.n] || Math.max(1, l.limit - 5); P.slide[l.n] = P.slide[l.n] || 60; }); save(); renderMenu(); return 'Alles gehaald'; } },
 ]);
 post('teun:ready');
+
+// uitleg of developer-paneel open: de klok van de legpuzzel loopt niet door
+let pausedAt = 0;
+window.addEventListener('teun:pause', () => { if (!pausedAt) pausedAt = performance.now(); });
+window.addEventListener('teun:resume', () => {
+  if (!pausedAt) return;
+  const d = performance.now() - pausedAt;
+  pausedAt = 0;
+  if (cur && cur.t0 && !cur.over) cur.t0 += d;
+  if (sl && sl.t0 && !sl.over) sl.t0 += d;
+});

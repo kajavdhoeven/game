@@ -15,7 +15,7 @@ export function initDev(actions) {
   if (document.getElementById('teunDevBtn')) return;
   const css = document.createElement('style');
   css.textContent = `
-  #teunDevBtn { position: fixed; top: 2px; right: 2px; z-index: 2147483000; font: 600 11px/1 system-ui, sans-serif; padding: 4px 7px; border-radius: 6px; border: 1px solid rgba(255,255,255,.35); background: rgba(0,0,0,.4); color: #fff; opacity: .55; cursor: pointer; touch-action: manipulation; }
+  #teunDevBtn { position: fixed; top: 8px; left: 8px; z-index: 2147483000; font: 700 15px/1 system-ui, sans-serif; padding: 9px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,.45); background: rgba(0,0,0,.5); color: #fff; opacity: .7; cursor: pointer; touch-action: manipulation; }
   #teunDevBtn:hover { opacity: 1; }
   .teun-dev-ov { position: fixed; inset: 0; z-index: 2147483001; display: grid; place-items: center; background: rgba(0,0,0,.6); padding: 16px; font-family: system-ui, sans-serif; user-select: text; -webkit-user-select: text; touch-action: manipulation; }
   .teun-dev-box { width: min(360px, 100%); background: #151a28; color: #fff; border: 1px solid #3a4560; border-radius: 14px; padding: 16px; box-shadow: 0 14px 40px rgba(0,0,0,.6); }
@@ -34,7 +34,7 @@ export function initDev(actions) {
   document.body.appendChild(btn);
 
   let ov = null;
-  const close = () => { if (ov) { ov.remove(); ov = null; } };
+  const close = () => { if (ov) { ov.remove(); ov = null; window.dispatchEvent(new Event('teun:resume')); } };
   const mk = (html) => {
     close();
     ov = document.createElement('div');
@@ -70,6 +70,6 @@ export function initDev(actions) {
     inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); else if (e.key === 'Escape') close(); });
     setTimeout(() => inp.focus(), 50);
   };
-  btn.addEventListener('click', (e) => { e.stopPropagation(); if (isOpen()) panel(); else ask(); });
+  btn.addEventListener('click', (e) => { e.stopPropagation(); window.dispatchEvent(new Event('teun:pause')); if (isOpen()) panel(); else ask(); });
   ['pointerdown', 'pointerup', 'touchstart', 'touchend'].forEach((t) => btn.addEventListener(t, (e) => e.stopPropagation()));
 }

@@ -2,6 +2,7 @@
 import { makeLevel, LEVEL_COUNT, ceilAt } from './levels.js';
 import { Terrain, makeBike, stepBike, crashTest, VEH, VEH_ORDER, headPos, G } from './sim.js';
 import { initDev } from '/js/devmode.js';
+import { initTutorial } from '/js/tutorial.js';
 import { Renderer, CHARS, CHAR_ORDER, limpPose } from './draw.js';
 
 const GAME_ID = 'te-un-x3m';
@@ -402,7 +403,19 @@ $('eRetry').addEventListener('click', () => startLevel(g.n));
 $('eNext').addEventListener('click', () => startLevel(g.n + 1));
 addEventListener('resize', () => { R.resize(); $('rotate').hidden = !(screen === 'play' && innerHeight > innerWidth); });
 
-// ---- developer-modus (knopje Dev rechtsboven, met wachtwoord)
+// ---- uitleg
+initTutorial({
+  id: 'te-un-x3m', title: 'Te-Un X3M',
+  steps: [
+    { icon: '🏍️', title: 'Rijd naar de finish', lines: ['Rij zo snel mogelijk door het level naar de finishvlag. Hoe sneller je bent, hoe meer sterren je krijgt: tot <b>3 sterren</b> per level.', 'Crash je, dan begin je meteen opnieuw. Druk op <kbd>R</kbd> om zelf opnieuw te beginnen.'] },
+    { icon: '🎮', title: 'Zo bestuur je', lines: ['<kbd>↑</kbd> of <kbd>W</kbd>: gas &nbsp; <kbd>↓</kbd> of <kbd>S</kbd>: remmen en achteruit', '<kbd>←</kbd> <kbd>→</kbd> of <kbd>A</kbd> <kbd>D</kbd>: achterover of voorover leunen. In de lucht draai je zo rond.', 'Op een telefoon gebruik je de knoppen onderin beeld.'] },
+    { icon: '🔄', title: 'Flips geven tijdsbonus', lines: ['Draai in de lucht een hele rotatie en land veilig: een <b>frontflip of backflip haalt 1 seconde</b> van je tijd af, een dubbele <b>3 seconden</b>.', 'Land je op je hoofd, dan crash je. Pas dus op.'] },
+    { icon: '🔥', title: 'Pas op voor gevaren', lines: ['Lava, spijkers, draaiende zagen en vuurstralen zijn dodelijk. Spring via een schans over spijkers en zagen en wacht op het juiste moment bij vuur. Het plafond is een muur, je kunt er niet doorheen.'] },
+    { icon: '⭐', title: 'Sterren, voertuigen en personages', lines: ['Met sterren upgrade je in de garage van fatbike naar <b>motor</b> (12 sterren) en daarna naar de <b>gouden vape</b> (36 sterren) waarmee je vliegt.', 'Personages speel je vrij door levels te halen: level 5, 10 en 20. Haal je overal 3 sterren, dan krijg je een profielfoto!'] },
+  ],
+});
+
+// ---- developer-modus (knopje Dev linksboven, met wachtwoord)
 initDev([
   { label: 'Alle levels en personages openen', run: () => { P.dev = true; save(); refreshAll(); return 'Alles open'; } },
   { label: '+100 sterren', run: () => { P.bonus = (P.bonus || 0) + 100; save(); refreshAll(); return `Nu ${freeStars()} sterren`; } },
@@ -442,6 +455,7 @@ function frame(ts) {
 }
 requestAnimationFrame(frame);
 
+window.addEventListener('teun:pause', () => { if (screen === 'play') setPaused(true); });
 window.__x3m = { get g() { return g; }, P, startLevel, getLevel, setPaused, keys, get R() { return R; } };
 setScreen('menu');
 post('teun:ready');

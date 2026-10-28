@@ -14,6 +14,7 @@ import { initInput } from './input.js';
 import { softCircleTexture } from './textures.js';
 import { P, load, save, buy, owns, ownedVehicles, VEHICLES, VEHICLE_ORDER, VEHICLE_TIME, PRICES } from './save.js';
 import { initDev } from '/js/devmode.js';
+import { initTutorial } from '/js/tutorial.js';
 import { fetchBoard, submitScore, cleanName, isOnline } from './net.js';
 import { initBridge } from './bridge.js';
 
@@ -1801,7 +1802,19 @@ window.addEventListener('blur', () => {
   (trainPool[t + 1] ||= []).push(createTrain(t, 1, rand));
 });
 
-// ---- developer-modus (knopje Dev rechtsboven, met wachtwoord)
+// ---- uitleg
+initTutorial({
+  id: 'te-un-surfers', title: 'Te-Un Surfers',
+  steps: [
+    { icon: '🚆', title: 'Ren voor je leven!', lines: ['Te-Un rent over het spoor en probeert de boze kabouters voor te blijven. Zo ver mogelijk rennen en munten pakken geeft de hoogste score.', 'Score = afstand + <b>10 punten per munt</b>.'] },
+    { icon: '🎮', title: 'Zo bestuur je Te-Un', lines: ['<kbd>←</kbd> <kbd>→</kbd> of <kbd>A</kbd> <kbd>D</kbd>: een spoor opzij', '<kbd>↑</kbd> of <kbd>W</kbd>: springen &nbsp; <kbd>↓</kbd> of <kbd>S</kbd>: rollen', 'Op een telefoon: swipe naar links, rechts, omhoog of omlaag.'] },
+    { icon: '🚧', title: 'Ontwijk de obstakels', lines: ['Spring over barrières, rol onder hoge dingen door en ren niet tegen rijdende treinen aan. Via een schans kom je op het dak van een trein, daar liggen extra munten!', 'Raak je de zijkant van een trein, dan komen de <b>boze kabouters</b> achter je aan. Gebeurt het nog een keer, dan pakken ze je.'] },
+    { icon: '💦', title: 'Treinspotters pakken', lines: ['Treinspotters staan langs het spoor. Druk op <kbd>F</kbd> (of dubbelklik, op een telefoon dubbeltik) om ze te pakken. Ze lopen je niet zomaar dood!', 'Je pakt ze met het waterpistool, of met een fluitje of camera als je die skin hebt. Dat geeft <b>25 munten</b>, en een spotter met een oranje shirt wel <b>100</b>.'] },
+    { icon: '⚡', title: 'Power-ups en winkel', lines: ['Onderweg vind je schoenen, een vliegtuigje, een magneet, een oranje shirt of drinkhoed met vest en een refill voor je voertuig.', 'Met je munten koop je in de winkel een rolstoel, koe of NS-trein. Die zet je aan met de <kbd>spatiebalk</kbd> en geven snelheid en extra munten.', 'Haal <b>50.000 punten</b> of koop alles, dan speel je speciale profielfoto\'s vrij.'] },
+  ],
+});
+
+// ---- developer-modus (knopje Dev linksboven, met wachtwoord)
 function devCoins(amount) {
   P.coins += amount;
   save();
@@ -1844,6 +1857,7 @@ requestAnimationFrame((t) => {
   $('loading').hidden = true;
 });
 
+window.addEventListener('teun:pause', () => { if (S.mode === 'playing') setPaused(true); });
 window.__game = {
   S, P, scene, camera, world, renderer, obstacles, coinList, spotters, pickups, action, startRun, die, skipIntro, gnome: () => gnome,
   step(n = 1, dt = 1 / 60) {

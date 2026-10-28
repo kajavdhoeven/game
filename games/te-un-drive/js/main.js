@@ -5,6 +5,7 @@ import { Terrain, makeCar, stepCar, crashTest, CARS, CAR_ORDER } from './sim.js'
 import { buildWorld } from './world.js';
 import { createCar } from './cars3d.js';
 import { initDev } from '/js/devmode.js';
+import { initTutorial } from '/js/tutorial.js';
 
 const GAME_ID = 'te-un-drive';
 const $ = (id) => document.getElementById(id);
@@ -331,7 +332,19 @@ $('eMenu').addEventListener('click', () => setScreen('levels'));
 $('eRetry').addEventListener('click', () => startLevel(g.n));
 $('eNext').addEventListener('click', () => startLevel(g.n + 1));
 addEventListener('resize', resize);
-// ---- developer-modus (knopje Dev rechtsboven, met wachtwoord)
+// ---- uitleg
+initTutorial({
+  id: 'te-un-drive', title: 'Te-Un Drive',
+  steps: [
+    { icon: '🚙', title: 'Rijd naar de finish', lines: ['Rij je blokkenauto over heuvels, trappen, houten bruggen en gaten naar de finishvlag. Elk level is net wat lastiger.'] },
+    { icon: '🎮', title: 'Zo bestuur je', lines: ['<kbd>→</kbd> of <kbd>D</kbd>: gas &nbsp; <kbd>←</kbd> of <kbd>A</kbd>: remmen en achteruit', 'Niet te hard en niet te zacht: neem snelheid voor een sprong, maar blijf op je wielen.', 'Op een telefoon gebruik je de knoppen GAS en REM onderin beeld.'] },
+    { icon: '🛞', title: 'In de lucht', lines: ['Tijdens een sprong tilt <b>gas</b> de neus van je auto omhoog en duwt <b>rem</b> hem omlaag. Zo kom je netjes op je wielen terecht.'] },
+    { icon: '💥', title: 'Wanneer ga je af?', lines: ['Je verliest als je op je dak landt, in het water valt of op spijkers rijdt. Dan begin je meteen opnieuw. Met <kbd>R</kbd> start je zelf opnieuw.'] },
+    { icon: '🎁', title: 'Nieuwe auto\'s', lines: ['Haal <b>level 5</b> voor Hermano\'s fiets, <b>level 15</b> voor de gouden regenboogauto en <b>level 20</b> voor de tuinkabouterauto. Kies ze in de garage. Bij Hermano\'s fiets staat Hermano\'s groot in beeld!'] },
+  ],
+});
+
+// ---- developer-modus (knopje Dev linksboven, met wachtwoord)
 initDev([
   { label: 'Alle levels en auto\'s openen', run: () => { P.dev = true; save(); refreshAll(); return 'Alles open'; } },
   { label: 'Alle levels als gehaald markeren', run: () => { for (let n = 1; n <= LEVEL_COUNT; n++) if (!P.done[n]) P.done[n] = 60; save(); refreshAll(); return 'Alle levels gehaald'; } },
@@ -354,6 +367,7 @@ function frame(ts) {
 }
 resize();
 requestAnimationFrame(frame);
+window.addEventListener('teun:pause', () => { if (screen === 'play') setPaused(true); });
 window.__drive = { get g() { return g; }, P, startLevel, setPaused, keys, camera, renderer, scene };
 setScreen('menu');
 post('teun:ready');
