@@ -6,7 +6,7 @@ compatibility_date = "2025-01-01"
 directory = "./"
 binding = "ASSETS"
 # Deze adressen gaan eerst door de Worker (zoekmachine-gegevens, sitemap, ranglijst)
-run_worker_first = ["/", "/api/*", "/g/*", "/c/*", "/popular", "/new", "/categories", "/favorites", "/profile", "/admin", "/search/*", "/sitemap.xml"]
+run_worker_first = ["/", "/api/*", "/g/*", "/games", "/favorites", "/profile", "/admin", "/search/*", "/sitemap.xml"]
 
 [vars]
 SITE_URL = "https://te-ungames.nl"

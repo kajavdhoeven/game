@@ -56,10 +56,37 @@ create table if not exists public.progress (
   primary key (user_id, game_id)
 );
 
+-- rechten en eigenaar (veilig opnieuw uit te voeren)
+alter table public.profiles add column if not exists is_owner    boolean not null default false;
+alter table public.profiles add column if not exists permissions jsonb   not null default '{}';
+
+-- het eerst aangemelde beheerdersaccount wordt de eigenaar (alleen als er nog geen eigenaar is)
+update public.profiles set is_owner = true
+where id = (select id from public.profiles where is_admin order by created_at limit 1)
+  and not exists (select 1 from public.profiles where is_owner);
+
 -- ---------- hulpfuncties ----------
 create or replace function public.is_admin()
 returns boolean language sql security definer set search_path = public stable as $$
   select coalesce((select p.is_admin from public.profiles p where p.id = auth.uid()), false);
+$$;
+
+-- heeft de ingelogde gebruiker dit beheerdersrecht? (de eigenaar mag alles)
+create or replace function public.has_perm(k text)
+returns boolean language sql security definer set search_path = public stable as $$
+  select coalesce((
+    select p.is_owner or (p.is_admin and coalesce((p.permissions ->> k)::boolean, false))
+    from public.profiles p where p.id = auth.uid()
+  ), false);
+$$;
+
+-- mag deze speler dit doen? Ontbreekt het recht, dan mag het (standaard staat alles aan).
+create or replace function public.user_can(k text)
+returns boolean language sql security definer set search_path = public stable as $$
+  select coalesce((
+    select p.is_owner or coalesce((p.permissions ->> k)::boolean, true)
+    from public.profiles p where p.id = auth.uid()
+  ), false);
 $$;
 
 -- profiel automatisch aanmaken bij een nieuwe aanmelding
@@ -75,12 +102,16 @@ $$;
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users for each row execute function public.handle_new_user();
 
--- een gewone speler mag nooit zichzelf beheerder maken
+-- alleen wie gebruikers mag beheren kan rol en rechten aanpassen; de eigenaar blijft altijd eigenaar
 create or replace function public.protect_admin_flag()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  if new.is_admin is distinct from old.is_admin and not public.is_admin() and auth.uid() is not null then
-    new.is_admin := old.is_admin;
+  if auth.uid() is not null then
+    new.is_owner := old.is_owner;
+    if not public.has_perm('manage_users') then
+      new.is_admin := old.is_admin;
+      new.permissions := old.permissions;
+    end if;
   end if;
   return new;
 end;
@@ -106,6 +137,7 @@ update auth.users set email_confirmed_at = now() where email_confirmed_at is nul
 create or replace function public.record_play(p_game text)
 returns void language plpgsql security definer set search_path = public as $$
 begin
+  if auth.uid() is not null and not public.user_can('can_play') then return; end if;
   if exists (select 1 from public.games where id = p_game and published) then
     insert into public.plays (game_id, user_id) values (p_game, auth.uid());
   end if;
@@ -119,7 +151,7 @@ create or replace view public.game_stats as
          coalesce((select count(*) from public.plays p where p.game_id = g.id), 0) as plays,
          coalesce((select count(*) from public.likes l where l.game_id = g.id), 0) as likes
   from public.games g
-  where g.published or public.is_admin();
+  where g.published or public.has_perm('manage_games');
 grant select on public.game_stats to anon, authenticated;
 
 -- ---------- beheer ----------
@@ -127,7 +159,7 @@ create or replace function public.admin_overview()
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare result jsonb;
 begin
-  if not public.is_admin() then raise exception 'Geen toegang'; end if;
+  if not public.has_perm('view_stats') then raise exception 'Geen toegang'; end if;
   select jsonb_build_object(
     'users', (select count(*) from public.profiles),
     'games', (select count(*) from public.games),
@@ -145,19 +177,35 @@ end;
 $$;
 grant execute on function public.admin_overview() to authenticated;
 
+drop function if exists public.admin_users();
 create or replace function public.admin_users()
-returns table (id uuid, email text, username text, avatar text, theme text, is_admin boolean, created_at timestamptz, last_seen timestamptz, plays bigint)
+returns table (id uuid, email text, username text, avatar text, theme text, is_admin boolean, is_owner boolean, permissions jsonb, created_at timestamptz, last_seen timestamptz, plays bigint)
 language plpgsql security definer set search_path = public as $$
 begin
-  if not public.is_admin() then raise exception 'Geen toegang'; end if;
+  if not (public.has_perm('view_users') or public.has_perm('manage_users')) then raise exception 'Geen toegang'; end if;
   return query
-    select p.id, u.email::text, p.username, p.avatar, p.theme, p.is_admin, p.created_at, p.last_seen,
+    select p.id, u.email::text, p.username, p.avatar, p.theme, p.is_admin, p.is_owner, p.permissions, p.created_at, p.last_seen,
            (select count(*) from public.plays pl where pl.user_id = p.id)
     from public.profiles p join auth.users u on u.id = p.id
     order by p.created_at desc;
 end;
 $$;
 grant execute on function public.admin_users() to authenticated;
+
+-- rol en rechten van een andere gebruiker aanpassen
+create or replace function public.admin_set_user(p_user uuid, p_is_admin boolean, p_permissions jsonb)
+returns void language plpgsql security definer set search_path = public as $$
+declare target public.profiles;
+begin
+  if not public.has_perm('manage_users') then raise exception 'Je mag geen gebruikers beheren.'; end if;
+  select * into target from public.profiles where id = p_user;
+  if not found then raise exception 'Gebruiker niet gevonden.'; end if;
+  if target.is_owner then raise exception 'De eigenaar kan niet worden aangepast.'; end if;
+  if p_user = auth.uid() then raise exception 'Je kunt je eigen rechten niet aanpassen.'; end if;
+  update public.profiles set is_admin = coalesce(p_is_admin, false), permissions = coalesce(p_permissions, '{}'::jsonb) where id = p_user;
+end;
+$$;
+grant execute on function public.admin_set_user(uuid, boolean, jsonb) to authenticated;
 
 -- ---------- beveiliging (Row Level Security) ----------
 alter table public.profiles enable row level security;
@@ -166,24 +214,34 @@ alter table public.likes    enable row level security;
 alter table public.plays    enable row level security;
 alter table public.progress enable row level security;
 
+-- eerst alle oude regels weghalen, dan opnieuw aanmaken
 drop policy if exists "profiel: eigen lezen" on public.profiles;
-create policy "profiel: eigen lezen" on public.profiles for select using (id = auth.uid() or public.is_admin());
 drop policy if exists "profiel: eigen aanpassen" on public.profiles;
+drop policy if exists "games: gepubliceerd lezen" on public.games;
+drop policy if exists "games: beheerder schrijven" on public.games;
+drop policy if exists "likes: eigen" on public.likes;
+drop policy if exists "likes: lezen" on public.likes;
+drop policy if exists "likes: toevoegen" on public.likes;
+drop policy if exists "likes: verwijderen" on public.likes;
+drop policy if exists "plays: beheerder lezen" on public.plays;
+drop policy if exists "voortgang: eigen" on public.progress;
+drop policy if exists "voortgang: lezen" on public.progress;
+drop policy if exists "voortgang: schrijven" on public.progress;
+
+create policy "profiel: eigen lezen" on public.profiles for select using (id = auth.uid() or public.has_perm('view_users') or public.has_perm('manage_users'));
 create policy "profiel: eigen aanpassen" on public.profiles for update using (id = auth.uid()) with check (id = auth.uid());
 
-drop policy if exists "games: gepubliceerd lezen" on public.games;
-create policy "games: gepubliceerd lezen" on public.games for select using (published or public.is_admin());
-drop policy if exists "games: beheerder schrijven" on public.games;
-create policy "games: beheerder schrijven" on public.games for all using (public.is_admin()) with check (public.is_admin());
+create policy "games: gepubliceerd lezen" on public.games for select using (published or public.has_perm('manage_games'));
+create policy "games: beheerder schrijven" on public.games for all using (public.has_perm('manage_games')) with check (public.has_perm('manage_games'));
 
-drop policy if exists "likes: eigen" on public.likes;
-create policy "likes: eigen" on public.likes for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "likes: lezen" on public.likes for select using (user_id = auth.uid());
+create policy "likes: toevoegen" on public.likes for insert with check (user_id = auth.uid() and public.user_can('can_like'));
+create policy "likes: verwijderen" on public.likes for delete using (user_id = auth.uid());
 
-drop policy if exists "plays: beheerder lezen" on public.plays;
-create policy "plays: beheerder lezen" on public.plays for select using (public.is_admin());
+create policy "plays: beheerder lezen" on public.plays for select using (public.has_perm('view_stats'));
 
-drop policy if exists "voortgang: eigen" on public.progress;
-create policy "voortgang: eigen" on public.progress for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "voortgang: lezen" on public.progress for select using (user_id = auth.uid());
+create policy "voortgang: schrijven" on public.progress for all using (user_id = auth.uid() and public.user_can('can_save_progress')) with check (user_id = auth.uid() and public.user_can('can_save_progress'));
 
 -- ---------- eerste game ----------
 insert into public.games (id, title, category, tags, tagline, description, controls, thumb, hero, url, published, featured)
@@ -195,9 +253,10 @@ values (
   '/assets/te-un-surfers.jpg', '/assets/te-un-surfers-hero.jpg', '/games/te-un-surfers/', true, true
 ) on conflict (id) do nothing;
 
--- ---------- JIJ ALS BEHEERDER ----------
+-- ---------- JIJ ALS EIGENAAR ----------
 -- 1. Maak eerst een account op je eigen site (te-ungames.nl).
--- 2. Vul hieronder het e-mailadres van dat account in en voer alleen dit stukje uit:
+-- 2. Vul hieronder het e-mailadres van dat account in en voer alleen deze regels uit.
+--    De eigenaar heeft altijd alle rechten en kan daarna anderen beheerder maken via het dashboard.
 --
--- update public.profiles set is_admin = true
+-- update public.profiles set is_admin = true, is_owner = true
 --   where id = (select id from auth.users where email = 'JOUW-EMAIL@VOORBEELD.NL');

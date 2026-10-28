@@ -1,7 +1,7 @@
 import { el, esc, fmt, toast } from './ui.js';
 import { icon, teunSVG } from './art.js';
-import { catById } from './games.js';
-import { gameTile } from './components.js';
+import { genreName } from './games.js';
+import { gameCard } from './components.js';
 import { api } from './api.js';
 
 let cleanup = null;
@@ -15,10 +15,10 @@ export async function renderGame(app, id) {
     f.appendChild(el('<div class="empty"><h3>Deze game bestaat niet (meer)</h3><p><a class="btn primary" href="/">Terug naar home</a></p></div>'));
     return f;
   }
-  const cat = catById(g.category);
+  const cat = { name: genreName(g.category) };
   const liked = app.state.likes.has(g.id);
   const page = el(`<div class="game-page">
-    <nav class="crumbs"><a href="/">Home</a> &rsaquo; <a href="/c/${esc(g.category)}">${esc(cat.name)}</a> &rsaquo; <b>${esc(g.title)}</b></nav>
+    <nav class="crumbs"><a href="/">Home</a> &rsaquo; <a href="/games">Games</a> &rsaquo; <b>${esc(g.title)}</b></nav>
     <div class="game-layout">
       <div class="player-col">
         <div class="player" id="player" style="--poster:url('${esc(g.hero || g.thumb)}')">
@@ -42,7 +42,7 @@ export async function renderGame(app, id) {
           <h3>Over deze game</h3>
           <p>${esc(g.description)}</p>
           <div class="stat-row"><span>${icon('play', 16)} <b>${fmt(g.plays)}</b> keer gespeeld</span><span>${icon('heart', 16)} <b id="likeCount2">${fmt(g.likes)}</b> likes</span></div>
-          <div class="tags">${[g.category, ...(g.tags || [])].map((t) => `<a class="pill" href="/c/${esc(t)}">${esc(catById(t).name)}</a>`).join('')}</div>
+          <div class="tags"><span class="pill">${esc(cat.name)}</span></div>
         </div>
         <div class="card" id="progressCard"></div>
         <div class="card"><h3>Besturing</h3><ul class="controls">${(g.controls || []).map(([k, v]) => `<li><kbd>${esc(k)}</kbd><span>${esc(v)}</span></li>`).join('') || '<li><span>Zie in de game.</span></li>'}</ul></div>
@@ -125,8 +125,8 @@ export async function renderGame(app, id) {
   // meer games
   const more = app.state.games.filter((x) => x.published && x.id !== g.id);
   if (more.length) {
-    const sec = el('<section class="row"><div class="row-head"><h2>Meer games</h2></div><div class="scroller"></div></section>');
-    more.forEach((x) => sec.querySelector('.scroller').appendChild(gameTile(x)));
+    const sec = el('<section class="block"><div class="block-head"><h2>Meer games</h2></div><div class="grid-games"></div></section>');
+    more.forEach((x) => sec.querySelector('.grid-games').appendChild(gameCard(x)));
     f.appendChild(sec);
   }
   cleanup = () => window.removeEventListener('message', onMsg);

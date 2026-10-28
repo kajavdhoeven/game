@@ -81,11 +81,7 @@ const FALLBACK_GAMES = [{
   hero: '/assets/te-un-surfers-hero.jpg', thumb: '/assets/te-un-surfers.jpg', created_at: '2025-01-01T00:00:00Z', controls: [],
 }];
 
-const CATS = {
-  actie: ['Actie', 'Snel reageren, niet omvallen.'], arcade: ['Arcade', 'Hoge scores jagen.'], avontuur: ['Avontuur', 'Ontdek de wereld van Te-Un.'],
-  puzzel: ['Puzzel', 'Hersenkrakers voor jong en oud.'], racen: ['Racen', 'Gas erop.'], sport: ['Sport', 'Scoren, rennen, zwemmen.'],
-  denken: ['Denken', 'Strategie en quizzen.'], kinderen: ['Kinderen', 'Lekker eenvoudig en lief.'], multiplayer: ['Multiplayer', 'Samen of tegen elkaar.'],
-};
+const GENRE = (id) => { const t = String(id || 'game'); return t[0].toUpperCase() + t.slice(1); };
 
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -112,7 +108,7 @@ function pageMeta(path, games, site) {
   };
   const home = () => ({
     ...base,
-    body: `<h1>Te-Un Games: gratis online games met Te-Un de kabouter</h1><p>${esc(base.description)}</p><h2>Games</h2><ul>${games.map((g) => `<li><a href="/g/${esc(g.id)}">${esc(g.title)}</a>: ${esc(g.tagline || '')}</li>`).join('')}</ul><h2>Categorieën</h2><ul>${Object.entries(CATS).map(([id, c]) => `<li><a href="/c/${id}">${c[0]}</a></li>`).join('')}</ul>`,
+    body: `<h1>Te-Un Games: gratis online games met Te-Un de kabouter</h1><p>${esc(base.description)}</p><h2>Games</h2><ul>${games.map((g) => `<li><a href="/g/${esc(g.id)}">${esc(g.title)}</a>: ${esc(g.tagline || '')}</li>`).join('')}</ul>`,
   });
   if (path === '/') return home();
 
@@ -121,11 +117,11 @@ function pageMeta(path, games, site) {
     const g = games.find((x) => x.id === m[1]);
     if (!g) return { ...base, title: 'Game niet gevonden | Te-Un Games', path, robots: 'noindex, follow', status: 404, body: '<h1>Game niet gevonden</h1><p><a href="/">Naar de startpagina</a></p>' };
     const desc = `${g.tagline ? g.tagline + ' ' : ''}${(g.description || '').slice(0, 130)}`.trim();
-    const cat = CATS[g.category] || [g.category, ''];
+    const cat = [GENRE(g.category), ''];
     const url = `${site}/g/${g.id}`;
     return {
       ...base, title: `${g.title} - gratis online spelen | Te-Un Games`, description: desc, image: g.hero || g.thumb || base.image, path: `/g/${g.id}`,
-      body: `<nav><a href="/">Home</a> &rsaquo; <a href="/c/${esc(g.category)}">${esc(cat[0])}</a> &rsaquo; ${esc(g.title)}</nav><h1>${esc(g.title)} gratis online spelen</h1><p>${esc(g.tagline || '')}</p><p>${esc(g.description || '')}</p>${(g.controls || []).length ? `<h2>Besturing</h2><ul>${g.controls.map((c) => `<li>${esc(c[0])}: ${esc(c[1])}</li>`).join('')}</ul>` : ''}<p><a href="/c/${esc(g.category)}">Meer ${esc(cat[0])} games</a></p>`,
+      body: `<nav><a href="/">Home</a> &rsaquo; <a href="/games">Games</a> &rsaquo; ${esc(g.title)}</nav><h1>${esc(g.title)} gratis online spelen</h1><p>${esc(g.tagline || '')}</p><p>${esc(g.description || '')}</p>${(g.controls || []).length ? `<h2>Besturing</h2><ul>${g.controls.map((c) => `<li>${esc(c[0])}: ${esc(c[1])}</li>`).join('')}</ul>` : ''}<p><a href="/games">Alle games</a></p>`,
       ld: {
         '@context': 'https://schema.org', '@type': 'VideoGame', name: g.title, url, description: desc, inLanguage: 'nl-NL',
         genre: cat[0], gamePlatform: 'Webbrowser', applicationCategory: 'Game', operatingSystem: 'Alle apparaten met een browser',
@@ -136,19 +132,8 @@ function pageMeta(path, games, site) {
       },
     };
   }
-  m = path.match(/^\/c\/([a-z]+)\/?$/);
-  if (m && CATS[m[1]]) {
-    const c = CATS[m[1]];
-    const list = games.filter((g) => g.category === m[1] || (g.tags || []).includes(m[1]));
-    return {
-      ...base, title: `${c[0]} games - gratis online spelen | Te-Un Games`, description: `${c[1]} Speel gratis ${c[0].toLowerCase()} games op Te-Un Games.`, path: `/c/${m[1]}`,
-      body: `<nav><a href="/">Home</a> &rsaquo; ${c[0]}</nav><h1>${c[0]} games</h1><p>${esc(c[1])}</p><ul>${list.map((g) => `<li><a href="/g/${esc(g.id)}">${esc(g.title)}</a></li>`).join('') || '<li>Er komen snel games bij!</li>'}</ul>`,
-    };
-  }
   const pages = {
-    '/popular': ['Populaire games', 'De meest gespeelde en geliefde games van Te-Un Games.'],
-    '/new': ['Nieuwe games', 'De nieuwste games op Te-Un Games.'],
-    '/categories': ['Alle categorieën', 'Bekijk alle game-categorieën van Te-Un Games: actie, arcade, avontuur, puzzel, racen en meer.'],
+    '/games': ['Alle games', 'Alle gratis online games van Te-Un Games op een rij.'],
   };
   const clean = path.replace(/\/$/, '');
   if (pages[clean]) {
@@ -197,8 +182,7 @@ async function sitemap(env, url) {
   const u = (loc, pri, freq, last = today, img) => `<url><loc>${site}${loc}</loc><lastmod>${last}</lastmod><changefreq>${freq}</changefreq><priority>${pri}</priority>${img ? `<image:image><image:loc>${esc(img.startsWith('http') ? img : site + img)}</image:loc></image:image>` : ''}</url>`;
   const body = [
     u('/', '1.0', 'daily'),
-    u('/popular', '0.7', 'daily'), u('/new', '0.7', 'daily'), u('/categories', '0.6', 'weekly'),
-    ...Object.keys(CATS).map((id) => u(`/c/${id}`, '0.6', 'weekly')),
+    u('/games', '0.8', 'daily'),
     ...games.map((g) => u(`/g/${g.id}`, '0.9', 'weekly', day(g.created_at), g.hero || g.thumb)),
   ].join('');
   return new Response(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">${body}</urlset>`, {
@@ -219,7 +203,7 @@ export default {
       if (url.host === 'www.' + host) return Response.redirect(env.SITE_URL + url.pathname + url.search, 301);
     }
     if (url.pathname === '/sitemap.xml') return sitemap(env, url);
-    if (request.method === 'GET' && /^\/(g\/|c\/|popular|new|categories|favorites|profile|admin|search)/.test(url.pathname) || (request.method === 'GET' && url.pathname === '/')) {
+    if (request.method === 'GET' && /^\/(g\/|games$|favorites|profile|admin|search)/.test(url.pathname) || (request.method === 'GET' && url.pathname === '/')) {
       return servePage(request, env, url);
     }
     return env.ASSETS.fetch(request);

@@ -31,7 +31,7 @@ Wil je zonder bevestigingsmail kunnen aanmelden: Authentication > Providers > Em
 
 ## Gevonden worden op Google
 
-- Elke pagina heeft een echt adres (`/g/te-un-surfers`, `/c/actie`), een eigen titel, beschrijving en canonical.
+- Elke pagina heeft een echt adres (`/g/te-un-surfers`, `/games`), een eigen titel, beschrijving en canonical.
 - De Worker (`worker/index.js`) geeft per pagina de juiste meta-tags, gestructureerde gegevens (VideoGame, WebSite, Organization) en leesbare tekst mee. Nieuwe games uit het dashboard krijgen dit automatisch.
 - `/sitemap.xml` wordt automatisch gemaakt uit de gepubliceerde games, `robots.txt` verwijst ernaar.
 - Beheer, profiel, favorieten en zoekresultaten staan op `noindex`.
@@ -41,10 +41,6 @@ Wil je zonder bevestigingsmail kunnen aanmelden: Authentication > Providers > Em
 1. Zet de game in `games/<naam>/` (een gewone web-game met `index.html`).
 2. Log in als beheerder > **Beheer > Nieuwe game**: naam, categorie, plaatje en adres (`/games/<naam>/`).
 3. Voortgang bewaren: de game stuurt `postMessage({type:'teun:save', game, data})` naar de ouder en luistert naar `teun:progress`. Zie `games/te-un-surfers/js/bridge.js` als voorbeeld.
-
-## Thema's
-
-Smurf Blauw, Ravagio Oranje (verborgen oranje shirtjes), Minecraft-sok groen (verborgen blokfiguurtje) en Bambi-trui bruin (verborgen hertje). Kleuren staan bovenaan `css/platform.css`.
 
 ## Structuur
 

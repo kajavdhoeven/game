@@ -1,18 +1,15 @@
 import { el, esc, fmt, ago, toast } from './ui.js';
 import { avatarSVG, AVATARS, icon, teunSVG } from './art.js';
-import { THEMES, THEME_ORDER } from './themes.js';
-import { eggsFound } from './eggs.js';
 import { api } from './api.js';
 
 export async function renderProfile(app) {
   const { user, profile } = app.state;
   const f = document.createDocumentFragment();
-  const theme = document.documentElement.dataset.theme;
 
   const head = el(`<section class="profile-head" data-egg-zone>
     <div class="avatar xl">${avatarSVG(profile ? profile.avatar : 'teun')}</div>
     <div><h1>${user ? esc(profile ? profile.username : '...') : 'Gast'}</h1>
-    <p class="muted">${user ? `Lid sinds ${ago(profile && profile.created_at)}${profile && profile.is_admin ? ' · beheerder' : ''}` : 'Je speelt als gast. Maak een account om je voortgang te bewaren.'}</p></div>
+    <p class="muted">${user ? `Lid sinds ${ago(profile && profile.created_at)}${profile && (profile.is_admin || profile.is_owner) ? ' · beheerder' : ''}` : 'Je speelt als gast. Maak een account om je voortgang te bewaren.'}</p></div>
     <div class="profile-teun">${teunSVG({ cls: 'wave' })}</div></section>`);
   f.appendChild(head);
 
@@ -30,6 +27,7 @@ export async function renderProfile(app) {
     AVATARS.forEach((a) => {
       const b = el(`<button class="av-opt ${profile && profile.avatar === a.id ? 'on' : ''}" data-id="${a.id}"><div class="avatar lg">${avatarSVG(a.id)}</div><b>${esc(a.name)}</b><small>${esc(a.desc)}</small></button>`);
       b.addEventListener('click', async () => {
+        if (!app.can('can_edit_profile')) return toast('Je mag je profiel niet aanpassen.');
         await app.updateProfile({ avatar: a.id });
         grid.querySelectorAll('.av-opt').forEach((x) => x.classList.toggle('on', x === b));
         head.querySelector('.avatar').innerHTML = avatarSVG(a.id);
@@ -44,24 +42,13 @@ export async function renderProfile(app) {
       e.preventDefault();
       const v = name.querySelector('#uname').value.replace(/[^\p{L}\p{N} _.\-]/gu, '').trim().slice(0, 14);
       if (v.length < 2) return toast('Kies een naam van minstens 2 tekens.');
+      if (!app.can('can_edit_profile')) return toast('Je mag je profiel niet aanpassen.');
       await app.updateProfile({ username: v });
       head.querySelector('h1').textContent = v;
       toast('Naam opgeslagen!');
     });
     f.appendChild(name);
   }
-
-  // thema
-  const th = el('<section class="card"><h3>Thema</h3><p class="muted">Verander het hele platform in één klik.</p><div class="theme-grid"></div></section>');
-  const tg = th.querySelector('.theme-grid');
-  THEME_ORDER.forEach((id) => {
-    const t = THEMES[id];
-    const b = el(`<button class="theme-opt ${theme === id ? 'on' : ''}" data-theme-pick="${id}" style="--a:${t.swatch[0]};--b:${t.swatch[1]};--c:${t.swatch[2]}">
-      <span class="theme-prev"><i></i><i></i><i></i></span><b>${esc(t.name)}</b><small>${esc(t.blurb)}</small></button>`);
-    b.addEventListener('click', () => { app.setTheme(id); tg.querySelectorAll('.theme-opt').forEach((x) => x.classList.toggle('on', x === b)); });
-    tg.appendChild(b);
-  });
-  f.appendChild(th);
 
   // voortgang
   if (user) {
@@ -80,8 +67,7 @@ export async function renderProfile(app) {
   }
 
   const misc = el(`<section class="card misc"><h3>Overig</h3>
-    <div class="misc-row"><span>Verborgen dingen gevonden: <b>${eggsFound()}</b></span></div>
-    <div class="misc-actions"><button class="btn ghost small" id="mTour">Rondleiding opnieuw</button>${user ? '<button class="btn ghost small" id="mOut">Uitloggen</button>' : ''}${profile && profile.is_admin ? '<a class="btn primary small" href="/admin">Beheer</a>' : ''}</div></section>`);
+    <div class="misc-actions"><button class="btn ghost small" id="mTour">Rondleiding opnieuw</button>${user ? '<button class="btn ghost small" id="mOut">Uitloggen</button>' : ''}${profile && (profile.is_admin || profile.is_owner) ? '<a class="btn primary small" href="/admin">Beheer</a>' : ''}</div></section>`);
   misc.querySelector('#mTour').onclick = () => app.startTour();
   const out = misc.querySelector('#mOut');
   if (out) out.onclick = () => app.signOut();

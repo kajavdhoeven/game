@@ -1,50 +1,32 @@
 import { esc, el, fmt } from './ui.js';
-import { icon, teunSVG, categoryIcon } from './art.js';
-import { catById } from './games.js';
+import { icon, teunSVG } from './art.js';
+import { genreName } from './games.js';
 
 const isNew = (g) => Date.now() - new Date(g.created_at || 0).getTime() < 45 * 864e5;
 
-export function gameTile(g, { wide = false } = {}) {
-  const cat = catById(g.category);
-  if (g.soon) {
-    const [c1, c2] = cat.color;
-    return el(`<div class="tile soon ${wide ? 'wide' : ''}" tabindex="0" role="button" aria-label="${esc(g.title)} (binnenkort)" style="--c1:${c1};--c2:${c2}">
-      <div class="tile-img soon-art"><span class="soon-emoji">${categoryIcon(g.category)}</span><div class="tile-teun">${teunSVG({ crop: 'face' })}</div></div>
-      <span class="badge soon">Binnenkort</span>
-      <div class="tile-over"><b>${esc(g.title)}</b><span>${esc(cat.name)}</span></div>
-    </div>`);
-  }
-  return el(`<a class="tile ${wide ? 'wide' : ''}" href="/g/${esc(g.id)}" aria-label="${esc(g.title)}">
-    <div class="tile-img" style="background-image:url('${esc(g.thumb)}')"></div>
-    ${isNew(g) ? '<span class="badge new">Nieuw</span>' : ''}
-    <div class="tile-over"><b>${esc(g.title)}</b><span>${esc(cat.name)}</span></div>
-    <div class="tile-meta"><span>${icon('heart', 14)} ${fmt(g.likes)}</span><span>${icon('play', 14)} ${fmt(g.plays)}</span></div>
+export function gameCard(g) {
+  return el(`<a class="card-game" href="/g/${esc(g.id)}" aria-label="${esc(g.title)}">
+    <div class="cg-img" style="background-image:url('${esc(g.thumb)}')">
+      ${isNew(g) ? '<span class="badge">Nieuw</span>' : ''}
+      <span class="cg-play" aria-hidden="true">${icon('play', 26)}</span>
+    </div>
+    <div class="cg-body"><b>${esc(g.title)}</b><span>${esc(genreName(g.category))}</span>
+      <div class="cg-meta"><span>${icon('heart', 14)} ${fmt(g.likes)}</span><span>${icon('play', 13)} ${fmt(g.plays)}</span></div></div>
   </a>`);
 }
 
-export function sectionRow(title, items, { sub = '', href = '', zone = true } = {}) {
-  const sec = el(`<section class="row" ${zone ? 'data-egg-zone' : ''}>
-    <div class="row-head"><h2>${title}</h2>${sub ? `<span class="muted">${sub}</span>` : ''}${href ? `<a class="more" href="${href}">Alles bekijken</a>` : ''}</div>
-    <div class="scroller"></div></section>`);
-  const sc = sec.querySelector('.scroller');
-  items.forEach((g) => sc.appendChild(gameTile(g)));
-  return sec;
-}
-
-export function hero(g, state) {
-  const cat = catById(g.category);
-  return el(`<section class="hero" data-egg-zone style="--hero:url('${esc(g.hero || g.thumb)}')">
-    <div class="hero-bg"></div><div class="hero-shade"></div>
-    <div class="hero-body">
-      <span class="chip">${categoryIcon(g.category)} ${esc(cat.name)}</span>
-      <h2 class="hero-title">${esc(g.title)}</h2>
+export function featured(g) {
+  return el(`<section class="featured">
+    <div class="feat-img" style="background-image:url('${esc(g.hero || g.thumb)}')"></div>
+    <div class="feat-body">
+      <span class="eyebrow">Uitgelicht</span>
+      <h2>${esc(g.title)}</h2>
       <p>${esc(g.tagline || g.description)}</p>
-      <div class="hero-actions">
+      <div class="feat-actions">
         <a class="btn primary big" href="/g/${esc(g.id)}">${icon('play', 20)} Speel nu</a>
-        <span class="hero-stats"><b>${icon('heart', 16)} ${fmt(g.likes)}</b><b>${icon('play', 16)} ${fmt(g.plays)}x gespeeld</b></span>
+        <span class="feat-stats"><span>${icon('heart', 16)} ${fmt(g.likes)}</span><span>${icon('play', 15)} ${fmt(g.plays)}x gespeeld</span></span>
       </div>
     </div>
-    <div class="hero-teun">${teunSVG({ cls: 'wave' })}</div>
   </section>`);
 }
 

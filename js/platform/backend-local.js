@@ -29,8 +29,8 @@ export const local = {
     const users = rd(K.users, []);
     if (users.some((u) => u.email.toLowerCase() === email.toLowerCase())) throw new Error('Dit e-mailadres heeft al een account.');
     const u = {
-      id: uid(), email, pw: await hash(password), username: username || email.split('@')[0], avatar: 'teun', theme: document.documentElement.dataset.theme || 'smurf',
-      is_admin: users.length === 0, tour_done: false, created_at: new Date().toISOString(), last_seen: new Date().toISOString(),
+      id: uid(), email, pw: await hash(password), username: username || email.split('@')[0], avatar: 'teun', theme: 'smurf',
+      is_admin: users.length === 0, is_owner: users.length === 0, permissions: {}, tour_done: false, created_at: new Date().toISOString(), last_seen: new Date().toISOString(),
     };
     users.push(u);
     wr(K.users, users);
@@ -126,9 +126,21 @@ export const local = {
   async adminUsers() {
     const plays = rd(K.plays, []);
     return rd(K.users, []).map((u) => ({
-      id: u.id, email: u.email, username: u.username, avatar: u.avatar, theme: u.theme, is_admin: u.is_admin,
+      id: u.id, email: u.email, username: u.username, avatar: u.avatar, theme: u.theme, is_admin: u.is_admin, is_owner: !!u.is_owner, permissions: u.permissions || {},
       created_at: u.created_at, last_seen: u.last_seen, plays: plays.filter((p) => p.user === u.id).length,
     }));
+  },
+  async adminSetUser(id, { is_admin, permissions }) {
+    const users = rd(K.users, []);
+    const u = users.find((x) => x.id === id);
+    const me = users.find((x) => x.id === rd(K.session, null));
+    if (!u || !me) throw new Error('Gebruiker niet gevonden.');
+    if (!(me.is_owner || (me.is_admin && me.permissions && me.permissions.manage_users === true))) throw new Error('Je mag geen gebruikers beheren.');
+    if (u.is_owner) throw new Error('De eigenaar kan niet worden aangepast.');
+    if (u.id === me.id) throw new Error('Je kunt je eigen rechten niet aanpassen.');
+    u.is_admin = !!is_admin;
+    u.permissions = permissions || {};
+    wr(K.users, users);
   },
   async adminListGames() { return this.listGames(); },
   async adminSaveGame(g) {

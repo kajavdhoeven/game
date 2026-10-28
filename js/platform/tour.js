@@ -1,20 +1,17 @@
 import { teunSVG } from './art.js';
 import { el, $ } from './ui.js';
-import { THEMES } from './themes.js';
 
 // De rondleiding: Te-Un loopt over het scherm naar het volgende onderwerp en vertelt er iets over.
 const STEPS = [
   { at: 'center', pose: 'wave', title: 'Hoi, ik ben Te-Un!', text: 'Welkom bij Te-Un Games! Dit is mijn eigen speelplek. Ik loop even met je mee en laat zien hoe alles werkt.' },
-  { at: '#search', side: 'below', title: 'Zoek je spel', text: 'Hier typ je de naam van een game of een categorie. Zo vind je altijd wat je zoekt.' },
-  { at: '.rail', fallback: '.bottom-nav', side: 'right', title: 'Alle categorieën', text: 'Actie, puzzels, racen, sport... in dit menu kies je wat je leuk vindt. Er komen steeds meer spellen bij!' },
-  { at: '.hero, .tile:not(.soon)', side: 'below', title: 'Mijn eigen game', text: 'Dit is Te-Un Surfers! Ik ren over het spoor, spring op treinen en spuit treinspotters nat. Probeer het maar eens.' },
+  { at: '#search', side: 'below', title: 'Zoek je spel', text: 'Hier typ je de naam van een game. Zo vind je altijd wat je zoekt.' },
+  { at: '.rail', fallback: '.bottom-nav', side: 'right', title: 'Onze games', text: 'In dit menu staan al onze games. Er komen steeds meer spellen bij!' },
+  { at: '.featured, .card-game', side: 'below', title: 'Mijn eigen game', text: 'Dit is Te-Un Surfers! Ik ren over het spoor, spring op treinen en spuit treinspotters nat. Probeer het maar eens.' },
   { at: '#btnAccount', side: 'below', title: 'Maak een account', text: 'Met een account bewaar ik je voortgang, je munten en je gekochte voertuigen. Je kiest ook je eigen profielpictogram: mij of een NS-trein!' },
-  { at: '#btnTheme', side: 'below', title: 'Kies je thema', text: 'Hier wissel je van thema: Smurf Blauw, Ravagio Oranje, Minecraft-sok groen of Bambi-trui bruin. Alles in het platform kleurt mee!' },
-  { at: 'center', pose: 'point', title: 'Zoek de verborgen dingen', text: 'In elk thema, behalve het blauwe, zit iets verstopt. Klik erop als je het ziet. Dan krijg je een verrassing!' },
   { at: 'center', pose: 'wave', title: 'Veel speelplezier!', text: 'Dat was het! Zin om te spelen? Dan zie ik je bij Te-Un Surfers. Tot zo!', last: true },
 ];
 
-export function startTour({ onDone, theme }) {
+export function startTour({ onDone }) {
   const root = $('#tour-root');
   root.innerHTML = '';
   document.body.classList.add('touring');
@@ -131,5 +128,4 @@ export function startTour({ onDone, theme }) {
   walker.style.transform = `translate(-200px, ${H() - size() - 40}px)`;
   curX = -200;
   requestAnimationFrame(() => requestAnimationFrame(() => { walker.style.transition = ''; go(0); }));
-  void theme; void THEMES;
 }

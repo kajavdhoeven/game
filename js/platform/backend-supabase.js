@@ -116,6 +116,10 @@ export const remote = {
     fail(error);
     return data || [];
   },
+  async adminSetUser(id, { is_admin, permissions }) {
+    const { error } = await client.rpc('admin_set_user', { p_user: id, p_is_admin: !!is_admin, p_permissions: permissions || {} });
+    fail(error);
+  },
   async adminListGames() { return this.listGames(); },
   async adminSaveGame(g) {
     const row = {
