@@ -375,3 +375,11 @@ select option { color: #111; }
 .player.pfs { position: fixed; inset: 0; z-index: 9999; width: 100vw; height: 100vh; height: 100dvh; max-height: none; aspect-ratio: auto; border-radius: 0; border: 0; }
 body.pfs-lock { overflow: hidden; }
 .player:fullscreen { aspect-ratio: auto; }
+
+.reward { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+.reward + .reward { border-top: 1px solid var(--line); }
+.reward .avatar { filter: grayscale(1) brightness(.75); }
+.reward.open .avatar { filter: none; }
+.reward b { display: block; font-size: 15px; }
+.reward small { color: var(--muted, rgba(255,255,255,.7)); font-size: 13px; }
+.reward.open b { color: #7be0a0; }

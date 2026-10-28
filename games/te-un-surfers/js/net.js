@@ -27,8 +27,8 @@ export async function fetchBoard() {
   const data = await req('/leaderboard');
   if (data) return data;
   // offline: toon in elk geval jezelf
-  const me = { pid: P.pid, name: P.name || 'Jij', distance: P.bestDist, coins: P.bestCoins };
-  return { offline: true, distance: P.bestDist ? [me] : [], coins: P.bestCoins ? [me] : [] };
+  const me = { pid: P.pid, name: P.name || 'Jij', distance: P.bestDist, coins: P.bestCoins, score: P.best, runDist: P.bestDist, runCoins: P.bestCoins };
+  return { offline: true, score: P.best ? [me] : [], distance: P.bestDist ? [me] : [], coins: P.bestCoins ? [me] : [] };
 }
 
 export async function submitScore(distance, coins) {

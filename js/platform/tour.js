@@ -7,7 +7,7 @@ const STEPS = [
   { at: '#search', side: 'below', title: 'Zoek je spel', text: 'Hier typ je de naam van een game. Zo vind je altijd wat je zoekt.' },
   { at: '.rail', fallback: '.bottom-nav', side: 'right', title: 'Onze games', text: 'In dit menu staan al onze games. Er komen steeds meer spellen bij!' },
   { at: '.featured, .card-game', side: 'below', title: 'Mijn eigen game', text: 'Dit is Te-Un Surfers! Ik ren over het spoor, spring op treinen en spuit treinspotters nat. Probeer het maar eens.' },
-  { at: '#btnAccount', side: 'below', title: 'Maak een account', text: 'Met een account bewaar ik je voortgang, je munten en je gekochte voertuigen. Je kiest ook je eigen profielpictogram: mij of een NS-trein!' },
+  { at: '#btnAccount', side: 'below', title: 'Maak een account', text: 'Met een account bewaar ik je voortgang, je munten en je gekochte voertuigen. Profielfoto\'s speel je vrij in de games. Haal bijvoorbeeld 50.000 punten in Te-Un Surfers voor een speciale Te-Un met gouden medaille!' },
   { at: 'center', pose: 'wave', title: 'Veel speelplezier!', text: 'Dat was het! Zin om te spelen? Dan zie ik je bij Te-Un Surfers. Tot zo!', last: true },
 ];
 

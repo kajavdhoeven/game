@@ -1,5 +1,5 @@
 import { el, esc, fmt, toast } from './ui.js';
-import { icon, teunSVG } from './art.js';
+import { icon, teunSVG, avatarSVG, AVATARS, avatarUnlocked } from './art.js';
 import { genreName } from './games.js';
 import { gameCard, titleHTML } from './components.js';
 import { api } from './api.js';
@@ -44,6 +44,7 @@ export async function renderGame(app, id) {
           <div class="stat-row"><span>${icon('play', 16)} <b>${fmt(g.plays)}</b> keer gespeeld</span><span>${icon('heart', 16)} <b id="likeCount2">${fmt(g.likes)}</b> likes</span></div>
           <div class="tags"><span class="pill">${esc(cat.name)}</span></div>
         </div>
+        <div class="card" id="rewardCard" hidden></div>
         <div class="card" id="progressCard"></div>
         <div class="card"><h3>Besturing</h3><ul class="controls">${(g.controls || []).map(([k, v]) => `<li><kbd>${esc(k)}</kbd><span>${esc(v)}</span></li>`).join('') || '<li><span>Zie in de game.</span></li>'}</ul></div>
       </aside>
@@ -80,7 +81,7 @@ export async function renderGame(app, id) {
   };
   window.addEventListener('message', onMsg);
 
-  const paintProgress = async (data) => {
+  const paintProgressBox = async (data) => {
     const box = page.querySelector('#progressCard');
     if (!app.state.user) {
       box.innerHTML = `<h3>Jouw voortgang</h3><p class="muted">Maak een account om je munten, voertuigen en record te bewaren, ook op andere apparaten.</p><button class="btn primary small" id="pgSign">Account maken</button>`;
@@ -105,6 +106,20 @@ export async function renderGame(app, id) {
       <div><b>${fmt(d.best)}</b><small>Record</small></div><div><b>${fmt(d.coins)}</b><small>Munten</small></div>
       <div><b>${veh}/3</b><small>Voertuigen</small></div><div><b>${fmt(d.runs)}</b><small>Rondes</small></div></div>`;
   };
+  // profielfoto's die je met deze game vrijspeelt
+  const paintRewards = async (data) => {
+    const list = AVATARS.filter((a) => a.unlock && a.unlock.game === g.id);
+    const box = page.querySelector('#rewardCard');
+    if (!list.length) return;
+    let d = data || null;
+    if (!d && app.state.user) d = await api.getProgress(g.id).catch(() => null);
+    box.hidden = false;
+    box.innerHTML = `<h3>Profielfoto's vrijspelen</h3>${list.map((a) => {
+      const open = avatarUnlocked(a, d);
+      return `<div class="reward ${open ? 'open' : ''}"><div class="avatar sm">${avatarSVG(a.id)}</div><div><b>${esc(a.name)}${open ? ' · vrijgespeeld' : ''}</b><small>${esc(a.unlock.how)}</small></div></div>`;
+    }).join('')}`;
+  };
+  const paintProgress = async (data) => { await Promise.all([paintProgressBox(data), paintRewards(data)]); };
   paintProgress();
 
   page.querySelector('#btnLike').addEventListener('click', async (e) => {

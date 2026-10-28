@@ -340,7 +340,7 @@ function spawnPattern() {
   const spd = Math.max(S.speed, 18);
   S.patterns++;
 
-  const weights = { coins: 0.7, trains: 3.8, barriers: 3.8, mixed: 2.8, ramp: 2.4 + diff, passing: 1.6 + diff * 1.4, spotter: inTunnel ? 0 : 1.8, platform: plats.length ? 3 : 0 };
+  const weights = { coins: 0.35, trains: 5.2, barriers: 4.2, mixed: 3.4, ramp: 2.4 + diff, passing: 2.8 + diff * 1.6, spotter: inTunnel ? 0 : 1.8, platform: plats.length ? 3 : 0 };
   let total = 0;
   Object.values(weights).forEach((w) => { total += w; });
   let roll = rand() * total;
@@ -370,7 +370,7 @@ function spawnPattern() {
     if (rand() < 0.22) maybePowerup(safe, z0 - 8);
     len = 26;
   } else if (type === 'trains') {
-    const both = rand() < 0.5 + 0.4 * diff;
+    const both = rand() < 0.65 + 0.3 * diff;
     const lanes = both ? others : [pick(others)];
     lanes.forEach((l) => {
       const o = addTrain(l, z0, { v: trainV() });
@@ -476,14 +476,14 @@ function spawnPattern() {
   if (!items.length) { vmax = 0; vmin = 0; }
   const dist = -z0;
   const tStart = dist / (spd + vmax);
-  if (tStart < S.hazardT + 0.65) {
-    const want = (S.hazardT + 0.65) * (spd + vmax);
+  if (tStart < S.hazardT + 0.5) {
+    const want = (S.hazardT + 0.5) * (spd + vmax);
     const shift = want - dist;
     shiftPattern(shift);
     z0 -= shift;
   }
   S.hazardT = Math.max(S.hazardT, (-z0 + len) / (spd + vmin));
-  cursor = Math.min(cursor, z0) - len - Math.max(15, S.speed * 0.62);
+  cursor = Math.min(cursor, z0) - len - Math.max(11, S.speed * 0.5);
 }
 
 // verschuif alles wat in dit patroon is toegevoegd verder van de speler af
@@ -705,7 +705,7 @@ function closeShop() {
 }
 
 // ---------------------------------------------------------------- ranglijst
-let boardTab = 'distance';
+let boardTab = 'score';
 let boardData = null;
 let boardFrom = 'menu';
 function renderBoardList() {
@@ -716,13 +716,19 @@ function renderBoardList() {
     const li = document.createElement('li');
     const mine = r.pid === P.pid.slice(0, 8) || r.pid === P.pid;
     if (mine) li.className = 'me';
-    const val = boardTab === 'distance' ? r.distance.toLocaleString('nl-NL') + ' m' : r.coins.toLocaleString('nl-NL');
+    const val = boardTab === 'score' ? String(r.score) : boardTab === 'distance' ? r.distance + ' m' : String(r.coins);
     li.innerHTML = `<span class="rk">${i + 1}</span><span></span><span class="sc">${val}</span>`;
     li.children[1].textContent = r.name || 'Naamloos';
+    if (boardTab === 'score') {
+      const sub = document.createElement('small');
+      sub.textContent = `${r.runDist} m + ${r.runCoins} munten`;
+      sub.style.cssText = 'display:block;opacity:.7;font-size:.72em;font-weight:400';
+      li.children[1].appendChild(sub);
+    }
     list.appendChild(li);
   });
   if (!rows.length) list.innerHTML = '<li><span></span><span>Nog geen scores. Wees de eerste!</span><span></span></li>';
-  $('boardNote').textContent = boardData && boardData.offline ? 'Geen verbinding met de online ranglijst. Je ziet alleen jouw eigen score.' : 'Online ranglijst, elke speler telt met zijn beste run.';
+  $('boardNote').textContent = boardData && boardData.offline ? 'Geen verbinding met de online ranglijst. Je ziet alleen jouw eigen score.' : 'Online ranglijst. De score is dezelfde als in de game: afstand + 10 punten per munt, van je beste run.';
 }
 async function openBoard(from) {
   boardFrom = from;
@@ -877,6 +883,7 @@ function setPaused(p) {
 
 async function finishRun() {
   const sc = score();
+  const prevBest = P.best;
   const isRecord = sc > P.best;
   if (isRecord) P.best = sc;
   P.coins += S.coins;
@@ -891,6 +898,7 @@ async function finishRun() {
   $('overSpot').textContent = S.spotters;
   $('overRank').textContent = 'Score wordt opgeslagen...';
   const res = await submitScore(S.dist, S.coins);
+  if (isRecord && sc >= 50000 && prevBest < 50000) toast('Profielfoto Te-Un 50K vrijgespeeld! Kies hem op je profiel.', 6000);
   $('overRank').textContent = res ? 'Je score staat op de online ranglijst.' : 'Geen verbinding: je score is lokaal bewaard.';
 }
 

@@ -5,17 +5,18 @@ import { Renderer, CHARS, CHAR_ORDER, limpPose } from './draw.js';
 
 const GAME_ID = 'te-un-x3m';
 const $ = (id) => document.getElementById(id);
-const UNLOCK = { orange: 5, green: 10, gold: 20 }; // personage -> level dat je moet halen
+const UNLOCK = { orange: 5, racer: 10, gold: 20 }; // personage -> level dat je moet halen
 
 // ---------------------------------------------------------------- opslaan
 const KEY = 'teun-x3m-v1';
-let P = { stars: {}, best: {}, owned: { fatbike: 1 }, veh: 'fatbike', char: 'teun', spent: 0, dev: false, updatedAt: 0 };
+let P = { stars: {}, best: {}, owned: { fatbike: 1 }, veh: 'fatbike', char: 'teun', spent: 0, bonus: 0, dev: false, updatedAt: 0 };
 try { P = Object.assign(P, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* geen opslag */ }
 const post = (type, extra = {}) => {
   if (window.parent === window) return;
   try { window.parent.postMessage({ type, game: GAME_ID, ...extra }, location.origin); } catch (e) { /* geen ouder */ }
 };
-const snapshot = () => ({ stars: P.stars, best: P.best, owned: P.owned, veh: P.veh, char: P.char, spent: P.spent, dev: P.dev, updatedAt: P.updatedAt });
+if (P.char === 'green') P.char = 'racer';
+const snapshot = () => ({ stars: P.stars, best: P.best, owned: P.owned, veh: P.veh, char: P.char, spent: P.spent, bonus: P.bonus, dev: P.dev, updatedAt: P.updatedAt });
 let saveTimer = null;
 function save(quiet) {
   if (!quiet) P.updatedAt = Date.now();
@@ -34,7 +35,7 @@ window.addEventListener('message', (e) => {
   }
 });
 const totalStars = () => Object.values(P.stars).reduce((a, b) => a + b, 0);
-const freeStars = () => totalStars() + (P.dev ? 100 : 0) - P.spent;
+const freeStars = () => totalStars() + (P.bonus || 0) - P.spent;
 const levelOpen = (n) => n === 1 || P.dev || (P.stars[n - 1] || 0) > 0;
 const charOpen = (id) => !UNLOCK[id] || P.dev || (P.stars[UNLOCK[id]] || 0) > 0;
 const fmt = (t) => t.toFixed(2).padStart(5, '0');
@@ -102,8 +103,8 @@ function startLevel(n) {
   const V = VEH[P.veh];
   const sy = V.fly ? 1.2 : V.r + 0.45;
   g = {
-    n, level, terr: new Terrain(level.pts), bike: makeBike(P.veh, level.startX, sy), character: P.char,
-    time: 0, tl: 0, state: 'ready', crashT: 0, rag: null, rider: null, over: false, paused: false,
+    n, level, terr: new Terrain(level.pts), ceilT: new Terrain([...level.ceil].reverse()), bike: makeBike(P.veh, level.startX, sy), character: P.char,
+    time: 0, tl: 0, state: 'ready', crashT: 0, airRot: 0, airT: 0, pend: null, flipBonus: 0, flipCount: 0, cough: { t: 0, next: 5 + Math.random() * 4 }, rag: null, rider: null, over: false, paused: false,
     cam: { x: level.startX + 3, y: 2, shake: 0 }, input: { ...NOINP }, dt: 1 / 60, rs: { lean: 0 },
   };
   R.parts.length = 0;
@@ -134,7 +135,7 @@ function setScreen(s) {
 
 function doCrash(reason) {
   const b = g.bike;
-  g.state = 'crashed'; g.crashT = 0; b.crash = reason;
+  g.state = 'crashed'; g.crashT = 0; b.crash = reason; g.pend = null;
   const [hx, hy] = headPos(b);
   g.rag = { x: hx, y: hy, vx: b.vx * 0.9 + (Math.random() - 0.3) * 3, vy: b.vy + 3 + Math.random() * 3, ang: b.a, w: -b.vx * 0.4 + (Math.random() - 0.5) * 6, seed: Math.random() * 6 };
   g.cam.shake = 0.5;
@@ -150,6 +151,8 @@ function finishLevel() {
   const t = g.tl;
   const stars = t <= par ? 3 : t <= par * 1.3 ? 2 : 1;
   const prevStars = P.stars[g.n] || 0;
+  const all3 = () => Array.from({ length: LEVEL_COUNT }, (_, i) => i + 1).every((k) => (P.stars[k] || 0) >= 3);
+  const wasAll3 = all3();
   const wasChar = Object.fromEntries(Object.keys(UNLOCK).map((k) => [k, charOpen(k)]));
   if (stars > prevStars) P.stars[g.n] = stars;
   if (!P.best[g.n] || t < P.best[g.n]) P.best[g.n] = Math.round(t * 100) / 100;
@@ -160,15 +163,63 @@ function finishLevel() {
     $('eTitle').textContent = `Level ${g.n} klaar!`;
     const box = $('eStars'); box.innerHTML = '';
     for (let i = 0; i < 3; i++) { const s = document.createElement('i'); s.textContent = '★'; s.className = i < stars ? 'on' : ''; s.style.animationDelay = i * 0.2 + 's'; box.appendChild(s); }
-    const best = P.best[g.n];
-    $('eText').textContent = `Tijd ${t.toFixed(2)} s${t <= best + 0.001 && best < (prevStars ? best + 1 : 0) ? '' : ''}  ·  Record ${best.toFixed(2)} s`;
+    const need = Math.round(par * 10) / 10;
+    const flipTxt = g.flipBonus > 0 ? `  ·  flips: -${g.flipBonus.toFixed(1)} s` : '';
+    $('eText').innerHTML = `Jouw tijd: <b>${t.toFixed(2)} s</b>${flipTxt}<br>${stars >= 3 ? 'Voor 3 sterren: gehaald!' : `Voor 3 sterren: <b>${need.toFixed(1)} s</b> of sneller`}`;
     const ul = [];
     for (const [id, lv] of Object.entries(UNLOCK)) if (!wasChar[id] && charOpen(id)) ul.push(`Nieuw personage vrijgespeeld: ${CHARS[id].name}!`);
-    if (stars > prevStars) { const gain = stars - prevStars; ul.push(`+${gain} ${gain === 1 ? 'ster' : 'sterren'} voor de garage (${freeStars()} beschikbaar)`); }
+    if (!wasAll3 && all3()) ul.push('Alle levels met 3 sterren! Profielfoto Te-Un Racer vrijgespeeld.');
+    ul.push(`★ ${freeStars()} sterren in totaal voor de garage`);
     $('eUnlock').hidden = !ul.length; $('eUnlock').innerHTML = ul.join('<br>');
     $('eNext').hidden = g.n >= LEVEL_COUNT;
     $('end').hidden = false;
   }, 900);
+}
+
+// ---- flips: een hele rotatie in de lucht haalt tijd van je klok
+const flipBonus = (n) => 2 * n - 1;
+function trackFlips(dt, b) {
+  if (g.state !== 'run') return;
+  const grounded = b.ground[0] || b.ground[1];
+  if (!grounded) { g.airRot += b.w * dt; g.airT += dt; }
+  else {
+    if (g.airT > 0.3) {
+      const n = Math.floor(Math.abs(g.airRot) / (Math.PI * 2) + 0.2);
+      if (n >= 1) g.pend = { t: 0.4, n, back: g.airRot > 0 };
+    }
+    g.airRot = 0; g.airT = 0;
+  }
+  if (g.pend) {
+    g.pend.t -= dt;
+    if (g.pend.t <= 0) {
+      const { n, back } = g.pend; g.pend = null;
+      const bonus = Math.min(flipBonus(n), g.tl);
+      g.tl -= bonus; g.flipBonus += bonus; g.flipCount += n;
+      const name = n === 1 ? (back ? 'Backflip' : 'Frontflip') : n === 2 ? `Dubbele ${back ? 'backflip' : 'frontflip'}` : `${n}x ${back ? 'backflip' : 'frontflip'}`;
+      flipPopup(`${name}! -${flipBonus(n).toFixed(1)} s`);
+      beep(660, 0.12, 'triangle', 0.2); beep(990, 0.18, 'triangle', 0.2, 0.1);
+    }
+  }
+}
+let popT = null;
+function flipPopup(text) {
+  const el = $('flip'); el.textContent = text; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+  const t = $('hudTime'); t.classList.remove('flash'); void t.offsetWidth; t.classList.add('flash');
+  clearTimeout(popT); popT = setTimeout(() => el.classList.remove('on'), 1600);
+}
+
+// ---- de bestuurder van de gouden vape hoest af en toe
+function cough() {
+  noise(0.12, 0.25); beep(150, 0.1, 'sawtooth', 0.12, 0, -50);
+  setTimeout(() => { noise(0.12, 0.25); beep(140, 0.1, 'sawtooth', 0.12, 0, -50); }, 190);
+  setTimeout(() => { noise(0.18, 0.3); beep(130, 0.16, 'sawtooth', 0.12, 0, -60); }, 380);
+}
+function updateCough(dt, b) {
+  const c = g.cough;
+  if (c.t > 0) { c.t -= dt; return; }
+  if (b.vid !== 'vape' || g.state !== 'run') return;
+  c.next -= dt;
+  if (c.next <= 0) { c.t = 0.95; c.next = 7 + Math.random() * 7; cough(); }
 }
 
 function anyInput() { const i = g.input; return i.gas || i.brake || i.left || i.right; }
@@ -182,13 +233,10 @@ function update(dt) {
   const inp = g.state === 'run' || g.state === 'done' ? (g.state === 'done' ? NOINP : g.input) : NOINP;
   if (active || true) {
     const n = 8;
-    for (let i = 0; i < n; i++) stepBike(b, g.terr, g.state === 'ready' ? NOINP : inp, dt / n);
+    for (let i = 0; i < n; i++) stepBike(b, g.terr, g.state === 'ready' ? NOINP : inp, dt / n, g.ceilT);
   }
-  // de vape botst zacht tegen het plafond
-  if (VEH[b.vid].fly && !b.crash) {
-    const ceilY = ceilAt(g.level, b.x) - 1.5;
-    if (b.y > ceilY) { b.y = ceilY; if (b.vy > 0) b.vy = 0; }
-  }
+  trackFlips(dt, b);
+  updateCough(dt, b);
   b.crank += b.spin[0] * dt * 0.35;
   b._dt = dt;
   if (g.state === 'run') {
@@ -309,8 +357,7 @@ function setPaused(v) {
 }
 $('btnPause').addEventListener('click', () => setPaused(true));
 $('pResume').addEventListener('click', () => setPaused(false));
-$('pRetry').addEventListener('click', () => startLevel(g.n));
-$('pMenu').addEventListener('click', () => setScreen('levels'));
+$('pMenu').addEventListener('click', () => { paused = false; setScreen('menu'); });
 $('btnSound').addEventListener('click', () => { soundOn = !soundOn; $('btnSound').textContent = soundOn ? '🔊' : '🔇'; if (!soundOn) engine(0, false, 'fatbike', false); });
 $('mPlay').addEventListener('click', () => { audio(); setScreen('levels'); });
 $('mGarage').addEventListener('click', () => { audio(); setScreen('garage'); });
@@ -321,13 +368,23 @@ $('eRetry').addEventListener('click', () => startLevel(g.n));
 $('eNext').addEventListener('click', () => startLevel(g.n + 1));
 addEventListener('resize', () => { R.resize(); $('rotate').hidden = !(screen === 'play' && innerHeight > innerWidth); });
 
+// ontwikkelaarstruc in de garage: 12x snel tikken op je sterren = 100 sterren
+{
+  let n = 0, t = 0;
+  const box = $('gStars');
+  box.style.cursor = 'pointer';
+  box.addEventListener('click', () => {
+    const now = performance.now(); n = now - t > 1800 ? 1 : n + 1; t = now;
+    if (n >= 12) { n = 0; P.bonus = (P.bonus || 0) + 100; save(); renderGarage(); toast('Developer: +100 sterren', 2400); beep(880, 0.2); }
+  });
+}
 // ontwikkelaarstruc: 3x snel tikken linksboven = 100 sterren en alles open
 {
   let n = 0, t = 0;
   addEventListener('pointerdown', (e) => {
     if (e.clientX > 80 || e.clientY > 80 || screen === 'play') return;
     const now = performance.now(); n = now - t > 1800 ? 1 : n + 1; t = now;
-    if (n >= 3) { n = 0; P.dev = true; save(); refreshAll(); toast('Developer: alles open + 100 sterren', 2600); }
+    if (n >= 3) { n = 0; if (!P.dev) { P.dev = true; P.bonus = (P.bonus || 0) + 100; } save(); refreshAll(); toast('Developer: alles open + 100 sterren', 2600); }
   }, true);
 }
 

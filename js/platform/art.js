@@ -59,6 +59,8 @@ export function teunSVG(opts = {}) {
 export function avatarSVG(kind = 'teun') {
   if (kind === 'train') return trainAvatar();
   if (kind === 'puzzle') return `<div class="av-face">${teunSVG({ crop: 'face' })}${PIECE_BADGE}</div>`;
+  if (kind === 'teun50k') return `<div class="av-face">${teunSVG({ crop: 'face' })}${MEDAL_BADGE}</div>`;
+  if (kind === 'racer') return racerAvatar();
   return `<div class="av-face">${teunSVG({ crop: 'face' })}</div>`;
 }
 
@@ -81,18 +83,37 @@ function trainAvatar() {
 
 // puzzelstukje dat Te-Un vasthoudt (profielfoto uit Te-Un Puzzel)
 const PIECE_BADGE = `<svg class="av-piece" viewBox="0 0 64 64" aria-hidden="true"><path d="M8 16h15a8 8 0 1 1 18 0h15v15a8 8 0 1 0 0 18v15H41a8 8 0 1 0-18 0H8V49a8 8 0 1 0 0-18z" fill="#ffc917" stroke="#0b3a99" stroke-width="4" stroke-linejoin="round"/><path d="M18 24h10M18 30h6" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"/></svg>`;
+// gouden 50K-medaille (profielfoto voor 50.000 punten in Te-Un Surfers)
+const MEDAL_BADGE = `<svg class="av-piece" viewBox="0 0 64 64" aria-hidden="true"><path d="M20 4h10l4 14H24zM44 4H34l-4 14h10z" fill="#d7191f" stroke="#7a0d12" stroke-width="2"/><circle cx="32" cy="40" r="20" fill="#ffc917" stroke="#8a5a00" stroke-width="4"/><circle cx="32" cy="40" r="14" fill="none" stroke="#fff3b0" stroke-width="2"/><text x="32" y="46" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="15" fill="#8a5a00">50K</text></svg>`;
+// Te-Un Racer: motorhelm met klep en bril
+function racerAvatar() {
+  return `<svg class="avsvg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Te-Un Racer">
+<defs><linearGradient id="rbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb4a8"/><stop offset="1" stop-color="#ff6a5a"/></linearGradient><linearGradient id="rhelm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5a52"/><stop offset=".55" stop-color="#d7191f"/><stop offset="1" stop-color="#8f0d12"/></linearGradient></defs>
+<rect width="100" height="100" fill="url(#rbg)"/>
+<path d="M14 100 Q16 74 50 72 Q84 74 86 100Z" fill="#d7191f" stroke="#16110e" stroke-width="3"/><path d="M50 74v26" stroke="#fff" stroke-width="2.5"/>
+<ellipse cx="53" cy="52" rx="24" ry="24" fill="#efb18d" stroke="#16110e" stroke-width="3"/>
+<path d="M74 50 Q78 20 46 20 Q18 20 20 50 Q20 74 40 76 L46 66 L46 50 L66 50Z" fill="url(#rhelm)" stroke="#16110e" stroke-width="3" stroke-linejoin="round"/>
+<path d="M30 40 Q46 20 70 34" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+<rect x="48" y="43" width="28" height="15" rx="6" fill="#16181c" stroke="#16110e" stroke-width="2"/><rect x="51" y="46" width="22" height="9" rx="4" fill="#7cc7ff"/><path d="M53 54l4-8h3l-4 8z" fill="#fff" opacity=".7"/>
+<path d="M46 70 Q64 78 78 62 L74 58 Q64 68 50 64Z" fill="#d7191f" stroke="#16110e" stroke-width="3" stroke-linejoin="round"/>
+<path d="M46 26 L88 24 Q94 26 88 32 L56 33Z" fill="#b3121c" stroke="#16110e" stroke-width="3" stroke-linejoin="round"/>
+</svg>`;
+}
 
+// Profielfoto's. Wie een vergrendelde wil, moet de opdracht in de game doen. 'check' krijgt de voortgang van die game.
+const SURFERS_ALL = ['wheelchair', 'cow', 'train', 'skin_conductor', 'board_cow'];
 export const AVATARS = [
   { id: 'teun', name: 'Te-Un', desc: 'De kabouter zelf' },
-  { id: 'train', name: 'NS-trein', desc: 'Een gele trein' },
-  { id: 'puzzle', name: 'Puzzel-Te-Un', desc: 'Voltooi level 1 t/m 4 van Te-Un Puzzel', unlock: { game: 'te-un-puzzel', link: '/g/te-un-puzzel' } },
+  { id: 'train', name: 'NS-trein', desc: 'Een gele trein', unlock: { game: 'te-un-surfers', how: 'Koop alles in de winkel van Te-Un Surfers', check: (d) => SURFERS_ALL.every((k) => d.owned && d.owned[k]) } },
+  { id: 'teun50k', name: 'Te-Un 50K', desc: 'Te-Un met gouden medaille', unlock: { game: 'te-un-surfers', how: 'Haal 50.000 punten in Te-Un Surfers', check: (d) => (d.best || 0) >= 50000 } },
+  { id: 'puzzle', name: 'Puzzel-Te-Un', desc: 'Te-Un met puzzelstukje', unlock: { game: 'te-un-puzzel', how: 'Maak level 1 t/m 4 van Te-Un Puzzel af', check: (d) => [1, 2, 3, 4].every((n) => d.done && d.done[n]) } },
+  { id: 'racer', name: 'Te-Un Racer', desc: 'Te-Un met motorhelm', unlock: { game: 'te-un-x3m', how: 'Haal 3 sterren op alle 25 levels van Te-Un X3M', check: (d) => Array.from({ length: 25 }, (_, i) => i + 1).every((n) => (d.stars && d.stars[n]) >= 3) } },
 ];
 
 // een profielfoto met een slot: de voortgang van de bijbehorende game bepaalt of hij open is
 export function avatarUnlocked(a, progress) {
   if (!a.unlock) return true;
-  const d = progress && progress.done;
-  return !!d && [1, 2, 3, 4].every((n) => d[n]);
+  return !!progress && !!a.unlock.check(progress);
 }
 
 // Het officiele logo staat in /assets/logo-256.png. Ontbreekt het bestand, dan tekenen we de kabouter zelf.

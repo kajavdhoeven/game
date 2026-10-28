@@ -1,7 +1,6 @@
 // Fysica van de voertuigen: een lichaam met twee wielen die als veren op het terrein duwen.
-import { ceilAt } from './levels.js';
 export const G = 12;
-const K = 3600, C = 46;
+const K = 3600, C = 150;
 
 export const VEH = {
   fatbike: { id: 'fatbike', name: 'Fatbike', r: 0.46, wb: 1.56, wy: -0.33, F: 15, vmax: 11.5, mu: 1.15, brake: 9, lean: 12, leanAir: 16, rev: 3, I: 0.55, parMul: 1, price: 0, desc: 'Dikke banden, rustig tempo. Prima om te leren.' },
@@ -9,6 +8,8 @@ export const VEH = {
   vape: { id: 'vape', name: 'Gouden Vape', fly: true, r: 0.22, wb: 1.5, wy: -0.28, thrust: 13, vmax: 16, mu: 0.4, rev: 0.5, lean: 10, leanAir: 12, I: 0.55, parMul: 0.55, price: 36, desc: 'Vliegt! Gas = vooruit en omhoog, leun om te sturen.' },
 };
 export const VEH_ORDER = ['fatbike', 'motor', 'vape'];
+
+const ROOF = [[-0.02, 1.0, 0.3], [0.6, 0.75, 0.22], [-0.62, 0.72, 0.22]];
 
 export class Terrain {
   constructor(pts) {
@@ -60,7 +61,7 @@ const xf = (b, lx, ly) => {
 };
 export const headPos = (b) => xf(b, -0.02, 1.0);
 
-export function stepBike(b, terr, inp, dt) {
+export function stepBike(b, terr, inp, dt, ceilT) {
   const V = VEH[b.vid];
   const c = Math.cos(b.a), s = Math.sin(b.a);
   const live = !b.crash;
@@ -79,7 +80,7 @@ export function stepBike(b, terr, inp, dt) {
     anyGround = true;
     const vpx = b.vx - b.w * ry, vpy = b.vy + b.w * rx;
     const vn = vpx * q.nx + vpy * q.ny;
-    const Fn = Math.min(95, Math.max(0, K * q.pen - C * vn));
+    const Fn = Math.min(260, Math.max(0, K * q.pen - C * vn));
     let Fx = q.nx * Fn, Fy = q.ny * Fn;
     const tx = q.ny, ty = -q.nx;
     const vt = vpx * tx + vpy * ty;
@@ -96,6 +97,21 @@ export function stepBike(b, terr, inp, dt) {
     ax += Fx; ay += Fy;
     aw += (rx * Fy - ry * Fx) / V.I;
     b.N[i] = Fn; b.vt[i] = vt;
+  }
+  // het plafond is een massieve muur: ons dak botst ertegenaan
+  if (ceilT) {
+    for (const [lx, ly, rr] of ROOF) {
+      const rx = c * lx - s * ly, ry = s * lx + c * ly;
+      const q = ceilT.query(b.x + rx, b.y + ry, rr);
+      if (!q) continue;
+      const vpx = b.vx - b.w * ry, vpy = b.vy + b.w * rx;
+      const vn = vpx * q.nx + vpy * q.ny;
+      const Fn = Math.min(260, Math.max(0, K * q.pen - C * vn));
+      const tx = q.ny, ty = -q.nx, vt = vpx * tx + vpy * ty;
+      const Fx = q.nx * Fn + tx * -vt * 2, Fy = q.ny * Fn + ty * -vt * 2;
+      ax += Fx; ay += Fy;
+      aw += (rx * Fy - ry * Fx) / V.I;
+    }
   }
   if (V.fly && gas) {
     ax += c * V.thrust; ay += s * V.thrust + G * 0.5;
@@ -149,7 +165,6 @@ export function crashTest(b, terr, level, t) {
   const [bx, by] = xf(b, -0.5, 0.55);
   const q2 = terr.query(bx, by, 0.2);
   if (q2 && q2.pen > 0.05) return 'back';
-  if (!V.fly && hy > ceilAt(level, hx) - 0.15) return 'ceiling';
   const circles = [[hx, hy, 0.3], [...xf(b, 0, 0.1), 0.45]];
   for (const lx of [-V.wb / 2, V.wb / 2]) circles.push([...xf(b, lx, V.wy), V.r * 0.85]);
   for (const [cx, cy, r] of circles) {

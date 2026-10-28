@@ -398,7 +398,8 @@ export class Renderer {
       c.lineWidth = w + 0.07; c.strokeStyle = OUT; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
       c.lineWidth = w; c.strokeStyle = col; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
     };
-    const col = '#ffb81c', col2 = '#e08a00';
+    const red = g.character === 'racer';
+    const col = red ? '#e32b2b' : '#ffb81c', col2 = red ? '#a81414' : '#e08a00';
     // vork + frame
     tube(0.5, 0.42, fx, wy, 0.07, '#4b5560');
     tube(rx, wy, -0.12, 0.28, 0.07, col2);
@@ -437,7 +438,8 @@ export class Renderer {
     this.wheel(c, rx, wy, V.r, this.spinAcc(b, 0, time), 'moto');
     this.wheel(c, fx, wy, V.r, this.spinAcc(b, 1, time), 'moto');
     c.lineWidth = 0.035; c.strokeStyle = OUT;
-    const orange = '#ff5a1f', dark = '#c93d0c';
+    const red = g.character === 'racer';
+    const orange = red ? '#e01e24' : '#ff5a1f', dark = red ? '#8f0d12' : '#c93d0c', light = red ? '#ff6a5a' : '#ff8a4a';
     // voorvork
     c.lineCap = 'round';
     c.strokeStyle = OUT; c.lineWidth = 0.14; c.beginPath(); c.moveTo(0.46, 0.62); c.lineTo(fx, wy); c.stroke();
@@ -457,7 +459,7 @@ export class Renderer {
     c.fillStyle = '#c9d0d8'; c.beginPath(); c.arc(0.02, -0.1, 0.1, 0, TAU); c.fill(); c.stroke();
     // plastic: tank, kuip, zadel, spatborden
     const body = c.createLinearGradient(0, 0.2, 0, 0.8);
-    body.addColorStop(0, dark); body.addColorStop(0.5, orange); body.addColorStop(1, '#ff8a4a');
+    body.addColorStop(0, dark); body.addColorStop(0.5, orange); body.addColorStop(1, light);
     c.fillStyle = body;
     c.beginPath(); c.moveTo(-0.1, 0.12); c.quadraticCurveTo(0.1, 0.3, 0.2, 0.72); c.quadraticCurveTo(0.5, 0.82, 0.58, 0.6); c.lineTo(0.5, 0.36); c.quadraticCurveTo(0.3, 0.12, -0.1, 0.12); c.closePath(); c.fill(); c.stroke();
     c.fillStyle = '#16181c'; c.beginPath(); c.moveTo(-0.65, 0.4); c.quadraticCurveTo(-0.3, 0.34, 0.1, 0.46); c.lineTo(0.1, 0.56); c.quadraticCurveTo(-0.3, 0.5, -0.65, 0.5); c.closePath(); c.fill(); c.stroke();
@@ -563,7 +565,14 @@ export function riderPose(b, g, time) {
   else { footB = [rig.footR[0], rig.footR[1] + 0.0]; footF = [rig.footF[0], rig.footF[1]]; }
   const lerpPt = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
   const hand = [rig.hand[0] + k.lean * 0.1, rig.hand[1]];
-  return { x: b.x, y: b.y, a: b.a, hip, sh, head, hand, footB, footF, torsoA: ta, legs: true, mode: b.vid, speed: Math.abs(b.vx), vx: b.vx, k, ground: b.air < 0.05 };
+  let cough = 0, headTilt = 0;
+  if (b.vid === 'vape' && g.cough && g.cough.t > 0) {
+    cough = Math.max(0, Math.min(1, g.cough.t / 0.18, (0.95 - g.cough.t) / 0.15));
+    hand[0] += (head[0] + 0.22 - hand[0]) * cough; hand[1] += (head[1] - 0.12 - hand[1]) * cough;
+    headTilt = -0.22 * cough + Math.sin(time * 40) * 0.07 * cough;
+    head[1] += Math.sin(time * 40) * 0.025 * cough;
+  }
+  return { x: b.x, y: b.y, a: b.a, hip, sh, head, headTilt, hand, footB, footF, torsoA: ta, legs: true, mode: b.vid, speed: Math.abs(b.vx), vx: b.vx, k, ground: b.air < 0.05 };
 }
 
 function drawBody(c, p, ch, time) {
@@ -581,7 +590,7 @@ function drawBody(c, p, ch, time) {
     const [ex, ey, hx, hy] = limp ? [p.elb[back ? 0 : 1][0], p.elb[back ? 0 : 1][1], p.hnd[back ? 0 : 1][0], p.hnd[back ? 0 : 1][1]] : ik(sx, sy, p.hand[0] - (back ? 0.03 : 0), p.hand[1], 0.3, 0.3, -1);
     limb(c, [[sx, sy], [ex, ey], [hx, hy]], 0.12, back ? col.shirtD : col.shirt, col.sleeve);
     // hand
-    c.fillStyle = col.skin; c.strokeStyle = OUT; c.lineWidth = 0.035; c.beginPath(); c.arc(hx, hy, 0.065, 0, TAU); c.fill(); c.stroke();
+    c.fillStyle = col.glove || col.skin; c.strokeStyle = OUT; c.lineWidth = 0.035; c.beginPath(); c.arc(hx, hy, col.glove ? 0.08 : 0.065, 0, TAU); c.fill(); c.stroke();
     if (!back && col.watches) {
       const ang = Math.atan2(hy - ey, hx - ex);
       c.save(); c.translate(hx - Math.cos(ang) * 0.1, hy - Math.sin(ang) * 0.1); c.rotate(ang);
@@ -609,6 +618,12 @@ function drawBody(c, p, ch, time) {
     c.restore();
   } else if (col.logo) {
     c.fillStyle = 'rgba(255,255,255,.35)'; c.beginPath(); c.arc(p.hip[0] + tx * 0.55 + nx * 0.02, p.hip[1] + ty * 0.55 + ny * 0.02, 0.07, 0, TAU); c.fill();
+  }
+  if (col.jacket) {
+    c.strokeStyle = '#fff'; c.lineWidth = 0.035;
+    c.beginPath(); c.moveTo(p.hip[0] + tx * 0.1 + nx * 0.05, p.hip[1] + ty * 0.1 + ny * 0.05); c.lineTo(p.sh[0] + nx * 0.05, p.sh[1] + ny * 0.05); c.stroke();
+    c.fillStyle = '#16181c'; c.beginPath(); c.arc(p.hip[0] + tx * 0.4 + nx * 0.14, p.hip[1] + ty * 0.4 + ny * 0.14, 0.04, 0, TAU); c.fill();
+    c.fillStyle = '#fff'; c.fillRect(p.hip[0] + tx * 0.32 - nx * 0.2 - 0.02, p.hip[1] + ty * 0.32 - ny * 0.2 - 0.02, 0.12, 0.045);
   }
   // broekriem
   c.fillStyle = col.pants; c.beginPath(); c.arc(p.hip[0], p.hip[1], 0.2, 0, TAU); c.fill(); c.stroke();
@@ -654,7 +669,7 @@ function head(c, p, col, time, flutter) {
   // oor
   c.fillStyle = col.skin; c.beginPath(); c.ellipse(-0.1, -0.02, 0.07, 0.1, 0.2, 0, TAU); c.fill(); c.stroke();
   // haar
-  if (col.hairStyle) {
+  if (col.hairStyle && !col.helmet) {
     c.fillStyle = col.hair; c.beginPath();
     if (col.hairStyle === 'short') { c.moveTo(-0.26, 0.04); c.quadraticCurveTo(-0.28, 0.32, 0.02, 0.32); c.quadraticCurveTo(0.26, 0.3, 0.27, 0.1); c.quadraticCurveTo(0.12, 0.2, -0.02, 0.14); c.quadraticCurveTo(-0.14, 0.2, -0.26, 0.04); }
     else { c.moveTo(-0.27, 0.0); c.quadraticCurveTo(-0.3, 0.34, 0.04, 0.34); c.quadraticCurveTo(0.28, 0.3, 0.27, 0.06); c.quadraticCurveTo(0.2, 0.2, 0.08, 0.15); c.quadraticCurveTo(-0.06, 0.24, -0.27, 0.0); }
@@ -668,13 +683,40 @@ function head(c, p, col, time, flutter) {
   c.strokeStyle = OUT; c.lineWidth = 0.035; c.beginPath(); c.moveTo(ex - 0.08, 0.15); c.lineTo(ex + 0.08, 0.17); c.stroke(); // wenkbrauw
   c.fillStyle = col.skin; c.beginPath(); c.moveTo(0.22, 0.0); c.lineTo(0.31, -0.04); c.lineTo(0.22, -0.08); c.closePath(); c.fill(); c.stroke(); // neus
   c.strokeStyle = '#7a2c1c'; c.lineWidth = 0.03; c.beginPath(); c.moveTo(0.08, -0.14); c.quadraticCurveTo(0.17, -0.19, 0.24, -0.12); c.stroke(); // mond
-  if (col.glasses) {
+  if (col.glasses && !col.helmet) {
     c.strokeStyle = col.glasses; c.lineWidth = col.thin ? 0.03 : 0.05;
     c.beginPath(); c.arc(ex, 0.05, 0.105, 0, TAU); c.stroke();
     c.beginPath(); c.moveTo(ex - 0.1, 0.07); c.lineTo(-0.2, 0.09); c.stroke();
     c.fillStyle = 'rgba(255,255,255,.35)'; c.beginPath(); c.arc(ex - 0.04, 0.09, 0.025, 0, TAU); c.fill();
   }
   // hoed
+  if (col.helmet) {
+    c.strokeStyle = OUT; c.lineWidth = 0.05;
+    const hg = c.createLinearGradient(-0.3, 0.3, 0.3, -0.2);
+    hg.addColorStop(0, '#ff4a4a'); hg.addColorStop(0.5, '#d7191f'); hg.addColorStop(1, '#8f0d12');
+    c.fillStyle = hg;
+    // schaal over de hele kop, met een open gezichtsvlak
+    c.beginPath(); c.moveTo(0.32, 0.12); c.quadraticCurveTo(0.34, 0.38, 0.0, 0.4); c.quadraticCurveTo(-0.38, 0.4, -0.38, 0.0); c.quadraticCurveTo(-0.38, -0.3, -0.05, -0.31);
+    c.lineTo(0.06, -0.2); c.lineTo(0.06, 0.1); c.lineTo(0.3, 0.1); c.closePath(); c.fill(); c.stroke();
+    // gezichtsopening
+    c.fillStyle = col.skin; c.beginPath(); c.roundRect(0.04, -0.12, 0.27, 0.27, 0.07); c.fill(); c.stroke();
+    // oog + bril
+    c.fillStyle = '#fff'; c.beginPath(); c.ellipse(0.19, 0.04, 0.055, 0.06, 0, 0, TAU); c.fill();
+    c.fillStyle = '#1a1210'; c.beginPath(); c.arc(0.21, 0.04, 0.028, 0, TAU); c.fill();
+    c.fillStyle = '#16181c'; c.beginPath(); c.roundRect(0.1, -0.03, 0.22, 0.16, 0.05); c.fill();
+    c.fillStyle = 'rgba(120,200,255,.75)'; c.beginPath(); c.roundRect(0.13, -0.0, 0.17, 0.1, 0.04); c.fill();
+    c.fillStyle = 'rgba(255,255,255,.7)'; c.beginPath(); c.moveTo(0.15, 0.08); c.lineTo(0.2, 0.08); c.lineTo(0.17, 0.0); c.lineTo(0.14, 0.0); c.closePath(); c.fill();
+    // kinbeugel
+    c.fillStyle = '#d7191f'; c.strokeStyle = OUT; c.lineWidth = 0.05;
+    c.beginPath(); c.moveTo(0.02, -0.2); c.quadraticCurveTo(0.2, -0.3, 0.34, -0.12); c.lineTo(0.3, -0.04); c.quadraticCurveTo(0.2, -0.17, 0.08, -0.14); c.closePath(); c.fill(); c.stroke();
+    c.strokeStyle = '#16181c'; c.lineWidth = 0.025; c.beginPath(); c.moveTo(0.14, -0.2); c.lineTo(0.14, -0.15); c.moveTo(0.2, -0.19); c.lineTo(0.2, -0.14); c.stroke();
+    // klep
+    c.fillStyle = '#b3121c'; c.strokeStyle = OUT; c.lineWidth = 0.05;
+    c.beginPath(); c.moveTo(0.04, 0.3); c.lineTo(0.46, 0.27); c.quadraticCurveTo(0.5, 0.25, 0.44, 0.2); c.lineTo(0.12, 0.2); c.closePath(); c.fill(); c.stroke();
+    // witte streep + glans
+    c.strokeStyle = '#fff'; c.lineWidth = 0.05; c.beginPath(); c.moveTo(-0.3, 0.2); c.quadraticCurveTo(-0.05, 0.42, 0.22, 0.3); c.stroke();
+    c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = 0.03; c.beginPath(); c.moveTo(-0.2, 0.0); c.quadraticCurveTo(-0.27, 0.2, -0.1, 0.32); c.stroke();
+  }
   if (col.hat) {
     const tip = [-0.55 - wind * 0.5, 0.78 - wind * 0.5 + flutter * 3];
     const g = c.createLinearGradient(0, 0.2, -0.4, 0.9);
@@ -695,10 +737,10 @@ function head(c, p, col, time, flutter) {
 export const CHARS = {
   teun: { id: 'teun', name: 'Te-Un', skin: '#efb18d', skinL: '#ffd3b5', hair: '#4a2f1f', shirt: '#2f6fe0', shirtD: '#1f4db4', sleeve: '#efb18d', pants: '#1d1d24', pantsD: '#101015', shoe: '#2f6fe0', shoeD: '#1f4db4', stripes: true, hat: true, glasses: '#0b0b0d', logo: true, hairStyle: 'short' },
   orange: { id: 'orange', name: 'Oranje shirt', skin: '#e7a67f', skinL: '#f8cba7', hair: '#101012', shirt: '#ff7a1a', shirtD: '#d85f0a', sleeve: '#e7a67f', pants: '#2a2b33', pantsD: '#18181d', shoe: '#f4f4f4', shoeD: '#cfcfcf', longHair: true, hairStyle: 'long', watches: true },
-  green: { id: 'green', name: 'Groene bril', skin: '#f0b996', skinL: '#ffd9bd', hair: '#e8741c', shirt: '#2fa64a', shirtD: '#1f7c35', sleeve: '#f0b996', pants: '#283454', pantsD: '#161d33', shoe: '#ffffff', shoeD: '#cfd8cf', hairStyle: 'short', glasses: '#14110f', thin: true },
+  racer: { id: 'racer', name: 'Te-Un Racer', skin: '#efb18d', skinL: '#ffd3b5', hair: '#4a2f1f', shirt: '#d7191f', shirtD: '#a60f14', sleeve: '#d7191f', pants: '#15161a', pantsD: '#0a0a0d', shoe: '#d7191f', shoeD: '#a60f14', stripes: true, helmet: true, jacket: true, glove: '#16181c' },
   gold: { id: 'gold', name: 'Gouden regenboog Te-Un', skin: '#ffd76a', skinL: '#fff2b0', hair: '#c98a14', shirt: '#ffcc33', shirtD: '#d49a10', sleeve: '#ffd76a', pants: '#e0a21a', pantsD: '#b87d0c', shoe: '#ffe27a', shoeD: '#d9a92e', stripes: true, hat: true, rainbow: true, glasses: '#7a4d00', stripe: true, sparkle: true, hairStyle: 'short' },
 };
-export const CHAR_ORDER = ['teun', 'orange', 'green', 'gold'];
+export const CHAR_ORDER = ['teun', 'orange', 'racer', 'gold'];
 
 // ---- uitgeschakelde bestuurder (na een crash)
 export function limpPose(r, time) {

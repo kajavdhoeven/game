@@ -73,3 +73,10 @@ button:disabled { filter: grayscale(.8); opacity: .6; cursor: not-allowed; }
 #touch button.gas { width: 96px; height: 96px; background: rgba(255,170,40,.65); }
 #touch button.on { background: #ffd25a; transform: translateY(3px); }
 @media (max-width: 720px) { .grid { grid-template-columns: repeat(4, 1fr); } .ink { height: 46px; font-size: 22px; } .hint { display: none; } }
+
+.flip { position: fixed; left: 50%; top: 22%; transform: translateX(-50%) scale(.6); font-size: clamp(28px, 6vw, 54px); font-weight: 700; color: #ffe27a; -webkit-text-stroke: 4px #14100c; paint-order: stroke fill; text-shadow: 0 5px 0 #14100c; opacity: 0; pointer-events: none; white-space: nowrap; z-index: 12; }
+.flip.on { animation: flip 1.5s ease-out both; }
+@keyframes flip { 0% { opacity: 0; transform: translateX(-50%) scale(.5); } 15% { opacity: 1; transform: translateX(-50%) scale(1.15); } 30% { transform: translateX(-50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateX(-50%) translateY(-30px) scale(1); } }
+#hudTime.flash { animation: tflash .8s; }
+@keyframes tflash { 0%, 60% { color: #6dff9a; transform: scale(1.25); } 100% { color: #fff; transform: scale(1); } }
+.chip#gStars { user-select: none; }

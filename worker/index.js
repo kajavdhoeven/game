@@ -31,11 +31,11 @@ export class Leaderboard {
     if (request.method === 'GET') {
       const entries = Object.values(await this.load());
       const top = (key) => entries
-        .filter((e) => e[key] > 0)
+        .filter((e) => (e[key] || 0) > 0)
         .sort((a, b) => b[key] - a[key])
         .slice(0, 25)
-        .map((e) => ({ pid: e.pid.slice(0, 8), name: e.name, distance: e.distance, coins: e.coins }));
-      return json({ distance: top('distance'), coins: top('coins') });
+        .map((e) => ({ pid: e.pid.slice(0, 8), name: e.name, distance: e.distance, coins: e.coins, score: e.score || 0, runDist: e.sd || 0, runCoins: e.sc || 0 }));
+      return json({ score: top('score'), distance: top('distance'), coins: top('coins') });
     }
     if (request.method === 'POST' && url.pathname.endsWith('/score')) {
       let b;
@@ -53,11 +53,14 @@ export class Leaderboard {
       e.name = cleanName(b.name);
       e.distance = Math.max(e.distance, distance);
       e.coins = Math.max(e.coins, coins);
+      // de score is precies die van de game: afstand + 10 per munt. We bewaren de beste run als geheel.
+      const score = distance + coins * 10;
+      if (score > (e.score || 0)) { e.score = score; e.sd = distance; e.sc = coins; }
       e.t = now;
       entries[pid] = e;
       const all = Object.values(entries);
       if (all.length > KEEP) {
-        all.sort((a, b2) => (b2.distance + b2.coins) - (a.distance + a.coins));
+        all.sort((a, b2) => (b2.score || 0) - (a.score || 0));
         const keep = {};
         all.slice(0, KEEP).forEach((x) => { keep[x.pid] = x; });
         await this.state.storage.put('entries', keep);
