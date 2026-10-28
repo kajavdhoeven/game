@@ -1319,14 +1319,7 @@ function collide() {
     if (p.type === 'refill' && (S.veh || S.vehCharge[P.vehicle] || S.t - S.vehEndT < 15 || !P.vehicle)) continue;
     collectPickup(p);
   }
-  // treinspotters aanrijden
-  for (const sp of spotters) {
-    if (sp.hit || sp.plat) continue;
-    if (!sweep(sp.z, sp.pz ?? sp.z, 1.0)) continue;
-    if (Math.abs(S.x - sp.x) > 2.15 || Math.sign(S.x) !== Math.sign(sp.x)) continue;
-    if (S.y > 1.1) continue;
-    hitSpotter(sp, 'ram');
-  }
+  // treinspotters pak je alleen met F (waterpistool, fluitje of camera), niet door ze aan te lopen
 }
 
 // ---------------------------------------------------------------- update
