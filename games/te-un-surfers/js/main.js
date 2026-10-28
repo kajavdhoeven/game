@@ -340,7 +340,7 @@ function spawnPattern() {
   const spd = Math.max(S.speed, 18);
   S.patterns++;
 
-  const weights = { coins: 1.6, trains: 3.4, barriers: 3.2, mixed: 2, ramp: 2.6 + diff, passing: 1.6 + diff * 1.4, spotter: inTunnel ? 0 : 1.8, platform: plats.length ? 3 : 0 };
+  const weights = { coins: 0.7, trains: 3.8, barriers: 3.8, mixed: 2.8, ramp: 2.4 + diff, passing: 1.6 + diff * 1.4, spotter: inTunnel ? 0 : 1.8, platform: plats.length ? 3 : 0 };
   let total = 0;
   Object.values(weights).forEach((w) => { total += w; });
   let roll = rand() * total;
@@ -370,7 +370,7 @@ function spawnPattern() {
     if (rand() < 0.22) maybePowerup(safe, z0 - 8);
     len = 26;
   } else if (type === 'trains') {
-    const both = rand() < 0.3 + 0.4 * diff;
+    const both = rand() < 0.5 + 0.4 * diff;
     const lanes = both ? others : [pick(others)];
     lanes.forEach((l) => {
       const o = addTrain(l, z0, { v: trainV() });
@@ -411,7 +411,7 @@ function spawnPattern() {
     if (rand() < 0.3) maybePowerup(pick(rest), z0 - 10);
   } else if (type === 'barriers') {
     others.forEach((l) => {
-      if (rand() < 0.9) {
+      if (rand() < 0.95) {
         const kind = pick(['low', 'low', 'high', 'crate', 'cone']);
         const z = z0 - rand() * 5;
         const o = addBarrier(l, z, kind);
@@ -423,13 +423,21 @@ function spawnPattern() {
     coinLine(safe, z0, 8, 2.4);
     if (rand() < 0.18) maybePowerup(safe, z0 - 10);
     len = 14;
+    // tweede rij vlak erachter: de vrije baan schuift hooguit een baan op
+    const safe2 = clamp(safe + pick([-1, 0, 1]), -1, 1);
+    [-1, 0, 1].filter((l) => l !== safe2).forEach((l) => {
+      if (rand() < 0.9) items.push(addBarrier(l, z0 - 11 - rand() * 3, pick(['low', 'high', 'crate', 'cone'])));
+    });
+    S.safe = safe2;
+    len = 24;
   } else if (type === 'mixed') {
     const [a, b] = others;
     const o = addTrain(a, z0, { v: 8 + rand() * 6 });
     items.push(o);
     trainLanes.push(a);
     items.push(addBarrier(b, z0 - 3, pick(['low', 'high', 'cone'])));
-    coinLine(safe, z0, 7, 2.3);
+    items.push(addBarrier(safe, z0 - 14 - rand() * 4, pick(['low', 'high', 'crate', 'cone'])));
+    coinLine(safe, z0, 5, 2.3);
     len = o.total;
   } else if (type === 'platform') {
     // perron: munten en power-ups op het perron, spotters op het perron
@@ -468,14 +476,14 @@ function spawnPattern() {
   if (!items.length) { vmax = 0; vmin = 0; }
   const dist = -z0;
   const tStart = dist / (spd + vmax);
-  if (tStart < S.hazardT + 1.0) {
-    const want = (S.hazardT + 1.0) * (spd + vmax);
+  if (tStart < S.hazardT + 0.65) {
+    const want = (S.hazardT + 0.65) * (spd + vmax);
     const shift = want - dist;
     shiftPattern(shift);
     z0 -= shift;
   }
   S.hazardT = Math.max(S.hazardT, (-z0 + len) / (spd + vmin));
-  cursor = Math.min(cursor, z0) - len - Math.max(27, S.speed * 1.15);
+  cursor = Math.min(cursor, z0) - len - Math.max(15, S.speed * 0.62);
 }
 
 // verschuif alles wat in dit patroon is toegevoegd verder van de speler af
