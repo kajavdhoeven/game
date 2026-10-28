@@ -326,8 +326,14 @@ function renderSearch(q) {
 
 function footer() {
   return el(`<footer class="foot"><div class="foot-brand">${logoSVG()}<b>Te-Un Games</b></div>
-    <p>Gratis online games met Te-Un de kabouter. ${SITE_DOMAIN}</p></footer>`);
+    <p>Gratis online games met Te-Un de kabouter. ${SITE_DOMAIN}</p><p class="muted" id="verLine"></p></footer>`);
 }
+
+// toont welke versie van de site live staat, handig om te controleren of een nieuwe build klaar is
+fetch('/version.json', { cache: 'no-store' }).then((r) => r.json()).then((v) => {
+  const n = document.getElementById('verLine');
+  if (n) n.textContent = 'Versie ' + v.version;
+}).catch(() => {});
 
 // ------------------------------------------------------------------ start
 async function boot() {
