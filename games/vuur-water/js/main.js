@@ -211,7 +211,12 @@ window.addEventListener('keydown', (e) => {
   if (GAMEKEYS.has(e.code)) e.preventDefault();
   if (e.code === 'Escape' || e.code === 'KeyP') { togglePause(); return; }
   if (e.code === 'KeyR') { restart(); return; }
-  if ((e.code === 'Space' || e.code === 'Tab' || e.code === 'KeyQ') && mode === 'one' && !e.repeat) { active = active === 'fire' ? 'water' : 'fire'; syncTouch(); }
+  if (GAMEKEYS.has(e.code) && document.activeElement && document.activeElement.tagName === 'BUTTON') document.activeElement.blur();
+  if ((e.code === 'Space' || e.code === 'Tab' || e.code === 'KeyQ') && !e.repeat) {
+    // met twee spelers is er niets te wisselen: de spatiebalk schakelt dan over naar 1 speler
+    if (mode === 'two') mode = 'one'; else active = active === 'fire' ? 'water' : 'fire';
+    syncTouch(); updateHud();
+  }
   keys.add(e.code);
 });
 window.addEventListener('keyup', (e) => keys.delete(e.code));
