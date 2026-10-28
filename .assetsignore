@@ -7,3 +7,4 @@ wrangler.toml
 vercel.json
 README.md
 worker
+supabase

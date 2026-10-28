@@ -229,3 +229,7 @@ h2 { margin: 0 0 6px; font-size: 40px; color: var(--yellow); text-shadow: 0 3px 
 #skipHint { position: fixed; left: 50%; bottom: 8%; transform: translateX(-50%); opacity: 0.85; font-size: 14px; text-shadow: 0 2px 0 rgba(0,0,0,0.6); pointer-events: none; }
 @media (pointer: coarse) { #fireHint { display: none; } #vehBtn kbd { display: none; } }
 @media (max-width: 520px) { #vehBtn { width: 92px; } #vehBtn img { width: 48px; height: 48px; } #pwBar { top: 64px; } }
+
+.game-logo { width: 130px; height: 130px; border-radius: 50%; filter: drop-shadow(0 8px 14px rgba(0,0,0,.4)); }
+.menu-logo { width: 84px; height: 84px; border-radius: 50%; float: right; margin: -6px -6px 0 8px; filter: drop-shadow(0 5px 8px rgba(0,0,0,.4)); }
+@media (max-aspect-ratio: 1/1) { .menu-logo { width: 60px; height: 60px; } }

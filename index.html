@@ -2,145 +2,33 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#003082">
-  <meta name="description" content="Te-Un Surfers: help de kabouter over het spoor, ontwijk gele NS-treinen en rij treinspotters aan voor 30 munten.">
-  <title>Te-Un Surfers</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ffc917'/%3E%3Cpath d='M32 6 L46 38 H18 Z' fill='%23d3202a'/%3E%3Ccircle cx='32' cy='44' r='13' fill='%23f1c4a0'/%3E%3Ccircle cx='26' cy='43' r='5' fill='none' stroke='%23000' stroke-width='2.5'/%3E%3Ccircle cx='38' cy='43' r='5' fill='none' stroke='%23000' stroke-width='2.5'/%3E%3Cpath d='M20 50 Q32 66 44 50 Z' fill='%23fff'/%3E%3C/svg%3E">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b5bd3">
+  <title>Te-Un Games - gratis online games met Te-Un de kabouter</title>
+  <meta name="description" content="Speel gratis online games op Te-Un Games. Ren, spring en vlieg samen met Te-Un de kabouter. Maak een account om je voortgang te bewaren.">
+  <meta property="og:title" content="Te-Un Games">
+  <meta property="og:description" content="Gratis online games met Te-Un de kabouter.">
+  <meta property="og:image" content="/assets/logo.png">
+  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <link rel="apple-touch-icon" href="/assets/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-  <script type="importmap">
-    { "imports": { "three": "./vendor/three.module.min.js" } }
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/platform.css">
+  <script>
+    // thema meteen zetten, zodat er geen kleurflits is
+    try { document.documentElement.dataset.theme = localStorage.getItem('teun-theme') || 'smurf'; } catch (e) { document.documentElement.dataset.theme = 'smurf'; }
   </script>
 </head>
 <body>
-  <canvas id="game"></canvas>
-  <div id="vignette"></div>
-  <div id="pops"></div>
-
-  <div id="loading" class="screen center">
-    <div class="logo-mini">NS</div>
-    <p>Het perron wordt klaargezet...</p>
-  </div>
-
-  <div id="hud" hidden>
-    <div class="hud-left">
-      <div class="hud-score"><span id="score">0</span><small>m</small></div>
-      <div class="hud-best">Record <span id="hudBest">0</span></div>
-    </div>
-    <div id="pwBar"></div>
-    <div class="hud-right">
-      <div class="hud-coins"><i class="coin"></i><span id="coins">0</span></div>
-      <button id="btnPause" class="icon-btn" aria-label="Pauze">
-        <svg viewBox="0 0 24 24" width="22" height="22"><rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor"/></svg>
-      </button>
-    </div>
-    <div id="vehBox">
-      <button id="vehPrev" class="mini-btn" aria-label="Vorig voertuig">&#9664;</button>
-      <button id="vehBtn" aria-label="Activeer voertuig">
-        <span class="ring"></span>
-        <img id="vehIcon" alt="">
-        <span id="vehName">Geen voertuig</span>
-        <span id="vehState">Koop er een in de winkel</span>
-        <kbd>Spatie</kbd>
-      </button>
-      <button id="vehNext" class="mini-btn" aria-label="Volgend voertuig">&#9654;</button>
-    </div>
-    <div id="fireHint">Dubbel tikken = waterpistool</div>
-  </div>
-  <div id="toast" hidden></div>
-  <div id="skipHint" hidden>Tik of druk op Enter om over te slaan</div>
-
-  <section id="menu" class="screen" hidden>
-    <div class="panel menu-panel">
-      <div class="title">
-        <span class="t1">TE-UN</span>
-        <span class="t2">SURFERS</span>
-      </div>
-      <p class="tagline">Help de kabouter over het spoor. Pas op voor de treinen!</p>
-      <label class="namebox">Jouw naam
-        <input id="nameInput" type="text" maxlength="14" placeholder="Naam voor de ranglijst" autocomplete="off" spellcheck="false">
-      </label>
-      <button id="btnPlay" class="btn big">Spelen</button>
-      <div class="row2">
-        <button id="btnShop" class="btn">Winkel</button>
-        <button id="btnLeader" class="btn">Ranglijst</button>
-      </div>
-      <ul class="how">
-        <li><b>&larr; &rarr;</b> of <b>A D</b>: een spoor opzij &middot; <b>&uarr;</b> springen &middot; <b>&darr;</b> rollen</li>
-        <li><b>Spatie</b>: voertuig &middot; <b>C</b>: ander voertuig &middot; <b>F</b> of dubbelklik: waterpistool</li>
-        <li class="touch"><b>Swipe</b> = 1 spoor, omhoog = springen, omlaag = rollen, <b>dubbeltik</b> = waterpistool</li>
-        <li class="bonus">Spuit een treinspotter nat: <b>+25 munten</b> (oranje shirt: <b>+100</b>)</li>
-      </ul>
-      <div class="stats">
-        <div><small>Record</small><b id="menuBest">0</b></div>
-        <div><small>Munten</small><b id="menuCoins">0</b></div>
-        <button id="btnSound" class="icon-btn" aria-label="Geluid aan of uit"></button>
-      </div>
-    </div>
-  </section>
-
-  <section id="shop" class="screen center" hidden>
-    <div class="panel wide">
-      <div class="panel-head">
-        <h2>Winkel</h2>
-        <div class="hud-coins"><i class="coin"></i><span id="shopCoins">0</span></div>
-        <button id="shopClose" class="icon-btn" aria-label="Sluiten">&times;</button>
-      </div>
-      <div class="tabs">
-        <button class="tab on" data-tab="vehicles">Voertuigen</button>
-        <button class="tab" data-tab="looks">Uiterlijk</button>
-      </div>
-      <div id="shopGrid" class="grid"></div>
-      <p id="shopNote" class="note"></p>
-    </div>
-  </section>
-
-  <section id="leader" class="screen center" hidden>
-    <div class="panel wide">
-      <div class="panel-head">
-        <h2>Ranglijst</h2>
-        <button id="leaderClose" class="icon-btn" aria-label="Sluiten">&times;</button>
-      </div>
-      <div class="tabs">
-        <button class="tab on" data-board="distance">Afstand</button>
-        <button class="tab" data-board="coins">Munten</button>
-      </div>
-      <ol id="boardList" class="board"></ol>
-      <p id="boardNote" class="note"></p>
-    </div>
-  </section>
-
-  <section id="pause" class="screen center" hidden>
-    <div class="panel small">
-      <h2>Pauze</h2>
-      <button id="btnResume" class="btn">Verder</button>
-      <button id="btnPauseMenu" class="btn ghost">Naar menu</button>
-    </div>
-  </section>
-
-  <section id="over" class="screen center" hidden>
-    <div class="panel small">
-      <h2 id="overTitle">Boem!</h2>
-      <p id="overMsg">Een trein was sneller dan Te-Un.</p>
-      <div class="result">
-        <div><small>Score</small><b id="overScore">0</b></div>
-        <div><small>Record</small><b id="overBest">0</b></div>
-        <div><small>Munten</small><b id="overCoins">0</b></div>
-        <div><small>Spotters</small><b id="overSpot">0</b></div>
-      </div>
-      <p id="overRank" class="note"></p>
-      <button id="btnAgain" class="btn big">Opnieuw</button>
-      <div class="row2">
-        <button id="btnOverShop" class="btn ghost">Winkel</button>
-        <button id="btnOverMenu" class="btn ghost">Menu</button>
-      </div>
-    </div>
-  </section>
-
-  <noscript><p style="position:fixed;inset:0;display:grid;place-items:center;color:#fff;background:#003082">Zet JavaScript aan om Te-Un Surfers te spelen.</p></noscript>
-  <script type="module" src="js/main.js"></script>
+  <div id="boot"><div class="boot-in"><img class="boot-img" src="/assets/logo.png" alt="" onerror="this.style.display='none'"><div class="boot-logo">Te-Un <b>Games</b></div><div class="boot-bar"><i></i></div><p>Te-Un zet de games klaar...</p></div></div>
+  <div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div id="app"></div>
+  <div id="modal-root"></div>
+  <div id="tour-root"></div>
+  <div id="egg-root"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <noscript><p style="position:fixed;inset:0;display:grid;place-items:center;background:#0b5bd3;color:#fff;font-family:sans-serif">Zet JavaScript aan om Te-Un Games te gebruiken.</p></noscript>
+  <script type="module" src="/js/platform/app.js"></script>
 </body>
 </html>

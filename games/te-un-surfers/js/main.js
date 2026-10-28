@@ -14,6 +14,7 @@ import { initInput } from './input.js';
 import { softCircleTexture } from './textures.js';
 import { P, load, save, buy, owns, ownedVehicles, cycleVehicle, VEHICLES, VEHICLE_ORDER, VEHICLE_TIME, PRICES } from './save.js';
 import { fetchBoard, submitScore, cleanName, isOnline } from './net.js';
+import { initBridge } from './bridge.js';
 
 const $ = (id) => document.getElementById(id);
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -339,11 +340,11 @@ function spawnPattern() {
   if (window.__force) type = window.__force;
   else if (S.patterns <= 2) type = 'coins';
 
+  // alle treinen rijden je tegemoet, de een langzaam en de ander snel
   const trainV = () => {
     const r = rand();
-    if (r < 0.34) return 0;
-    if (r < 0.7) return 7 + rand() * 6;
-    return 14 + rand() * (8 + 6 * diff);
+    if (r < 0.4) return 7 + rand() * 5;
+    return 13 + rand() * (9 + 6 * diff);
   };
 
   if (type === 'coins') {
@@ -368,7 +369,7 @@ function spawnPattern() {
     coinLine(safe, z0, Math.min(14, Math.round(len / 2.4)), 2.4);
   } else if (type === 'ramp') {
     const l = pick(others);
-    const o = addTrain(l, z0, { ramp: true, v: rand() < 0.45 ? 6 + rand() * 7 : 0 });
+    const o = addTrain(l, z0, { ramp: true, v: 5 + rand() * 5 });
     items.push(o);
     trainLanes.push(l);
     len = o.total;
@@ -379,7 +380,7 @@ function spawnPattern() {
     // tweede trein, soms ook met schans
     const rest = others.filter((x) => x !== l);
     if (rand() < 0.35) {
-      const o2 = addTrain(rest[0], z0 - rand() * 4, { ramp: rand() < 0.5, v: 0 });
+      const o2 = addTrain(rest[0], z0 - rand() * 4, { ramp: rand() < 0.5, v: 5 + rand() * 6 });
       items.push(o2);
       trainLanes.push(rest[0]);
       len = Math.max(len, o2.total);
@@ -412,7 +413,7 @@ function spawnPattern() {
     len = 14;
   } else if (type === 'mixed') {
     const [a, b] = others;
-    const o = addTrain(a, z0, { v: rand() < 0.4 ? 8 : 0 });
+    const o = addTrain(a, z0, { v: 8 + rand() * 6 });
     items.push(o);
     trainLanes.push(a);
     items.push(addBarrier(b, z0 - 3, pick(['low', 'high', 'cone'])));
@@ -1347,6 +1348,7 @@ function update(dt) {
     if (o.kind === 'train') {
       // subtiel schommelen van rijdende treinen
       if (o.v > 0) {
+        // rijdend: zacht schommelen en voorlichten die wiebelen
         o.mesh.rotation.z = Math.sin(S.t * 9 + o.phase) * 0.004;
         o.mesh.position.y = GROUND - 0.06 + Math.abs(Math.sin(S.t * 14 + o.phase)) * 0.012;
       }
@@ -1688,6 +1690,13 @@ window.addEventListener('blur', () => {
 
 updateSoundIcon();
 goMenu();
+initBridge({
+  onProgress: () => {
+    refreshMenuStats();
+    if (S.mode === 'menu' && gnomeSkin !== P.skin) buildGnome();
+    lastVehKey = '';
+  },
+});
 camera.position.copy(camMenuPos);
 camera.lookAt(camMenuLook);
 renderer.compile(scene, camera);

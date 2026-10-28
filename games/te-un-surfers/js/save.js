@@ -17,6 +17,9 @@ export const VEHICLE_TIME = 30;
 
 const KEY = 'teun-save-v2';
 
+// het platform (te-ungames.nl) hangt hier aan om voortgang in de cloud te bewaren
+export const hooks = { onSave: null };
+
 function uuid() {
   try {
     if (crypto.randomUUID) return crypto.randomUUID();
@@ -38,6 +41,7 @@ const defaults = () => ({
   runs: 0,
   totalDist: 0,
   spotters: 0,
+  updatedAt: 0,
 });
 
 export const P = defaults();
@@ -57,10 +61,12 @@ export function load() {
   return P;
 }
 
-export function save() {
+export function save(silent = false) {
+  if (!silent) P.updatedAt = Date.now();
   try {
     localStorage.setItem(KEY, JSON.stringify(P));
   } catch (e) { /* geen opslag */ }
+  if (!silent && hooks.onSave) hooks.onSave(P);
 }
 
 export function owns(id) {

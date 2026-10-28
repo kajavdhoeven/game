@@ -1,54 +1,51 @@
-# Te-Un Surfers
+# Te-Un Games
 
-Een 3D endless runner in de browser. Te-Un, een kleine kabouter met rood mutsje, ronde zwarte bril en smurfblauwe schoenen, rent over het spoor tussen treinen, tunnels en stations.
+Het gameplatform van te-ungames.nl, met Te-Un de kabouter als hoofdpersoon. Statische site, geen build-stap.
 
-## Spelen
+- `/` is het platform (home, categorieën, zoeken, favorieten, profiel, beheer).
+- `/games/te-un-surfers/` is de eerste game (een iframe op de gamepagina).
 
-- **Besturing:** pijltjes of WASD (een spoor opzij, springen, rollen), **spatie** activeert je geselecteerde voertuig, **C** wisselt van voertuig, **F** of dubbelklikken schiet met het waterpistool. Op een telefoon: swipe = precies één spoor, omhoog = springen, omlaag = rollen, dubbeltik = waterpistool.
-- **Treinspotters:** spuit ze nat voor 25 munten. Eén op de tien draagt een oranje shirt en geeft 100 munten.
-- **Treinen:** sprinters, intercity's, internationale treinen, vintage materieel en goederentreinen, met en zonder graffiti of stickers. Sommige komen je snel tegemoet. Via schansen (plank, metaal, beton) kom je op het dak.
-- **Perrons en tunnels:** spring op het perron voor munten en power-ups, en weer terug naar het spoor.
-- **Power-ups:** superschoenen (spring op daken), mini-vliegtuig (7,5 s vliegen), voertuig-refill, hoverboard (oranje shirt, vangt één klap op).
-- **Voertuigen (winkel):** rolstoel (2.500), koe (7.500) en NS-trein (15.000). Elk werkt 30 seconden met een eigen snelheids- en muntenbonus. Verder in de winkel: NS-conducteur met koeienpetje (50.000) en koe-hoverboard (10.000).
-- Je munten, aankopen, record en naam worden bewaard in de browser. De online ranglijst (afstand en munten) werkt op Cloudflare.
+## Logo
 
-## Lokaal draaien
+Zet je logo als **`assets/logo.png`** (vierkant, bij voorkeur 512x512 of groter). Dat bestand wordt overal gebruikt: topbalk, laadscherm, favicon, apple-touch-icon, delen via social media en in de game. Ontbreekt het bestand, dan tekent het platform zelf een kabouter.
 
-Er is geen build-stap. Serveer de map met een willekeurige statische server:
+## Accounts koppelen met Supabase
 
-```bash
-python3 -m http.server 8000
-```
+Zonder Supabase draait het platform in **demo-modus** (accounts in je eigen browser, het eerste account is beheerder). Voor echte accounts:
 
-Open daarna http://localhost:8000 (ES-modules werken niet via `file://`). De online ranglijst is dan niet beschikbaar; het spel valt terug op je eigen score.
+1. Maak een project op https://supabase.com.
+2. Open **SQL Editor**, plak `supabase/schema.sql` en voer uit.
+3. Ga naar **Project Settings > API** en kopieer de *Project URL* en de *anon public key* naar `js/platform/config.js`. De anon key is bedoeld om openbaar te zijn; de beveiliging zit in de regels uit het schema.
+4. **Authentication > URL Configuration**: zet *Site URL* op `https://te-ungames.nl` en voeg die ook toe bij *Redirect URLs*.
+5. Maak een account op je site. Voer daarna onderaan `schema.sql` het stukje "JIJ ALS BEHEERDER" uit met je e-mailadres. Daarna zie je het menu **Beheer**.
 
-## Hosten
+Wil je zonder bevestigingsmail kunnen aanmelden: Authentication > Providers > Email > zet "Confirm email" uit.
 
-### Cloudflare (met online ranglijst)
+## Hosten op Cloudflare met je eigen domein
 
-`wrangler.toml` serveert de site als statische assets en draait `worker/index.js` voor `/api/*`. De ranglijst staat in een Durable Object met SQLite-opslag, die bij de eerste deploy automatisch wordt aangemaakt. Er zijn geen extra instellingen nodig:
+`wrangler.toml` serveert de site als statische assets en draait `worker/index.js` voor `/api/*` (de ranglijst van Te-Un Surfers, in een Durable Object).
 
-- Build command: leeg
-- Deploy command: `npx wrangler deploy`
+- Build command: leeg. Deploy command: `npx wrangler deploy`.
+- Domein: Workers & Pages > je project > **Settings > Domains & Routes > Add > Custom domain** > `te-ungames.nl` (en `www.te-ungames.nl`).
+- Staat je domein nog niet bij Cloudflare, voeg het dan toe onder *Websites* en zet bij je registrar de nameservers zoals Cloudflare aangeeft.
 
-### Vercel (zonder online ranglijst)
+## Een nieuwe game toevoegen
 
-Importeer de repository, kies Framework Preset **Other** en laat Build en Output leeg. `vercel.json` regelt de caching. De ranglijst valt dan terug op lokale scores.
+1. Zet de game in `games/<naam>/` (een gewone web-game met `index.html`).
+2. Log in als beheerder > **Beheer > Nieuwe game**: naam, categorie, plaatje en adres (`/games/<naam>/`).
+3. Voortgang bewaren: de game stuurt `postMessage({type:'teun:save', game, data})` naar de ouder en luistert naar `teun:progress`. Zie `games/te-un-surfers/js/bridge.js` als voorbeeld.
+
+## Thema's
+
+Smurf Blauw, Ravagio Oranje (verborgen oranje shirtjes), Minecraft-sok groen (verborgen blokfiguurtje) en Bambi-trui bruin (verborgen hertje). Kleuren staan bovenaan `css/platform.css`.
 
 ## Structuur
 
 | Pad | Inhoud |
 | --- | --- |
-| `index.html`, `css/style.css` | Menu, winkel, ranglijst, HUD |
-| `js/main.js` | Spelloop, patronen, botsingen, voertuigen, intro, camera |
-| `js/gnome.js` | Te-Un en varianten (skins, poses, cartoon-animaties) |
-| `js/train.js` | Treintypes, graffiti, stickers, goederenwagons, schansen |
-| `js/spotter.js` | Treinspotters met gezichten, camera's en gedrag |
-| `js/vehicles.js`, `js/powerups.js` | Rolstoel, koe, NS-trein, hoverboards, power-up modellen |
-| `js/world.js` | Spoor, dag/nacht, tunnels, perrons, polderlandschap |
-| `js/mob.js` | Boze kabouters met fakkels en hooivorken (intro) |
-| `js/save.js`, `js/net.js` | Opslag in de browser en online ranglijst |
-| `worker/index.js` | Cloudflare Worker met Durable Object voor de ranglijst |
-| `vendor/` | Three.js r170 (MIT) |
-
-Alle modellen, textures en geluiden worden in code gegenereerd.
+| `index.html`, `css/platform.css` | Platform |
+| `js/platform/` | App, pagina's, rondleiding, thema's, easter eggs, backends |
+| `supabase/schema.sql` | Database en beveiligingsregels |
+| `games/te-un-surfers/` | De eerste game |
+| `worker/index.js` | Cloudflare Worker voor de ranglijst |
+| `vendor/` | Supabase-client |
