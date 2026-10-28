@@ -8,6 +8,7 @@ const soonOf = (cat) => COMING_SOON.filter((s) => s.category === cat).map((s) =>
 export function renderHome(app) {
   const { games, user } = app.state;
   const f = document.createDocumentFragment();
+  f.appendChild(el('<a class="banner" href="#/" aria-label="Te-Un Games"><img src="/assets/header.jpg" alt="Te-Un Games" width="1600" height="639" fetchpriority="high"></a>'));
   const live = games.filter((g) => g.published);
   const featured = live.find((g) => g.featured) || live[0];
   if (featured) f.appendChild(hero(featured, app.state));
