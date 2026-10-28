@@ -1,5 +1,16 @@
 name = "game"
+main = "worker/index.js"
 compatibility_date = "2025-01-01"
 
 [assets]
 directory = "./"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+[[durable_objects.bindings]]
+name = "LEADERBOARD"
+class_name = "Leaderboard"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Leaderboard"]

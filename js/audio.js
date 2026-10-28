@@ -224,3 +224,91 @@ export const audio = {
     tone(1046, t + 0.14, 0.7, 'sine', 0.18);
   },
 };
+
+// ---- extra geluiden: power-ups, voertuigen, waterpistool, tekenfilm-botsing, boze menigte
+Object.assign(audio, {
+  pickup() {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    [523, 659, 784, 1046].forEach((f, i) => tone(f, t + i * 0.06, 0.18, 'triangle', 0.18));
+  },
+  powerup() {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    [392, 523, 659, 784, 1046, 1318].forEach((f, i) => tone(f, t + i * 0.055, 0.22, 'square', 0.1));
+    tone(200, t, 0.4, 'sine', 0.25, null, 900);
+  },
+  vehicle(id) {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    if (id === 'cow') {
+      // muu: lage zaagtand met vibrato door een formantfilter
+      const o = ctx.createOscillator();
+      const lfo = ctx.createOscillator();
+      const lg = ctx.createGain();
+      const g = ctx.createGain();
+      const f = ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.setValueAtTime(500, t);
+      f.frequency.linearRampToValueAtTime(900, t + 0.5);
+      f.frequency.linearRampToValueAtTime(400, t + 1.2);
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(120, t);
+      o.frequency.linearRampToValueAtTime(150, t + 0.5);
+      o.frequency.linearRampToValueAtTime(95, t + 1.2);
+      lfo.frequency.value = 6;
+      lg.gain.value = 5;
+      lfo.connect(lg);
+      lg.connect(o.frequency);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.5, t + 0.15);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+      o.connect(f);
+      f.connect(g);
+      g.connect(sfxBus);
+      o.start(t); lfo.start(t);
+      o.stop(t + 1.4); lfo.stop(t + 1.4);
+    } else if (id === 'train') {
+      audio.horn(0);
+      noise(t, 0.8, 0.4, 900);
+    } else {
+      tone(180, t, 0.9, 'sawtooth', 0.22, null, 1100);
+      noise(t, 0.9, 0.35, 2600, 500);
+    }
+  },
+  squirt() {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    noise(t, 0.28, 0.35, 8000, 2500);
+    tone(900, t, 0.12, 'sine', 0.08, null, 1600);
+  },
+  splash() {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    noise(t, 0.35, 0.3, 4000, 600);
+    tone(400, t, 0.2, 'sine', 0.12, null, 150);
+  },
+  splat() {
+    // tekenfilm-bonk, dan een lang zakkend fluitje terwijl hij naar beneden glijdt
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    tone(130, t, 0.35, 'sine', 0.6, null, 40);
+    noise(t, 0.25, 0.7, 1500);
+    tone(1500, t + 0.9, 1.6, 'sine', 0.14, null, 220);
+    tone(80, t + 2.4, 0.4, 'sine', 0.5, null, 30);
+    noise(t + 2.4, 0.2, 0.4, 700);
+  },
+  boing() {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    tone(180, t, 0.35, 'sine', 0.3, null, 520);
+  },
+  mob() {
+    // boze menigte: laag gemompel en een dreigende zaagtand
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    noise(t, 2.2, 0.25, 520);
+    tone(70, t, 2.2, 'sawtooth', 0.08, null, 55);
+    tone(98, t + 0.3, 1.6, 'sawtooth', 0.05, null, 82);
+  },
+});

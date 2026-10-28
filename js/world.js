@@ -25,19 +25,25 @@ function makeSky(scene) {
       mid: { value: new THREE.Color('#7fb4ea') },
       hor: { value: HORIZON.clone() },
       sunDir: { value: sunDir },
+      nightK: { value: 0 },
+      sunI: { value: 1 },
     },
     vertexShader: `varying vec3 vDir;
       void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: `varying vec3 vDir; uniform vec3 top; uniform vec3 mid; uniform vec3 hor; uniform vec3 sunDir;
+    fragmentShader: `varying vec3 vDir; uniform vec3 top; uniform vec3 mid; uniform vec3 hor; uniform vec3 sunDir; uniform float nightK; uniform float sunI;
       void main(){
         vec3 d = normalize(vDir);
         float h = clamp(d.y, 0.0, 1.0);
         vec3 col = mix(hor, mid, smoothstep(0.0, 0.22, h));
         col = mix(col, top, smoothstep(0.18, 0.95, h));
         float s = max(dot(d, sunDir), 0.0);
-        col += vec3(1.0, 0.86, 0.62) * pow(s, 6.0) * 0.28;
-        col += vec3(1.0, 0.95, 0.8) * pow(s, 700.0) * 4.0;
-        if (d.y < 0.0) col = mix(hor, vec3(0.35,0.45,0.3), clamp(-d.y * 6.0, 0.0, 1.0));
+        col += vec3(1.0, 0.86, 0.62) * pow(s, 6.0) * 0.28 * sunI;
+        col += mix(vec3(1.0, 0.95, 0.8), vec3(0.75, 0.82, 1.0), nightK) * pow(s, 700.0) * 4.0;
+        vec3 sp = d * 70.0; vec3 cell = floor(sp);
+        float hh = fract(sin(dot(cell, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+        float star = step(0.992, hh) * smoothstep(0.42, 0.0, length(fract(sp) - 0.5));
+        col += vec3(star) * nightK * smoothstep(0.05, 0.35, d.y);
+        if (d.y < 0.0) col = mix(hor, mix(vec3(0.35,0.45,0.3), vec3(0.03,0.05,0.08), nightK), clamp(-d.y * 6.0, 0.0, 1.0));
         gl_FragColor = vec4(col, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -96,6 +102,15 @@ export class World {
     this.sun.shadow.normalBias = 0.05;
     scene.add(this.sun, this.sun.target);
 
+    this.dayK = 1;
+    this.tunnelK = 0;
+    this.zone = { type: 'open', left: 7, tp: 0 };
+    this.zoneNo = 0;
+    this.skyUniforms = sky.material.uniforms;
+    this.palettes = {
+      day: { top: new THREE.Color('#2f78cf'), mid: new THREE.Color('#7fb4ea'), hor: HORIZON.clone(), sun: new THREE.Color('#fff0d4'), hemiS: new THREE.Color('#cfe2ff'), hemiG: new THREE.Color('#7a8a50') },
+      night: { top: new THREE.Color('#050a20'), mid: new THREE.Color('#0b1636'), hor: new THREE.Color('#16264a'), sun: new THREE.Color('#8fa8ff'), hemiS: new THREE.Color('#2a3d78'), hemiG: new THREE.Color('#10151f') },
+    };
     this.initShared();
     this.segments = [];
     this.root = new THREE.Group();
@@ -108,6 +123,59 @@ export class World {
       this.segments.push(seg);
     }
     this.buildClouds();
+    this.applyLight();
+  }
+
+  // 0 = nacht, 1 = dag
+  setDay(k) {
+    this.dayK = k;
+    this.applyLight();
+  }
+
+  setTunnel(k) {
+    if (Math.abs(k - this.tunnelK) < 0.002) return;
+    this.tunnelK = k;
+    this.applyLight();
+  }
+
+  applyLight() {
+    const k = this.dayK;
+    const t = 1 - this.tunnelK * 0.86;
+    const D = this.palettes.day;
+    const N = this.palettes.night;
+    const u = this.skyUniforms;
+    u.top.value.copy(N.top).lerp(D.top, k);
+    u.mid.value.copy(N.mid).lerp(D.mid, k);
+    u.hor.value.copy(N.hor).lerp(D.hor, k);
+    u.nightK.value = 1 - k;
+    u.sunI.value = k;
+    const fog = this.scene.fog;
+    fog.color.copy(u.hor.value);
+    if (this.tunnelK > 0) fog.color.lerp(new THREE.Color('#05070a'), this.tunnelK);
+    fog.near = 70 - this.tunnelK * 50;
+    fog.far = 230 - this.tunnelK * 110;
+    this.scene.background.copy(fog.color);
+    this.sun.color.copy(N.sun).lerp(D.sun, k);
+    this.sun.intensity = (0.35 + 2.65 * k) * t;
+    this.hemi.color.copy(N.hemiS).lerp(D.hemiS, k);
+    this.hemi.groundColor.copy(N.hemiG).lerp(D.hemiG, k);
+    this.hemi.intensity = (0.3 + 0.7 * k) * (0.45 + 0.55 * t);
+    this.scene.environmentIntensity = (0.12 + 0.63 * k) * t;
+    if (this.clouds) this.clouds.forEach((c) => c.material.color.setScalar(0.1 + 0.9 * k));
+  }
+
+  // wat is er op wereld-z? (zone en perrons)
+  zoneAt(z) {
+    for (const seg of this.segments) {
+      const sz = seg.group.position.z;
+      if (z <= sz + SEG_LEN / 2 && z > sz - SEG_LEN / 2) return seg;
+    }
+    return null;
+  }
+
+  platformAt(z, side) {
+    const seg = this.zoneAt(z);
+    return !!(seg && seg.plat && seg.plat[side]);
   }
 
   setShadowQuality(size) {
@@ -266,49 +334,32 @@ export class World {
         fixed.add(head);
       });
     }
-    // bovenleiding: portalen elke 24 m, draden doorlopend
+    // bovenleiding: hoog boven het beeld, zodat hij het zicht niet blokkeert
+    const cat = new THREE.Group();
     for (let i = 0; i < 2; i++) {
       const z = -SEG_LEN / 2 + 12 + i * 24;
       [-1, 1].forEach((side) => {
         const post = new THREE.Mesh(s.box, s.mast);
-        post.scale.set(0.28, 7.2, 0.28);
-        post.position.set(side * 6.4, 3.5, z);
+        post.scale.set(0.3, 11, 0.3);
+        post.position.set(side * 6.9, 5.4, z);
         post.castShadow = true;
-        fixed.add(post);
-        const brace = new THREE.Mesh(s.box, s.mast);
-        brace.scale.set(0.12, 2.0, 0.12);
-        brace.position.set(side * 6.0, 6.0, z);
-        brace.rotation.z = side * 0.9;
-        fixed.add(brace);
+        cat.add(post);
+        const arm = new THREE.Mesh(s.box, s.mast);
+        arm.scale.set(2.8, 0.14, 0.14);
+        arm.position.set(side * 5.5, 10.4, z);
+        cat.add(arm);
       });
-      const beam = new THREE.Mesh(s.box, s.mast);
-      beam.scale.set(12.9, 0.26, 0.26);
-      beam.position.set(0, 6.9, z);
-      beam.castShadow = true;
-      fixed.add(beam);
-      for (let l = -1; l <= 1; l++) {
-        const hang = new THREE.Mesh(s.box, s.wire);
-        hang.scale.set(0.05, 1.15, 0.05);
-        hang.position.set(l * LANE, 6.25, z);
-        fixed.add(hang);
-        const ins = new THREE.Mesh(s.cyl, s.white);
-        ins.scale.set(0.07, 0.4, 0.07);
-        ins.position.set(l * LANE, 6.6, z);
-        fixed.add(ins);
-      }
     }
     for (let l = -1; l <= 1; l++) {
       const cw = new THREE.Mesh(s.box, s.wire);
-      cw.scale.set(0.035, 0.035, SEG_LEN);
-      cw.position.set(l * LANE, 5.55, 0);
-      fixed.add(cw);
-      const mw = new THREE.Mesh(s.box, s.wire);
-      mw.scale.set(0.05, 0.05, SEG_LEN);
-      mw.position.set(l * LANE, 6.15, 0);
-      fixed.add(mw);
+      cw.scale.set(0.03, 0.03, SEG_LEN);
+      cw.position.set(l * LANE, 9.6, 0);
+      cat.add(cw);
     }
+    fixed.add(cat);
+    mergeStatic(cat);
     mergeStatic(fixed);
-    return { group, fixed, scenery };
+    return { group, fixed, scenery, cat, zone: 'open', plat: { '-1': false, 1: false } };
   }
 
   clearScenery(seg) {
@@ -333,11 +384,25 @@ export class World {
     const rand = (a, b) => a + r() * (b - a);
     const pick = (arr) => arr[(r() * arr.length) | 0];
 
-    const platformSide = r() < 0.22 ? (r() < 0.5 ? -1 : 1) : 0;
+    const zone = this.nextZone(r);
+    seg.zone = zone.type;
+    seg.plat = { '-1': false, 1: false };
+    if (zone.type === 'tunnel') {
+      seg.cat.visible = false;
+      if (zone.tp) seg.plat[zone.tp] = true;
+      this.buildTunnel(seg, zone.tp, r);
+      mergeStatic(seg.scenery);
+      return;
+    }
+    seg.cat.visible = true;
+    let platformSide = 0;
+    if (zone.type === 'station') platformSide = 2; // beide kanten
+    else if (r() < 0.16) platformSide = r() < 0.5 ? -1 : 1;
+    if (platformSide === 2) { seg.plat['-1'] = true; seg.plat[1] = true; } else if (platformSide) seg.plat[platformSide] = true;
     const wallSide = !platformSide && r() < 0.18 ? (r() < 0.5 ? -1 : 1) : 0;
 
     [-1, 1].forEach((side) => {
-      const hasPlatform = platformSide === side;
+      const hasPlatform = platformSide === 2 || platformSide === side;
       const hasWall = wallSide === side;
 
       // randstroken: sloot, veld, weiland
@@ -375,7 +440,7 @@ export class World {
         const lamp = add(s.sphere, r() < 0.5 ? s.signalG : s.signalR, side * 7.0, 2.9, z + (side > 0 ? 0 : 0) - 0.12, 0.09, 0.09, 0.06);
       }
 
-      if (hasPlatform) this.buildPlatform(sc, side, r);
+      if (hasPlatform) this.buildPlatform(sc, side, zone.type === 'station', r);
       if (hasWall) {
         const wall = add(s.box, s.noiseWall, side * 8.0, 1.5, 0, 0.3, 3.0, SEG_LEN, true);
         wall.receiveShadow = true;
@@ -592,8 +657,140 @@ export class World {
     sc.add(g);
   }
 
-  buildPlatform(sc, side, r) {
+  // zone-opvolging: open land, tunnels en stations
+  nextZone(r) {
+    const z = this.zone;
+    this.zoneNo++;
+    if (z.left > 0) {
+      z.left--;
+      return { type: z.type, tp: z.tp };
+    }
+    const roll = r();
+    if (z.type !== 'open' || this.zoneNo < 4) {
+      z.type = 'open';
+      z.left = 2 + ((r() * 4) | 0);
+    } else if (roll < 0.38) {
+      z.type = 'tunnel';
+      z.left = 1 + ((r() * 2) | 0);
+      z.tp = r() < 0.5 ? (r() < 0.5 ? -1 : 1) : 0;
+    } else if (roll < 0.62) {
+      z.type = 'station';
+      z.left = 1;
+      z.tp = 0;
+    } else {
+      z.type = 'open';
+      z.left = 2 + ((r() * 3) | 0);
+    }
+    return { type: z.type, tp: z.tp };
+  }
+
+  initTunnel() {
     const s = this.sh;
+    s.tunnelTex = canvasTex(256, 256, (g, w, h) => {
+      const r = rng(41);
+      g.fillStyle = '#7d7f80';
+      g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 2500; i++) {
+        g.fillStyle = `rgba(${r() > 0.5 ? '255,255,255' : '0,0,0'},${0.04 + r() * 0.07})`;
+        g.fillRect(r() * w, r() * h, 3, 3);
+      }
+      g.fillStyle = 'rgba(0,0,0,0.35)';
+      g.fillRect(0, 0, w, 3);
+      g.fillRect(0, 0, 3, h);
+      for (let i = 0; i < 9; i++) {
+        const x = r() * w;
+        const gr = g.createLinearGradient(x, 0, x, h);
+        gr.addColorStop(0, 'rgba(20,20,20,0)');
+        gr.addColorStop(1, 'rgba(20,20,20,0.35)');
+        g.fillStyle = gr;
+        g.fillRect(x, 0, 6 + r() * 10, h);
+      }
+    }, { repeat: true });
+    s.tunnelTex.repeat.set(1, 1);
+    s.tunnelMat = new THREE.MeshStandardMaterial({ map: s.tunnelTex, roughness: 0.95, side: THREE.BackSide });
+    s.tunnelOuter = new THREE.MeshStandardMaterial({ map: s.grassTex[0], roughness: 1 });
+    s.tunnelConcrete = new THREE.MeshStandardMaterial({ map: s.tunnelTex, roughness: 0.95, side: THREE.DoubleSide });
+    s.tunnelLamp = new THREE.MeshBasicMaterial({ color: '#ffe0a0', toneMapped: false });
+    s.tunnelFloor = new THREE.MeshStandardMaterial({ color: '#55575a', roughness: 1 });
+    s.archCache = new Map();
+  }
+
+  buildTunnel(seg, tp, r) {
+    const s = this.sh;
+    if (!s.tunnelMat) this.initTunnel();
+    const sc = seg.scenery;
+    const R = tp ? 9.6 : 7.6;
+    const cx = tp * 2.7;
+    const spring = 3.2;
+    const key = R;
+    let geo = s.archCache.get(key);
+    if (!geo) {
+      const inner = new THREE.CylinderGeometry(R, R, SEG_LEN, 36, 1, true, Math.PI / 2, Math.PI);
+      inner.rotateX(Math.PI / 2);
+      const outer = new THREE.CylinderGeometry(R + 2.8, R + 2.8, SEG_LEN, 36, 1, true, Math.PI / 2, Math.PI);
+      outer.rotateX(Math.PI / 2);
+      const ring = new THREE.RingGeometry(R, R + 2.8, 36, 1, 0, Math.PI);
+      geo = { inner, outer, ring };
+      // texturen: lengte in meters laten lopen
+      const uv = inner.attributes.uv;
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 6, uv.getY(i) * (SEG_LEN / 6));
+      s.archCache.set(key, geo);
+    }
+    const add = (g, mat, x, y, z, shadow = false) => {
+      const m = new THREE.Mesh(g, mat);
+      m.position.set(x, y, z);
+      m.castShadow = shadow;
+      m.receiveShadow = true;
+      sc.add(m);
+      return m;
+    };
+    add(geo.inner, s.tunnelMat, cx, spring, 0);
+    add(geo.outer, s.tunnelOuter, cx, spring, 0);
+    add(geo.ring, s.tunnelConcrete, cx, spring, SEG_LEN / 2);
+    const back = add(geo.ring, s.tunnelConcrete, cx, spring, -SEG_LEN / 2);
+    back.rotation.y = Math.PI;
+    // zijmuren en vloer
+    [-1, 1].forEach((side) => {
+      const wx = cx + side * R;
+      const w = new THREE.Mesh(s.box, s.tunnelConcrete);
+      w.scale.set(0.5, spring, SEG_LEN);
+      w.position.set(wx, spring / 2, 0);
+      w.receiveShadow = true;
+      sc.add(w);
+      const outer = Math.abs(wx);
+      const inn = 6.4;
+      if (outer > inn) {
+        const fl = new THREE.Mesh(this.plane(outer - inn, 4), s.tunnelFloor);
+        fl.position.set(Math.sign(wx) * (inn + outer) / 2, -0.03, 0);
+        fl.receiveShadow = true;
+        sc.add(fl);
+      }
+    });
+    // lampen langs de wand en plafond
+    for (let z = -SEG_LEN / 2 + 3; z < SEG_LEN / 2; z += 6) {
+      [-1, 1].forEach((side) => {
+        const l = new THREE.Mesh(s.box, s.tunnelLamp);
+        l.scale.set(0.16, 0.14, 0.9);
+        l.position.set(cx + side * (R - 0.3), spring + 1.2, z);
+        sc.add(l);
+        const stripe = new THREE.Mesh(s.box, s.signBlue);
+        stripe.scale.set(0.06, 0.5, SEG_LEN);
+        stripe.position.set(cx + side * (R - 0.04), 1.8, 0);
+        if (z === -SEG_LEN / 2 + 3) sc.add(stripe);
+      });
+    }
+    for (let z = -SEG_LEN / 2 + 6; z < SEG_LEN / 2; z += 12) {
+      const l = new THREE.Mesh(s.box, s.tunnelLamp);
+      l.scale.set(0.5, 0.1, 1.4);
+      l.position.set(cx, spring + R - 0.15, z);
+      sc.add(l);
+    }
+    if (tp) this.buildPlatform(sc, tp, true, r, true);
+  }
+
+  buildPlatform(sc, side, station, r, inTunnel = false) {
+    const s = this.sh;
+    const PH = 0.93;
     const add = (geo, mat, x, y, z, sx, sy, sz, sh = true) => {
       const m = new THREE.Mesh(geo, mat);
       m.position.set(x, y, z);
@@ -603,20 +800,30 @@ export class World {
       sc.add(m);
       return m;
     };
-    add(s.box, s.concrete, side * 9.6, 0.4, 0, 6.2, 1.0, SEG_LEN);
-    add(s.box, s.platTop, side * 9.9, 0.92, 0, 5.4, 0.06, SEG_LEN);
-    add(s.box, s.yellowLine, side * 7.4, 0.96, 0, 0.35, 0.03, SEG_LEN, false);
-    for (let z = -SEG_LEN / 2 + 4; z < SEG_LEN / 2; z += 8) {
-      add(s.box, s.mast, side * 11.0, 2.6, z, 0.18, 4.2, 0.18);
+    const cx = side * 9.35;
+    add(s.box, s.concrete, cx, PH / 2 - 0.02, 0, 5.8, PH, SEG_LEN);
+    add(s.box, s.platTop, cx + side * 0.15, PH + 0.005, 0, 5.4, 0.04, SEG_LEN, false);
+    add(s.box, s.yellowLine, side * 6.8, PH + 0.03, 0, 0.4, 0.02, SEG_LEN, false);
+    for (let z = -SEG_LEN / 2 + 1; z < SEG_LEN / 2; z += 2) add(s.box, s.yellowLine, side * 7.35, PH + 0.03, z, 0.5, 0.015, 0.14, false);
+    // lantaarns, banken, borden
+    for (let z = -SEG_LEN / 2 + 5; z < SEG_LEN / 2; z += 12) {
+      add(s.box, s.mast, side * 11.6, PH + 2.2, z, 0.12, 4.4, 0.12);
+      add(s.box, s.tunnelLamp || s.white, side * 11.1, PH + 4.4, z, 0.7, 0.1, 0.3, false);
+      add(s.box, s.wood, side * 11.7, PH + 0.5, z + 3.5, 0.55, 0.12, 2.0, false);
+      add(s.box, s.wood, side * 11.95, PH + 0.9, z + 3.5, 0.1, 0.8, 2.0, false);
+      add(s.box, s.mast, side * 11.6, PH + 0.25, z + 2.6, 0.1, 0.5, 0.1, false);
+      add(s.box, s.mast, side * 11.6, PH + 0.25, z + 4.4, 0.1, 0.5, 0.1, false);
     }
-    add(s.box, s.white, side * 11.5, 4.7, 0, 4.4, 0.18, SEG_LEN, true);
-    for (let z = -SEG_LEN / 2 + 6; z < SEG_LEN / 2; z += 12) {
-      add(s.box, s.wood, side * 11.7, 1.4, z, 0.6, 0.12, 2.0, false);
-      add(s.box, s.mast, side * 7.9, 2.4, z + 4, 0.1, 2.9, 0.1);
-      add(s.box, s.white, side * 7.9, 3.9, z + 4, 0.5, 0.12, 0.5, false);
-    }
-    const sign = add(s.box, s.nameMat, side * 8.0, 3.7, -SEG_LEN / 2 + 2, 0.1, 0.9, 3.4, false);
+    const sign = add(s.box, s.nameMat, side * 10.2, PH + 3.0, -SEG_LEN / 2 + 4, 0.1, 0.9, 3.4, false);
     sign.material = s.nameMat;
+    // vitrine met reclame
+    add(s.box, s.signBlue, side * 12.0, PH + 1.2, -4, 0.15, 2.0, 1.2, false);
+    if (station && !inTunnel) {
+      // overkapping met kolommen
+      for (let z = -SEG_LEN / 2 + 4; z < SEG_LEN / 2; z += 8) add(s.box, s.mast, side * 7.6, PH + 2.1, z, 0.2, 4.2, 0.2);
+      add(s.box, s.white, side * 9.7, PH + 4.35, 0, 5.8, 0.18, SEG_LEN, true);
+      add(s.box, s.signBlue, side * 9.7, PH + 4.5, 0, 5.8, 0.1, SEG_LEN, false);
+    }
   }
 
   buildClouds() {
