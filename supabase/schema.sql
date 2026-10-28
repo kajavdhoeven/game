@@ -284,6 +284,7 @@ update public.games set
   description = 'Rijd door gevaarlijke levels vol lava, spijkers, zagen en vuur. Wees snel voor drie sterren, upgrade van fatbike naar motor en naar de gouden vape waarmee je vliegt, en speel nieuwe personages vrij: de oranje-shirt jongen in level 5, Te-Un Racer in level 10 en de gouden regenboog Te-Un in level 20.'
 where id = 'te-un-x3m';
 
+update public.games set logo = '/assets/te-un-x3m-logo.png' where id = 'te-un-x3m' and coalesce(logo, '') = '';
 -- titel-logo voor de eerste game
 update public.games set logo = '/assets/te-un-surfers-logo.png' where id = 'te-un-surfers' and coalesce(logo, '') = '';
 update public.games set logo = '/assets/te-un-puzzel-logo.png' where id = 'te-un-puzzel' and coalesce(logo, '') = '';

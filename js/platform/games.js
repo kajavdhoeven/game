@@ -36,7 +36,7 @@ export const DEFAULT_GAMES = [
       ['↑  of  W', 'Gas'], ['↓  of  S', 'Remmen en achteruit'], ['←  →  of  A D', 'Leunen: achterover of voorover'],
       ['R', 'Level opnieuw'], ['Esc  of  P', 'Pauze'], ['Telefoon', 'Knoppen onderin beeld'],
     ],
-    logo: '', thumb: '/assets/te-un-x3m.jpg', hero: '/assets/te-un-x3m-hero.jpg', url: '/games/te-un-x3m/',
+    logo: '/assets/te-un-x3m-logo.png', thumb: '/assets/te-un-x3m.jpg', hero: '/assets/te-un-x3m-hero.jpg', url: '/games/te-un-x3m/',
     published: true, featured: false, created_at: '2025-07-01T00:00:00Z', plays: 0, likes: 0,
   },
 ];

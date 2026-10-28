@@ -80,3 +80,7 @@ button:disabled { filter: grayscale(.8); opacity: .6; cursor: not-allowed; }
 #hudTime.flash { animation: tflash .8s; }
 @keyframes tflash { 0%, 60% { color: #6dff9a; transform: scale(1.25); } 100% { color: #fff; transform: scale(1); } }
 .chip#gStars { user-select: none; }
+
+.logo-h { margin: 0; line-height: 0; }
+.title-logo { display: block; width: min(340px, 64vw); max-height: 38vh; height: auto; object-fit: contain; filter: drop-shadow(0 8px 14px rgba(0,0,0,.5)); }
+@media (max-height: 640px) { .title-logo { max-height: 30vh; } }

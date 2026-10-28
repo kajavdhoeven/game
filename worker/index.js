@@ -91,7 +91,7 @@ const FALLBACK_GAMES = [{
   id: 'te-un-x3m', title: 'Te-Un X3M', category: 'racen',
   tagline: 'Spring en stunt met een fatbike, motor of gouden vape door 25 levels.',
   description: 'Rijd door gevaarlijke levels vol lava, spijkers, zagen en vuur. Upgrade van fatbike naar motor en naar de gouden vape waarmee je vliegt, en speel nieuwe personages vrij.',
-  logo: '', hero: '/assets/te-un-x3m-hero.jpg', thumb: '/assets/te-un-x3m.jpg', created_at: '2025-07-01T00:00:00Z', controls: [],
+  logo: '/assets/te-un-x3m-logo.png', hero: '/assets/te-un-x3m-hero.jpg', thumb: '/assets/te-un-x3m.jpg', created_at: '2025-07-01T00:00:00Z', controls: [],
 }];
 
 const GENRE = (id) => { const t = String(id || 'game'); return t[0].toUpperCase() + t.slice(1); };
