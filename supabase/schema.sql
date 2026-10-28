@@ -310,3 +310,13 @@ update public.games set logo = '/assets/te-un-puzzel-logo.png' where id = 'te-un
 --
 -- update public.profiles set is_admin = true, is_owner = true
 --   where id = (select id from auth.users where email = 'JOUW-EMAIL@VOORBEELD.NL');
+
+-- vijfde game: VuurTe-Un & WaterTe-Un
+insert into public.games (id, title, category, tags, tagline, description, controls, thumb, hero, logo, url, published, featured)
+values (
+  'vuur-water', 'VuurTe-Un & WaterTe-Un', 'puzzel', array['puzzel','actie'],
+  'Twee kabouters, twee deuren: kom samen veilig door 32 tempellevels.',
+  'Bestuur twee kabouters tegelijk: VuurTe-Un en WaterTe-Un. Breng allebei veilig naar hun eigen deur, zonder dat de één in water en de ander in lava valt. Verzamel rode en blauwe stenen, druk op knoppen en trek aan hendels om poorten te openen. 32 levels in een mossige tempel. Alleen? Speel met één kabouter en wissel met de spatiebalk.',
+  '[["←  →  ↑", "VuurTe-Un: lopen en springen"], ["A  D  W", "WaterTe-Un: lopen en springen"], ["Spatie", "Wisselen (1 speler)"], ["R", "Level opnieuw"], ["Esc  of  P", "Pauze"], ["Telefoon", "Knoppen onderin beeld"]]'::jsonb,
+  '/assets/vuur-water.jpg', '/assets/vuur-water-hero.jpg', '/assets/vuur-water-logo.png', '/games/vuur-water/', true, false
+) on conflict (id) do nothing;

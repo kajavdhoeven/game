@@ -104,6 +104,12 @@ export async function renderGame(app, id) {
       box.innerHTML = `<h3>Jouw voortgang</h3><div class="prog-grid"><div><b>${dn}/25</b><small>Levels af</small></div><div><b>${cars}/4</b><small>Auto's</small></div></div>`;
       return;
     }
+    if (g.id === 'vuur-water') {
+      const dn = Object.keys(d.done || {}).length;
+      const gm = Object.values(d.done || {}).reduce((a, x) => a + (x.red || 0) + (x.blue || 0), 0);
+      box.innerHTML = `<h3>Jouw voortgang</h3><div class="prog-grid"><div><b>${dn}/32</b><small>Levels af</small></div><div><b>${gm}</b><small>Stenen verzameld</small></div></div>`;
+      return;
+    }
     if (g.id === 'te-un-x3m') {
       const st = d.stars || {};
       const lv = Object.keys(st).length, sum = Object.values(st).reduce((a, b2) => a + b2, 0) + (d.bonus || 0) - (d.spent || 0);

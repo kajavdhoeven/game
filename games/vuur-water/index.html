@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1d2a22">
+  <meta name="description" content="VuurTe-Un & WaterTe-Un: bestuur twee kabouters tegelijk, ontwijk lava, water en smurrie en breng ze naar hun deuren. 32 levels.">
+  <title>VuurTe-Un &amp; WaterTe-Un</title>
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main id="menu" class="screen">
+    <h1 class="title"><img src="/assets/vuur-water-logo.png" alt="VuurTe-Un & WaterTe-Un" width="1682" height="241"></h1>
+    <svg id="tree" viewBox="250 60 780 600" role="group" aria-label="Kies een level"></svg>
+    <div class="menubar">
+      <button id="mBack" class="btn">&#8592; Terug</button>
+      <span id="treeCount" class="chip"></span>
+      <button id="mNumbers" class="btn ghost" aria-pressed="false">Levelnummers</button>
+      <button id="mBoard" class="btn ghost">🏆</button>
+    </div>
+  </main>
+
+  <section id="play" class="screen play" hidden>
+    <header class="bar">
+      <button id="back" class="btn" aria-label="Terug naar het menu">&#8592; Menu</button>
+      <b id="lvName">Level 1</b>
+      <span class="stat">⏱ <span id="clock">0:00</span></span>
+      <span class="stat red">◆ <span id="gemRed">0/0</span></span>
+      <span class="stat blue">◆ <span id="gemBlue">0/0</span></span>
+      <span id="who" class="stat"></span><span class="grow"></span>
+      <button id="modeBtn" class="btn ghost">2 spelers</button>
+      <button id="restart" class="btn ghost" aria-label="Opnieuw">&#8635;</button>
+      <button id="pauseBtn" class="btn ghost" aria-label="Pauze">&#10074;&#10074;</button>
+    </header>
+    <div id="stage"><canvas id="cv" aria-label="Speelveld"></canvas></div>
+    <div class="pads">
+      <div class="pad left" data-pad="water">
+        <button data-k="water-l" aria-label="Links">&#9664;</button><button data-k="water-r" aria-label="Rechts">&#9654;</button>
+      </div>
+      <button id="swap" class="swap fire">Vuur</button>
+      <div class="pad right" data-pad="fire">
+        <button data-k="fire-u" aria-label="Springen">&#9650;</button>
+      </div>
+    </div>
+    <div id="pauseBox" class="overlay" hidden>
+      <div class="card"><h2>Pauze</h2>
+        <div class="row"><button id="resume" class="btn">Verder</button><button id="pRestart" class="btn ghost">Opnieuw</button><button id="pMenu" class="btn ghost">Menu</button></div>
+      </div>
+    </div>
+    <div id="overlay" class="overlay" hidden>
+      <div class="card"><h2 id="ovTitle"></h2><p id="ovText"></p>
+        <div class="row"><button id="ovBoard" class="btn ghost">🏆</button><button id="ovMenu" class="btn ghost">Menu</button><button id="ovRetry" class="btn ghost">Opnieuw</button><button id="ovNext" class="btn">Volgende level</button></div>
+      </div>
+    </div>
+  </section>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

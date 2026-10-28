@@ -4,7 +4,7 @@
 const MAX_DIST = 500000;
 const MAX_COINS = 2000000;
 const KEEP = 1500;
-const TIME_GAMES = new Set(['te-un-puzzel', 'te-un-x3m', 'te-un-drive']);
+const TIME_GAMES = new Set(['te-un-puzzel', 'te-un-x3m', 'te-un-drive', 'vuur-water']);
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -129,6 +129,11 @@ const FALLBACK_GAMES = [{
   tagline: 'Rijd je blokkenauto door 25 levels vol bruggen, gaten en spijkers.',
   description: 'Rijd je blokkenauto over heuvels, trappen, houten bruggen en gaten vol water naar de finish. Pas op voor spijkers! Je begint met Hermano\'s fiets en speelt nieuwe auto\'s vrij: de gele monstertruck na level 5, de gouden monstertruck na level 15 en de tuinkabouterauto na level 20. Let op de veerboten en de knoppen die bruggen laten uitschuiven.',
   logo: '/assets/te-un-drive-logo.png', hero: '/assets/te-un-drive-hero.jpg', thumb: '/assets/te-un-drive.jpg', created_at: '2025-08-01T00:00:00Z', controls: [],
+}, {
+  id: 'vuur-water', title: 'VuurTe-Un & WaterTe-Un', category: 'puzzel',
+  tagline: 'Twee kabouters, twee deuren: kom samen veilig door 32 tempellevels.',
+  description: 'Bestuur twee kabouters tegelijk: VuurTe-Un en WaterTe-Un. Breng allebei veilig naar hun eigen deur, zonder dat de één in water en de ander in lava valt. Verzamel rode en blauwe stenen, druk op knoppen en trek aan hendels om poorten te openen. 32 levels in een mossige tempel. Alleen? Speel met één kabouter en wissel met de spatiebalk.',
+  logo: '/assets/vuur-water-logo.png', hero: '/assets/vuur-water-hero.jpg', thumb: '/assets/vuur-water.jpg', created_at: '2025-09-01T00:00:00Z', controls: [],
 }];
 
 const GENRE = (id) => { const t = String(id || 'game'); return t[0].toUpperCase() + t.slice(1); };

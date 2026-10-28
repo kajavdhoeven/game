@@ -50,6 +50,21 @@ export const DEFAULT_GAMES = [
     logo: '/assets/te-un-drive-logo.png', thumb: '/assets/te-un-drive.jpg', hero: '/assets/te-un-drive-hero.jpg', url: '/games/te-un-drive/',
     published: true, featured: false, created_at: '2025-08-01T00:00:00Z', plays: 0, likes: 0,
   },
+  {
+    id: 'vuur-water', title: 'VuurTe-Un & WaterTe-Un', category: 'puzzel', tags: [],
+    tagline: 'Twee kabouters, twee deuren: kom samen veilig door 32 tempellevels.',
+    description: 'Bestuur twee kabouters tegelijk: VuurTe-Un en WaterTe-Un. Breng allebei veilig naar hun eigen deur, zonder dat de één in water en de ander in lava valt. Verzamel rode en blauwe stenen, druk op knoppen en trek aan hendels om poorten te openen. 32 levels in een mossige tempel. Alleen? Speel met één kabouter en wissel met de spatiebalk.',
+    controls: [
+      ['←  →  ↑', 'VuurTe-Un: lopen en springen'],
+      ['A  D  W', 'WaterTe-Un: lopen en springen'],
+      ['Spatie', 'Wisselen (1 speler)'],
+      ['R', 'Level opnieuw'],
+      ['Esc  of  P', 'Pauze'],
+      ['Telefoon', 'Knoppen onderin beeld'],
+    ],
+    logo: '/assets/vuur-water-logo.png', thumb: '/assets/vuur-water.jpg', hero: '/assets/vuur-water-hero.jpg', url: '/games/vuur-water/',
+    published: true, featured: false, created_at: '2025-09-01T00:00:00Z', plays: 0, likes: 0,
+  },
 ];
 
 export const genreName = (id) => {
