@@ -265,6 +265,16 @@ values (
   '/assets/te-un-puzzel.jpg', '/assets/te-un-puzzel-hero.jpg', '/games/te-un-puzzel/', true, false
 ) on conflict (id) do nothing;
 
+-- derde game: Te-Un X3M
+insert into public.games (id, title, category, tags, tagline, description, controls, thumb, hero, url, published, featured)
+values (
+  'te-un-x3m', 'Te-Un X3M', 'racen', array['racen','actie'],
+  'Spring en stunt met een fatbike, motor of gouden vape door 25 levels.',
+  'Rijd door gevaarlijke levels vol lava, spijkers, zagen en vuur. Wees snel voor drie sterren, upgrade van fatbike naar motor en naar de gouden vape waarmee je vliegt, en speel nieuwe personages vrij: de oranje-shirt jongen in level 5, de groene bril in level 10 en de gouden regenboog Te-Un in level 20.',
+  '[["↑  of  W","Gas"],["↓  of  S","Remmen en achteruit"],["←  →  of  A D","Leunen: achterover of voorover"],["R","Level opnieuw"],["Esc  of  P","Pauze"],["Telefoon","Knoppen onderin beeld"]]'::jsonb,
+  '/assets/te-un-x3m.jpg', '/assets/te-un-x3m-hero.jpg', '/games/te-un-x3m/', true, false
+) on conflict (id) do nothing;
+
 -- titel-logo voor de eerste game
 update public.games set logo = '/assets/te-un-surfers-logo.png' where id = 'te-un-surfers' and coalesce(logo, '') = '';
 update public.games set logo = '/assets/te-un-puzzel-logo.png' where id = 'te-un-puzzel' and coalesce(logo, '') = '';

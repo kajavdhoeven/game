@@ -28,6 +28,17 @@ export const DEFAULT_GAMES = [
     logo: '/assets/te-un-puzzel-logo.png', thumb: '/assets/te-un-puzzel.jpg', hero: '/assets/te-un-puzzel-hero.jpg', url: '/games/te-un-puzzel/',
     published: true, featured: false, created_at: '2025-06-01T00:00:00Z', plays: 0, likes: 0,
   },
+  {
+    id: 'te-un-x3m', title: 'Te-Un X3M', category: 'racen', tags: [],
+    tagline: 'Spring en stunt met een fatbike, motor of gouden vape door 25 levels.',
+    description: 'Rijd door gevaarlijke levels vol lava, spijkers, zagen en vuur. Wees snel voor drie sterren, upgrade van fatbike naar motor en naar de gouden vape waarmee je vliegt, en speel nieuwe personages vrij: de oranje-shirt jongen in level 5, de groene bril in level 10 en de gouden regenboog Te-Un in level 20.',
+    controls: [
+      ['↑  of  W', 'Gas'], ['↓  of  S', 'Remmen en achteruit'], ['←  →  of  A D', 'Leunen: achterover of voorover'],
+      ['R', 'Level opnieuw'], ['Esc  of  P', 'Pauze'], ['Telefoon', 'Knoppen onderin beeld'],
+    ],
+    logo: '', thumb: '/assets/te-un-x3m.jpg', hero: '/assets/te-un-x3m-hero.jpg', url: '/games/te-un-x3m/',
+    published: true, featured: false, created_at: '2025-07-01T00:00:00Z', plays: 0, likes: 0,
+  },
 ];
 
 export const genreName = (id) => {

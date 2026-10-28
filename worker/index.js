@@ -84,6 +84,11 @@ const FALLBACK_GAMES = [{
   tagline: 'Vier legpuzzels met Te-Un. Maak ze allemaal af voor een nieuwe profielfoto.',
   description: 'Sleep de door elkaar liggende stukjes naar de juiste plek en maak de afbeelding af. Vier levels, van rustig tot serieus moeilijk.',
   logo: '/assets/te-un-puzzel-logo.png', hero: '/assets/te-un-puzzel-hero.jpg', thumb: '/assets/te-un-puzzel.jpg', created_at: '2025-06-01T00:00:00Z', controls: [],
+}, {
+  id: 'te-un-x3m', title: 'Te-Un X3M', category: 'racen',
+  tagline: 'Spring en stunt met een fatbike, motor of gouden vape door 25 levels.',
+  description: 'Rijd door gevaarlijke levels vol lava, spijkers, zagen en vuur. Upgrade van fatbike naar motor en naar de gouden vape waarmee je vliegt, en speel nieuwe personages vrij.',
+  logo: '', hero: '/assets/te-un-x3m-hero.jpg', thumb: '/assets/te-un-x3m.jpg', created_at: '2025-07-01T00:00:00Z', controls: [],
 }];
 
 const GENRE = (id) => { const t = String(id || 'game'); return t[0].toUpperCase() + t.slice(1); };
