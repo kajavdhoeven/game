@@ -47,7 +47,7 @@ export const DEFAULT_GAMES = [
       ['→  of  D', 'Gas'], ['←  of  A', 'Remmen en achteruit'], ['R', 'Level opnieuw'], ['Esc  of  P', 'Pauze'],
       ['In de lucht', 'Gas tilt de neus op, rem duwt hem omlaag'], ['Telefoon', 'Knoppen onderin beeld'],
     ],
-    logo: '', thumb: '/assets/te-un-drive.jpg', hero: '/assets/te-un-drive-hero.jpg', url: '/games/te-un-drive/',
+    logo: '/assets/te-un-drive-logo.png', thumb: '/assets/te-un-drive.jpg', hero: '/assets/te-un-drive-hero.jpg', url: '/games/te-un-drive/',
     published: true, featured: false, created_at: '2025-08-01T00:00:00Z', plays: 0, likes: 0,
   },
 ];

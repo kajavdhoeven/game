@@ -59,3 +59,6 @@ button:disabled { filter: grayscale(.8); opacity: .65; cursor: not-allowed; }
 #touch button.gas { width: 116px; height: 116px; background: rgba(255,160,30,.7); }
 #touch button.on { transform: translateY(3px); filter: brightness(1.25); }
 @media (max-width: 720px) { .grid { grid-template-columns: repeat(4, 1fr); } .hint { display: none; } .lvl-badge { font-size: 16px; padding: 6px 12px; } }
+
+.logo-h { margin: 0; line-height: 0; }
+.title-logo { display: block; width: min(600px, 88vw); height: auto; filter: drop-shadow(0 8px 14px rgba(0,30,90,.45)); }

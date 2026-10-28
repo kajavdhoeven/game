@@ -295,6 +295,7 @@ update public.games set
 where id = 'te-un-x3m';
 
 update public.games set logo = '/assets/te-un-x3m-logo.png' where id = 'te-un-x3m' and coalesce(logo, '') = '';
+update public.games set logo = '/assets/te-un-drive-logo.png' where id = 'te-un-drive' and coalesce(logo, '') = '';
 -- titel-logo voor de eerste game
 update public.games set logo = '/assets/te-un-surfers-logo.png' where id = 'te-un-surfers' and coalesce(logo, '') = '';
 update public.games set logo = '/assets/te-un-puzzel-logo.png' where id = 'te-un-puzzel' and coalesce(logo, '') = '';

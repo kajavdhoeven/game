@@ -85,7 +85,7 @@ export function buildWorld(level) {
       const m = new THREE.Mesh(new THREE.BoxGeometry(w, 6, DEPTH + 0.3), new THREE.MeshBasicMaterial({ color: '#17c2ff', transparent: true, opacity: 0.92 }));
       m.position.set((h.x0 + h.x1) / 2, h.y + 4.5 - 3, 0);
       root.add(m);
-      const foam = new THREE.Mesh(new THREE.BoxGeometry(w, 0.14, DEPTH + 0.35), new THREE.MeshBasicMaterial({ color: '#ffffff' }));
+      const foam = new THREE.Mesh(new THREE.BoxGeometry(w, 0.14, DEPTH + 0.35), new THREE.MeshBasicMaterial({ color: '#bff3ff' }));
       foam.position.set((h.x0 + h.x1) / 2, h.y + 4.52, 0);
       root.add(foam);
       waters.push(foam);

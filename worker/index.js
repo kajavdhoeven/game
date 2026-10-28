@@ -96,7 +96,7 @@ const FALLBACK_GAMES = [{
   id: 'te-un-drive', title: 'Te-Un Drive', category: 'racen',
   tagline: 'Rijd je blokkenauto door 25 levels vol bruggen, gaten en spijkers.',
   description: 'Rijd je blokkenauto over heuvels, trappen, houten bruggen en gaten vol water naar de finish. Pas op voor spijkers! Speel nieuwe auto\'s vrij: vanaf level 5 Hermano\'s fiets, vanaf level 15 de gouden regenboogauto en vanaf level 20 de tuinkabouterauto.',
-  logo: '', hero: '/assets/te-un-drive-hero.jpg', thumb: '/assets/te-un-drive.jpg', created_at: '2025-08-01T00:00:00Z', controls: [],
+  logo: '/assets/te-un-drive-logo.png', hero: '/assets/te-un-drive-hero.jpg', thumb: '/assets/te-un-drive.jpg', created_at: '2025-08-01T00:00:00Z', controls: [],
 }];
 
 const GENRE = (id) => { const t = String(id || 'game'); return t[0].toUpperCase() + t.slice(1); };
