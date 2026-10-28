@@ -1,4 +1,4 @@
-name = "game"
+name = "te-ungames"
 main = "worker/index.js"
 compatibility_date = "2025-01-01"
 
