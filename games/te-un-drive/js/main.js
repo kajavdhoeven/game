@@ -21,6 +21,9 @@ const post = (type, extra = {}) => {
   try { window.parent.postMessage({ type, game: GAME_ID, ...extra }, location.origin); } catch (e) { /* geen ouder */ }
 };
 let saveTimer = null;
+// de tekst boven Hermano's fiets wisselt tijdens het spelen
+const HERM = ["HERMANO'S", 'FLINKE SCHAFER', 'OUTFITJE 52K'];
+let hermT = 0, hermI = 0;
 function save(quiet) {
   if (!quiet) P.updatedAt = Date.now();
   try { localStorage.setItem(KEY, JSON.stringify(snapshot())); } catch (e) { /* geen opslag */ }
@@ -158,6 +161,7 @@ function startLevel(n) {
   $('hudLevel').textContent = `Level ${n}`;
   $('hudTime').textContent = '0.0';
   $('hermano').hidden = id !== 'bike';
+  hermT = 0; hermI = 0; $('hermano').firstElementChild.textContent = HERM[0];
   hintT = n <= 2 ? 7 : 2.5;
   $('hint').classList.remove('off');
   place();
@@ -235,6 +239,7 @@ function update(dt) {
     if (c.id === 'gold' && g.state === 'run' && Math.random() < dt * 90) emit(c.x - 2.0, c.y + 0.2 + Math.random() * 0.4, (Math.random() - 0.5) * 1.5, -c.vx * 0.2 - 2, 0.3, 0.9, 0.34, '#' + new THREE.Color().setHSL((g.t * 0.8 + Math.random() * 0.3) % 1, 1, 0.55).getHexString());
   }
   engine(sp, g.input.gas && g.state === 'run', g.state === 'run' && !paused);
+  if (!$('hermano').hidden && !paused) { hermT += dt; if (hermT > 2.6) { hermT = 0; hermI = (hermI + 1) % HERM.length; $('hermano').firstElementChild.textContent = HERM[hermI]; } }
   if (hintT > 0 && g.state === 'run') { hintT -= dt; if (hintT <= 0) $('hint').classList.add('off'); }
   stepParts(dt);
   // camera
