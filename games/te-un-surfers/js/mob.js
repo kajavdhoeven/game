@@ -14,7 +14,7 @@ export function createMob(scene, lights) {
   const members = [];
   const N = 7;
   for (let i = 0; i < N; i++) {
-    const gn = createGnome({ skin: 'mob', tunic: TUNICS[i % TUNICS.length], hat: HATS[(i * 5 + 1) % HATS.length] });
+    const gn = createGnome({ skin: 'mob', classic: true, tunic: TUNICS[i % TUNICS.length], hat: HATS[(i * 5 + 1) % HATS.length] });
     gn.root.scale.setScalar(0.95 + (i % 3) * 0.07);
     const torch = i % 2 === 0;
     const w = torch ? createTorch() : createPitchfork();
@@ -56,6 +56,9 @@ export function createMob(scene, lights) {
       // leider staat het dichtst bij Te-Un
       members[2].role = 'leader';
     },
+    allGone() {
+      return members.every((m) => m.z > 15);
+    },
     hide() {
       group.visible = false;
       lights.forEach((l) => { l.intensity = 0; });
@@ -78,6 +81,15 @@ export function createMob(scene, lights) {
           gn.root.rotation.y = Math.sin(t * 1.3 + i) * 0.15;
           gn.update('scared', dt, t + i, 0, 0, { emotion: 'angry' });
           gn.root.position.y = Math.abs(Math.sin(t * 7 + m.phase)) * 0.06;
+        } else if (extra.follow) {
+          // achtervolging na een botsing: dicht achter Te-Un, bij 'catch' vlak achter zijn hielen, bij 'leave' vallen ze weg
+          const base = [2.4, 3.1, 2.0, 3.6, 2.7, 4.2, 3.4][i % 7];
+          const tz = extra.follow === 'catch' ? 0.9 + (i % 4) * 0.35 : extra.follow === 'leave' ? 26 : base + Math.sin(t * 2 + i) * 0.25;
+          m.z += (tz - m.z) * Math.min(1, dt * (extra.follow === 'leave' ? 0.9 : 4.5));
+          gn.root.position.set(m.x * 0.7 + Math.sin(t * 2.2 + i) * 0.15, 0, m.z);
+          gn.root.rotation.y = 0;
+          gn.update(extra.follow === 'catch' ? 'scared' : 'run', dt, t + i, 0.6, 0, { angry: true, armUp: true, emotion: 'angry' });
+          gn.root.visible = m.z < 16;
         } else {
           // achtervolging: ze rennen mee, Te-Un wordt sneller
           const diff = worldSpeed - m.runSpeed;

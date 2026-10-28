@@ -42,19 +42,17 @@
         <svg viewBox="0 0 24 24" width="22" height="22"><rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor"/></svg>
       </button>
     </div>
-    <div id="vehBox">
-      <button id="vehPrev" class="mini-btn" aria-label="Vorig voertuig">&#9664;</button>
-      <button id="vehBtn" aria-label="Activeer voertuig">
+    <div id="vehBox" hidden>
+      <button id="vehBtn" aria-label="Voertuig gebruiken">
         <span class="ring"></span>
         <img id="vehIcon" alt="">
-        <span id="vehName">Geen voertuig</span>
-        <span id="vehState">Koop er een in de winkel</span>
-        <kbd>Spatie</kbd>
+        <span class="spentmark" aria-hidden="true">&#9889;</span>
+        <span id="vehState"></span>
       </button>
-      <button id="vehNext" class="mini-btn" aria-label="Volgend voertuig">&#9654;</button>
     </div>
     <div id="fireHint">Dubbel tikken = waterpistool</div>
   </div>
+  <div id="devCorner" aria-hidden="true"></div>
   <div id="toast" hidden></div>
   <div id="skipHint" hidden>Tik of druk op Enter om over te slaan</div>
 
@@ -76,9 +74,9 @@
       </div>
       <ul class="how">
         <li><b>&larr; &rarr;</b> of <b>A D</b>: een spoor opzij &middot; <b>&uarr;</b> springen &middot; <b>&darr;</b> rollen</li>
-        <li><b>Spatie</b>: voertuig &middot; <b>C</b>: ander voertuig &middot; <b>F</b> of dubbelklik: waterpistool</li>
+        <li><b>Spatie</b>: voertuig &middot; <b>F</b> of dubbelklik: waterpistool</li>
         <li class="touch"><b>Swipe</b> = 1 spoor, omhoog = springen, omlaag = rollen, <b>dubbeltik</b> = waterpistool</li>
-        <li class="bonus">Spuit een treinspotter nat: <b>+25 munten</b> (oranje shirt: <b>+100</b>)</li>
+        <li class="bonus">Spuit een treinspotter nat: <b>+25 munten</b> (oranje shirt: <b>+100</b>). Loop je tegen de zijkant van een trein, dan komen de boze kabouters achter je aan.</li>
       </ul>
       <div class="stats">
         <div><small>Record</small><b id="menuBest">0</b></div>

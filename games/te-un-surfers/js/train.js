@@ -41,6 +41,11 @@ export const TRAIN_TYPES = {
     logo: 'none', nose: { len: 0.6, sx: 0.02, sy: 0.02 }, number: 'CARGO 6401', stripe: '#ffcc00', loco: true, pantograph: true,
   },
 };
+// Korte NS-trein die Te-Un als voertuig gebruikt: afgeronde neus aan allebei de kanten, dus geen open achterkant
+TRAIN_TYPES.mini = {
+  label: 'NS-trein (voertuig)', len: 8.4, W: 2.5, H: 3.2, body: NS_YELLOW, skirt: NS_BLUE, doors: '#26467f', roof: '#c9cdd1',
+  logo: 'blue', nose: { len: 1.6, sx: 0.1, sy: 0.06 }, number: 'TE-UN 1', mini: true, bothNoses: true, pantograph: false,
+};
 export const TRAIN_KEYS = ['sprinter', 'sprinter_gr', 'sprinter_st', 'intercity', 'intercity_gr', 'international', 'vintage', 'freight'];
 export const TRAIN_WEIGHTS = { ...Object.fromEntries(Object.entries(TRAIN_TYPES).map(([k, v]) => [k, v.weight || 0])), freight: 1.4 };
 
@@ -71,7 +76,12 @@ function buildBody(cfg) {
   const NP = P.length;
   const hl = len / 2;
   const nl = cfg.nose.len;
-  const zs = [{ z: -hl, t: 0 }, { z: hl - nl, t: 0 }];
+  const zs = [];
+  if (cfg.bothNoses) {
+    zs.length = 0;
+    for (let i = 0; i <= 6; i++) zs.push({ z: -hl + nl * (i / 6), t: 1 - i / 6 });
+    zs.push({ z: hl - nl, t: 0 });
+  } else zs.push({ z: -hl, t: 0 }, { z: hl - nl, t: 0 });
   for (let i = 1; i <= 6; i++) zs.push({ z: hl - nl + nl * (i / 6), t: i / 6 });
   const pos = [];
   const uv = [];
@@ -112,7 +122,8 @@ function buildBody(cfg) {
 }
 
 // ------------------------------------------------------------------ textures
-function layout(L) {
+function layout(L, cfg = {}) {
+  if (cfg.mini) return { doors: [L / 2], windows: [[0.9, L / 2 - 0.95], [L / 2 + 0.95, L - 0.9]] };
   const dL = L * 0.21;
   return {
     doors: [dL, L - dL],
@@ -317,7 +328,7 @@ function sideTexture(cfg) {
       g.fillRect(0, Y(1.45), W, Y(1.2) - Y(1.45));
     }
 
-    const lay = layout(L);
+    const lay = layout(L, cfg);
     if (cfg.loco) {
       // locomotief: ventilatieroosters, gele waarschuwingsband en cabinevensters aan beide uiteinden
       g.fillStyle = '#1a2129';
@@ -591,7 +602,7 @@ function buildCar(key) {
   const front = new THREE.Mesh(a.frontGeo, a.frontMat);
   front.position.z = L / 2;
   car.add(front);
-  const rear = new THREE.Mesh(a.frontGeo, s.back);
+  const rear = new THREE.Mesh(a.frontGeo, cfg.bothNoses ? a.frontMat : s.back);
   rear.position.z = -L / 2;
   rear.rotation.y = Math.PI;
   car.add(rear);
@@ -641,8 +652,8 @@ function addLamps(car, cfg) {
     sp.scale.set(1.1, 1.1, 1);
     sp.position.set(x, 0.8, L / 2 + 0.3);
     car.add(sp);
-    const rl = new THREE.Mesh(s.disc, s.redLamp);
-    rl.scale.set(0.6, 0.6, 1);
+    const rl = new THREE.Mesh(s.disc, cfg.bothNoses ? s.lampMat : s.redLamp);
+    rl.scale.set(cfg.bothNoses ? 1 : 0.6, cfg.bothNoses ? 1 : 0.6, 1);
     rl.position.set(x * 0.95, 1.1, -L / 2 - 0.02);
     rl.rotation.y = Math.PI;
     car.add(rl);
@@ -837,6 +848,17 @@ export function pickTrainType(rand = Math.random) {
 }
 
 // Een treinstel; neus wijst naar +z (naar de speler).
+const carProtos = new Map();
+function carClone(key, cfg) {
+  let proto = carProtos.get(key);
+  if (!proto) {
+    proto = buildCar(key);
+    addLamps(proto, cfg);
+    carProtos.set(key, proto);
+  }
+  return proto.clone(true);
+}
+
 export function createTrain(key, cars = 1, rand = Math.random) {
   const g = new THREE.Group();
   if (key === 'freight') {
@@ -864,8 +886,7 @@ export function createTrain(key, cars = 1, rand = Math.random) {
   const cfg = TRAIN_TYPES[key];
   const gapZ = 0.35;
   for (let i = 0; i < cars; i++) {
-    const car = buildCar(key);
-    addLamps(car, cfg);
+    const car = carClone(key, cfg);
     car.position.z = -i * (cfg.len + gapZ);
     g.add(car);
     if (i > 0) {
@@ -882,10 +903,17 @@ export function createTrain(key, cars = 1, rand = Math.random) {
 
 // Compacte NS-trein als voertuig voor Teun (1 rijtuig, ingekort).
 export function createVehicleTrain() {
-  const car = buildCar('sprinter');
-  addLamps(car, TRAIN_TYPES.sprinter);
+  const car = buildCar('mini');
+  addLamps(car, TRAIN_TYPES.mini);
+  // reling op het dak waar Te-Un op staat
+  const sh = shared();
+  const rail = new THREE.Group();
+  [-1, 1].forEach((sd) => {
+    [-1.8, 0, 1.8].forEach((z) => box(sh, sh.steel, 0.05, 0.4, 0.05, sd * 0.7, TRAIN_TYPES.mini.H + 0.2, z, rail));
+    box(sh, sh.steel, 0.05, 0.05, 3.7, sd * 0.7, TRAIN_TYPES.mini.H + 0.4, 0, rail);
+  });
+  car.add(rail);
   const g = new THREE.Group();
   g.add(car);
-  g.scale.set(0.78, 0.7, 0.46);
   return g;
 }

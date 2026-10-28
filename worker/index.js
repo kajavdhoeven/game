@@ -203,6 +203,8 @@ export default {
       if (url.host === 'www.' + host) return Response.redirect(env.SITE_URL + url.pathname + url.search, 301);
     }
     if (url.pathname === '/sitemap.xml') return sitemap(env, url);
+    // oude categorie-adressen bestaan niet meer
+    if (/^\/(c\/|popular|new|categories)/.test(url.pathname)) return Response.redirect((env.SITE_URL || url.origin) + '/games', 301);
     if (request.method === 'GET' && /^\/(g\/|games$|favorites|profile|admin|search)/.test(url.pathname) || (request.method === 'GET' && url.pathname === '/')) {
       return servePage(request, env, url);
     }

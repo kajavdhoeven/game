@@ -83,16 +83,22 @@ const easeOut = (x) => 1 - Math.pow(1 - x, 3);
 export function createGnome(opts = {}) {
   const skinName = opts.skin || 'teun';
   const conductor = skinName === 'conductor';
+  // 'classic' is de oude baardige kabouter (de boze menigte); Te-Un zelf ziet eruit zoals op zijn logo
+  const classic = !!opts.classic;
+  const photo = !classic;
   const skin = M('#f1c4a0', { roughness: 0.6 });
-  const tunicColor = opts.tunic || (conductor ? '#102a5c' : '#2f7a4b');
-  const tunicMap = knitTexture(tunicColor, new THREE.Color(tunicColor).offsetHSL(0, 0, 0.07).getStyle(), new THREE.Color(tunicColor).offsetHSL(0, 0, -0.08).getStyle(), 7, 3);
-  const tunic = M('#ffffff', { map: conductor ? null : tunicMap, roughness: 0.85 });
-  if (conductor) tunic.color.set(tunicColor);
-  const trousers = M(conductor ? '#0c1d40' : '#6a4a2e', { roughness: 0.9 });
+  const tunicColor = opts.tunic || (conductor ? '#102a5c' : photo ? '#1f5fe6' : '#2f7a4b');
+  const useKnit = classic && !conductor;
+  const tunicMap = useKnit ? knitTexture(tunicColor, new THREE.Color(tunicColor).offsetHSL(0, 0, 0.07).getStyle(), new THREE.Color(tunicColor).offsetHSL(0, 0, -0.08).getStyle(), 7, 3) : null;
+  const tunic = M('#ffffff', { map: tunicMap, roughness: 0.85 });
+  if (!useKnit) tunic.color.set(tunicColor);
+  const trousers = M(conductor ? '#0c1d40' : photo ? '#15161b' : '#6a4a2e', { roughness: 0.9 });
+  const hairMat = M('#4a2f1f', { roughness: 0.7 });
   const white = M('#f8f8f4', { roughness: 0.95 });
   const hatColor = opts.hat || '#d3202a';
-  const hatMap = knitTexture(hatColor, new THREE.Color(hatColor).offsetHSL(0, 0, 0.08).getStyle(), new THREE.Color(hatColor).offsetHSL(0, 0, -0.1).getStyle(), 3, 2);
-  const redHat = M('#ffffff', { map: hatMap, roughness: 0.8 });
+  const hatMap = classic ? knitTexture(hatColor, new THREE.Color(hatColor).offsetHSL(0, 0, 0.08).getStyle(), new THREE.Color(hatColor).offsetHSL(0, 0, -0.1).getStyle(), 3, 2) : null;
+  const redHat = M('#ffffff', { map: hatMap, roughness: 0.78 });
+  if (!classic) redHat.color.set('#e0232c');
   const leather = M('#7a4a22', { roughness: 0.6 });
   const black = P('#0a0a0c', { roughness: 0.18, metalness: 0.3, clearcoat: 1, clearcoatRoughness: 0.08 });
   // smurfblauw, glanzend
@@ -115,19 +121,19 @@ export function createGnome(opts = {}) {
     const hip = new THREE.Group();
     hip.position.set(side * 0.12, 0.56, 0);
     rig.add(hip);
-    const thigh = capsule(0.075, 0.12, trousers, hip);
+    const thigh = capsule(photo ? 0.098 : 0.075, 0.12, trousers, hip);
     thigh.position.y = -0.14;
     const knee = new THREE.Group();
     knee.position.y = -0.28;
     hip.add(knee);
-    const shin = capsule(0.062, 0.1, trousers, knee);
+    const shin = capsule(photo ? 0.085 : 0.062, 0.1, trousers, knee);
     shin.position.y = -0.12;
-    const sock = mesh(new THREE.CylinderGeometry(0.066, 0.07, 0.09, 12), white, knee, 0, -0.2, 0);
+    const sock = mesh(new THREE.CylinderGeometry(0.066, 0.07, 0.09, 12), photo ? trousers : white, knee, 0, -0.2, 0);
     sock.castShadow = false;
     const ankle = new THREE.Group();
     ankle.position.y = -0.26;
     knee.add(ankle);
-    const shoeMat = conductor ? P('#111317', { roughness: 0.25, clearcoat: 0.9 }) : smurf;
+    const shoeMat = conductor ? P('#111317', { roughness: 0.25, clearcoat: 0.9 }) : photo ? P('#1f5ee0', { roughness: 0.55 }) : smurf;
     const shoe = mesh(new THREE.SphereGeometry(1, 20, 14), shoeMat, ankle, 0, -0.02, -0.07);
     shoe.scale.set(0.095, 0.075, 0.185);
     const toe = mesh(new THREE.SphereGeometry(1, 16, 12), shoeMat, ankle, 0, 0.004, -0.17);
@@ -137,6 +143,17 @@ export function createGnome(opts = {}) {
     sl.castShadow = false;
     const lace = mesh(new THREE.BoxGeometry(0.07, 0.012, 0.07), white, ankle, 0, 0.04, -0.05);
     lace.castShadow = false;
+    if (photo) {
+      // sneaker: twee witte zijstrepen en een lichte teenkap
+      [-1, 1].forEach((sd) => [0.0, 0.03].forEach((o) => {
+        const st = mesh(new THREE.BoxGeometry(0.008, 0.012, 0.13), white, ankle, sd * 0.094, 0.0 - o, -0.09);
+        st.rotation.x = 0.35;
+        st.castShadow = false;
+      }));
+      const cap = mesh(new THREE.SphereGeometry(1, 14, 10), sole, ankle, 0, -0.04, -0.2);
+      cap.scale.set(0.07, 0.045, 0.06);
+      cap.castShadow = false;
+    }
     return { hip, knee, ankle };
   }
   const legL = makeLeg(-1);
@@ -152,12 +169,12 @@ export function createGnome(opts = {}) {
   ].map(([r, y]) => new THREE.Vector2(r, y));
   const body = mesh(new THREE.LatheGeometry(tunicShape, 24), tunic, torso, 0, -0.02, 0);
   body.scale.z = 0.82;
-  const belt = mesh(new THREE.TorusGeometry(0.205, 0.022, 8, 28), leather, torso, 0, 0.14, 0);
+  const belt = mesh(new THREE.TorusGeometry(0.205, 0.022, 8, 28), photo ? M('#101114', { roughness: 0.5 }) : leather, torso, 0, 0.14, 0);
   belt.rotation.x = Math.PI / 2;
   belt.scale.set(1, 0.82, 1);
-  mesh(new THREE.BoxGeometry(0.07, 0.06, 0.02), gold, torso, 0, 0.14, -0.178);
+  mesh(new THREE.BoxGeometry(0.07, 0.06, 0.02), photo ? M('#cfd4da', { metalness: 0.9, roughness: 0.25 }) : gold, torso, 0, 0.14, -0.178);
   // knopen
-  for (let i = 0; i < 3; i++) mesh(new THREE.SphereGeometry(0.018, 8, 8), conductor ? gold : M('#d9c28a'), torso, 0, 0.22 + i * 0.07, -0.176 + i * 0.004);
+  if (!photo || conductor) for (let i = 0; i < 3; i++) mesh(new THREE.SphereGeometry(0.018, 8, 8), conductor ? gold : M('#d9c28a'), torso, 0, 0.22 + i * 0.07, -0.176 + i * 0.004);
   if (conductor) {
     // NS-banden op de mouwen en reflecterende band
     const band = mesh(new THREE.TorusGeometry(0.2, 0.012, 6, 24), M('#ffc917'), torso, 0, 0.3, 0);
@@ -179,14 +196,17 @@ export function createGnome(opts = {}) {
 
   // sjaal met wapperende staart (stropdas bij de conducteur)
   const scarfMat = M(conductor ? '#ffc917' : '#e0a826', { roughness: 0.85 });
-  const scarfRing = mesh(new THREE.TorusGeometry(0.15, 0.045, 10, 24), scarfMat, torso, 0, 0.42, 0);
+  const scarfG = new THREE.Group();
+  torso.add(scarfG);
+  scarfG.visible = classic || conductor;
+  const scarfRing = mesh(new THREE.TorusGeometry(0.15, 0.045, 10, 24), scarfMat, scarfG, 0, 0.42, 0);
   scarfRing.rotation.x = Math.PI / 2;
   scarfRing.scale.set(1, 0.9, 1);
   const scarfTail = [];
   {
     let parent = new THREE.Group();
     parent.position.set(0.06, 0.4, 0.14);
-    torso.add(parent);
+    scarfG.add(parent);
     for (let i = 0; i < 5; i++) {
       const seg = new THREE.Group();
       seg.position.z = i === 0 ? 0 : 0.11;
@@ -208,12 +228,15 @@ export function createGnome(opts = {}) {
     const el = new THREE.Group();
     el.position.y = -0.2;
     sh.add(el);
-    const low = capsule(0.05, 0.09, tunic, el);
+    const low = capsule(0.05, 0.09, photo && !conductor ? skin : tunic, el);
     low.position.y = -0.1;
-    const cuff = mesh(new THREE.CylinderGeometry(0.058, 0.058, 0.04, 12), conductor ? M('#ffc917') : white, el, 0, -0.2, 0);
-    cuff.castShadow = false;
-    mesh(new THREE.SphereGeometry(0.062, 14, 12), white, el, 0, -0.26, 0);
-    const thumb = mesh(new THREE.SphereGeometry(0.026, 8, 8), white, el, -side * 0.05, -0.25, -0.03);
+    const handMat = photo ? skin : white;
+    if (!photo || conductor) {
+      const cuff = mesh(new THREE.CylinderGeometry(0.058, 0.058, 0.04, 12), conductor ? M('#ffc917') : white, el, 0, -0.2, 0);
+      cuff.castShadow = false;
+    }
+    mesh(new THREE.SphereGeometry(0.062, 14, 12), handMat, el, 0, -0.26, 0);
+    const thumb = mesh(new THREE.SphereGeometry(0.026, 8, 8), handMat, el, -side * 0.05, -0.25, -0.03);
     thumb.castShadow = false;
     return { sh, el };
   }
@@ -238,7 +261,7 @@ export function createGnome(opts = {}) {
   head.position.y = 0.62 + 0.46 + 0.17;
   rig.add(head);
   const skull = mesh(new THREE.SphereGeometry(0.235, 32, 24), skin, head);
-  skull.scale.set(1, 0.97, 0.98);
+  skull.scale.set(photo ? 1.05 : 1, photo ? 0.99 : 0.97, photo ? 1.02 : 0.98);
   mesh(new THREE.SphereGeometry(0.06, 16, 14), M('#e79a86', { roughness: 0.55 }), head, 0, -0.045, -0.235);
   const cheekL = mesh(new THREE.SphereGeometry(0.045, 12, 10), M('#ee9c8c', { roughness: 0.7 }), head, -0.13, -0.07, -0.19);
   cheekL.scale.z = 0.5;
@@ -246,7 +269,7 @@ export function createGnome(opts = {}) {
   cheekR.position.x = 0.13;
   head.add(cheekR);
   for (const s of [-1, 1]) {
-    const ear = mesh(new THREE.ConeGeometry(0.05, 0.16, 12), skin, head, s * 0.235, 0.02, 0.01);
+    const ear = mesh(new THREE.ConeGeometry(photo ? 0.068 : 0.05, photo ? 0.21 : 0.16, 12), skin, head, s * (photo ? 0.245 : 0.235), photo ? 0.03 : 0.02, 0.01);
     ear.rotation.z = -s * 1.2;
   }
   // ogen (knipperen) en wenkbrauwen (emotie) zijn losse onderdelen
@@ -258,15 +281,21 @@ export function createGnome(opts = {}) {
     const eye = new THREE.Group();
     eye.position.set(s * 0.095, 0.045, -0.2);
     head.add(eye);
+    if (photo) eye.scale.setScalar(1.18);
     const ball = mesh(new THREE.SphereGeometry(0.04, 14, 12), eyeMat, eye);
     ball.castShadow = false;
+    if (photo) {
+      const iris = mesh(new THREE.SphereGeometry(0.03, 12, 10), M('#3b6fb8', { roughness: 0.3 }), eye, 0, 0, -0.016);
+      iris.scale.z = 0.7;
+      iris.castShadow = false;
+    }
     const pupil = mesh(new THREE.SphereGeometry(0.02, 12, 10), pupilMat, eye, 0, 0, -0.035);
     pupil.castShadow = false;
     eyes.push({ g: eye, pupil });
     const brow = new THREE.Group();
     brow.position.set(s * 0.097, 0.125, -0.205);
     head.add(brow);
-    const bm = mesh(new THREE.CapsuleGeometry(0.012, 0.07, 4, 8), white, brow);
+    const bm = mesh(new THREE.CapsuleGeometry(0.012, 0.07, 4, 8), photo ? hairMat : white, brow);
     bm.rotation.z = Math.PI / 2;
     bm.castShadow = false;
     brows.push({ g: brow, side: s });
@@ -287,9 +316,26 @@ export function createGnome(opts = {}) {
   }
   mesh(new THREE.TorusGeometry(0.03, 0.01, 8, 16, Math.PI), black, head, 0, 0.065, -0.225).castShadow = false;
 
-  // baard en snor
+  if (photo) {
+    // glimlach en haar: de pony kijkt onder de muts uit
+    const smile = mesh(new THREE.TorusGeometry(0.05, 0.008, 6, 14, Math.PI), M('#9a4a3a', { roughness: 0.6 }), head, 0, -0.075, -0.222);
+    smile.rotation.z = Math.PI;
+    smile.castShadow = false;
+    const fringe = mesh(new THREE.SphereGeometry(0.1, 16, 10), hairMat, head, -0.02, 0.15, -0.17);
+    fringe.scale.set(1.5, 0.5, 0.65);
+    fringe.rotation.z = 0.08;
+    const tuft = mesh(new THREE.ConeGeometry(0.035, 0.1, 8), hairMat, head, 0.07, 0.19, -0.19);
+    tuft.rotation.set(-0.7, 0, -0.5);
+    [-1, 1].forEach((sd) => {
+      const lock = mesh(new THREE.SphereGeometry(0.07, 12, 10), hairMat, head, sd * 0.19, 0.08, -0.07);
+      lock.scale.set(0.5, 1.0, 0.9);
+    });
+  }
+
+  // baard en snor (alleen bij de oude kabouters)
   const beard = new THREE.Group();
   head.add(beard);
+  beard.visible = classic;
   const beardMain = mesh(new THREE.ConeGeometry(0.2, 0.46, 24, 1), white, beard, 0, -0.27, -0.09);
   beardMain.rotation.x = 0.1;
   beardMain.scale.z = 0.72;
@@ -306,7 +352,7 @@ export function createGnome(opts = {}) {
 
   // muts (gebreid, gebogen punt) of petje met koeienprint
   const hatBase = new THREE.Group();
-  hatBase.position.set(0, 0.1, 0.01);
+  hatBase.position.set(0, photo ? 0.135 : 0.1, 0.01);
   hatBase.rotation.x = -0.06;
   head.add(hatBase);
   const hatParts = [];

@@ -30,7 +30,6 @@ export function createWheelchair() {
   const seatM = M('#1c3f94', { roughness: 0.8 });
   const tire = M('#111214', { roughness: 0.9 });
   const rim = M('#e8eaed', { metalness: 0.95, roughness: 0.2 });
-  const orange = M('#ff7a1a', { roughness: 0.4 });
 
   const body = new THREE.Group();
   g.add(body);
@@ -80,22 +79,6 @@ export function createWheelchair() {
     part(new THREE.BoxGeometry(0.03, 0.3, 0.03), frame, c, 0, 0.2, 0.02);
     casters.push(c);
   });
-  // straalmotoren (de rolstoel vliegt)
-  const flames = [];
-  [-1, 1].forEach((s) => {
-    const n = part(new THREE.CylinderGeometry(0.07, 0.1, 0.22, 14), M('#33363d', { metalness: 0.8 }), body, s * 0.45, 0.34, 0.5);
-    n.rotation.x = Math.PI / 2;
-    part(new THREE.TorusGeometry(0.075, 0.015, 8, 16), orange, body, s * 0.45, 0.34, 0.62);
-    const f = flame('#ff9a2a', 0.9);
-    f.position.set(s * 0.45, 0.34, 0.85);
-    body.add(f);
-    flames.push(f);
-  });
-  // vleugeltjes
-  [-1, 1].forEach((s) => {
-    const wg = part(new THREE.BoxGeometry(0.6, 0.03, 0.22), orange, body, s * 0.82, 0.86, 0.18);
-    wg.rotation.z = s * -0.12;
-  });
   mergeStatic(body);
   // wielen zijn losse groepen; ze zitten in body maar zijn vooraf samengevoegd per groep? (de groepen blijven bestaan)
   g.userData = {
@@ -103,12 +86,9 @@ export function createWheelchair() {
     seatZ: 0.02,
     update(dt, t, speed01 = 0) {
       wheels.forEach((w) => { w.rotation.x -= dt * (6 + speed01 * 8); });
-      flames.forEach((f, i) => {
-        const k = 0.8 + Math.sin(t * 40 + i) * 0.18 + speed01 * 0.4;
-        f.scale.set(k, k * 1.3, 1);
-      });
-      body.rotation.z = Math.sin(t * 2.2) * 0.04;
-      body.position.y = Math.sin(t * 3) * 0.06;
+      // rolt over de grond: een klein schokje van de ondergrond
+      body.rotation.z = Math.sin(t * 9) * 0.006;
+      body.position.y = Math.abs(Math.sin(t * 15)) * 0.012 * (0.4 + speed01);
     },
   };
   return g;
@@ -216,7 +196,7 @@ export function createNSVehicle() {
   const train = createVehicleTrain();
   g.add(train);
   // vonken/dampuitlaat en uitzichtplatform op het dak
-  const roofY = 3.6 * 0.7;
+  const roofY = 3.2;
   g.userData = {
     seatY: roofY + 0.1,
     seatZ: 0,

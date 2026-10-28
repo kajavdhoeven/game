@@ -5,7 +5,6 @@ const KEYS = {
   ArrowUp: 'jump', KeyW: 'jump',
   ArrowDown: 'roll', KeyS: 'roll',
   Space: 'vehicle',
-  KeyC: 'cycle', KeyQ: 'cycle',
   KeyF: 'fire', KeyE: 'fire',
   KeyP: 'pause', Escape: 'pause',
   Enter: 'confirm',
@@ -33,7 +32,7 @@ export function initInput(el, onAction) {
   let lastTapY = 0;
 
   el.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('button, input, a, .panel, #leader, #shop, .hud-coins')) return;
+    if (e.target.closest('button, input, a, .panel, #leader, #shop, .hud-coins, #devCorner, #vehBox')) return;
     active = true;
     fired = false;
     pid = e.pointerId;

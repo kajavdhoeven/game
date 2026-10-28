@@ -25,7 +25,8 @@ export const POWERUPS = {
   shoes: { id: 'shoes', label: 'Superschoenen', color: '#3aa0ff', time: 14, desc: 'Spring zo hoog dat je op treinen landt' },
   plane: { id: 'plane', label: 'Mini-vliegtuig', color: '#ff4a4a', time: 7.5, desc: 'Vlieg 7,5 seconde boven het spoor' },
   refill: { id: 'refill', label: 'Voertuig-refill', color: '#4cff8a', time: 0, desc: 'Vul je geselecteerde voertuig weer op' },
-  board: { id: 'board', label: 'Hoverboard', color: '#ff8a2a', time: 22, desc: 'Zweef op een hoverboard, vangt één botsing op' },
+  board: { id: 'board', label: 'Hoverboard', color: '#ff8a2a', time: 0, desc: 'Zweef op een hoverboard, vangt één botsing op' },
+  magnet: { id: 'magnet', label: 'Magneet', color: '#ff4d6d', time: 10, desc: 'Trekt alle munten in de buurt naar je toe' },
 };
 
 export function createPickup(type, boardKind = 'orange') {
@@ -73,6 +74,17 @@ export function createPickup(type, boardKind = 'orange') {
     part(new THREE.BoxGeometry(0.8, 0.06, 0.03), M('#222'), prop);
     g.userData.prop = prop;
     inner.scale.setScalar(0.8);
+  } else if (type === 'magnet') {
+    const red = M('#e8272f', { roughness: 0.3, metalness: 0.4 });
+    const steel = M('#d9dde3', { roughness: 0.2, metalness: 0.95 });
+    const arc = part(new THREE.TorusGeometry(0.34, 0.12, 14, 28, Math.PI), red, inner, 0, 0.05, 0);
+    arc.rotation.z = 0;
+    [-1, 1].forEach((sd) => {
+      part(new THREE.CylinderGeometry(0.12, 0.12, 0.34, 14), red, inner, sd * 0.34, -0.12, 0);
+      part(new THREE.CylinderGeometry(0.125, 0.125, 0.16, 14), steel, inner, sd * 0.34, -0.36, 0);
+    });
+    g.userData.spinFast = true;
+    inner.scale.setScalar(1.15);
   } else if (type === 'refill') {
     const green = M('#18a64a', { roughness: 0.3, metalness: 0.3 });
     part(new THREE.CylinderGeometry(0.28, 0.28, 0.7, 20), green, inner);

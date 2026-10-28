@@ -12,7 +12,7 @@ import { renderIcon } from './icons.js';
 import { audio } from './audio.js';
 import { initInput } from './input.js';
 import { softCircleTexture } from './textures.js';
-import { P, load, save, buy, owns, ownedVehicles, cycleVehicle, VEHICLES, VEHICLE_ORDER, VEHICLE_TIME, PRICES } from './save.js';
+import { P, load, save, buy, owns, ownedVehicles, VEHICLES, VEHICLE_ORDER, VEHICLE_TIME, PRICES } from './save.js';
 import { fetchBoard, submitScore, cleanName, isOnline } from './net.js';
 import { initBridge } from './bridge.js';
 
@@ -66,6 +66,7 @@ const S = {
   aim: null, fireCd: 0, god: params.has('god'),
   introT: 0, introVariant: 0, launched: false, launchT: 2.2, lastVariant: -1,
   gestureT: 0,
+  vehEndT: -999, chase: null, boardMax: Infinity, infRefill: false,
 };
 let cursor = -50;
 let lastScore = -1;
@@ -119,9 +120,9 @@ const spotters = [];
 const pickups = [];
 const pendingHits = [];
 
-function getTrain() {
+function getTrain(want = 0) {
   const type = window.__trainType || pickTrainType(rand);
-  const cars = type === 'freight' ? 1 : rand() < 0.35 ? 2 : 1;
+  const cars = type === 'freight' ? 1 : want || (rand() < 0.35 ? 2 : 1);
   const key = type + cars;
   const pool = (trainPool[key] ||= []);
   const m = pool.pop() || createTrain(type, cars, rand);
@@ -233,16 +234,27 @@ function coinArc(lane, z0, n, step, h) {
 
 function addPickup(type, lane, z, y = 0.9, parent = null, lz = 0) {
   const mesh = getPickup(type);
-  const p = { type, x: laneX(lane), y: y + platY(lane), z, mesh, taken: false, p: parent, lz };
+  const p = { type, x: laneX(lane), y: y + platY(lane), z, pz: z, mesh, taken: false, p: parent, lz };
   mesh.position.set(p.x, GROUND + p.y, z);
   pickups.push(p);
   return p;
 }
 
+// Een refill mag alleen verschijnen als je voertuig leeg is, niet tijdens de rit en niet in de 15 seconden erna,
+// en er ligt er nooit meer dan een tegelijk.
+function refillAllowed() {
+  const id = P.vehicle;
+  if (!id || !owns(id)) return false;
+  if (S.veh || S.vehCharge[id]) return false;
+  if (S.t - S.vehEndT < 15) return false;
+  return !pickups.some((p) => p.type === 'refill' && !p.taken);
+}
+
 function maybePowerup(lane, z, y = 0.9, parent = null, lz = 0) {
-  const list = ['shoes', 'shoes', 'plane', 'board', 'board'];
-  if (ownedVehicles().length) list.push('refill', 'refill');
-  addPickup(pick(list), lane, z, y, parent, lz);
+  const list = ['shoes', 'shoes', 'plane', 'board', 'board', 'magnet', 'magnet'];
+  if (refillAllowed()) list.push('refill', 'refill', 'refill');
+  const type = pick(list);
+  addPickup(type, lane, z, y, parent, lz);
 }
 
 // veilige snelheid voor een nieuwe trein: haalt geen eerdere hindernis in dezelfde baan in
@@ -261,7 +273,7 @@ function safeTrainSpeed(lane, zNear, v) {
 }
 
 function addTrain(lane, z0, opts = {}) {
-  const mesh = getTrain();
+  const mesh = getTrain(opts.cars || 0);
   const u = mesh.userData;
   const len = u.length;
   let ramp = null;
@@ -278,7 +290,7 @@ function addTrain(lane, z0, opts = {}) {
   const o = {
     kind: 'train', lane, x: laneX(lane), z: z0 - rampLen - len / 2, len, mesh, hw: (u.hw || 1.3), v,
     roofH: u.roofH, special: u.special, label: u.label, horn: false, ramp: ramp ? { len: rampLen } : null,
-    rampMesh: ramp, total: len + rampLen, phase: rand() * 6,
+    rampMesh: ramp, total: len + rampLen, phase: rand() * 6, pz: z0 - rampLen - len / 2,
   };
   mesh.position.set(o.x, GROUND - 0.06, o.z);
   mesh.rotation.set(0, 0, 0);
@@ -289,7 +301,7 @@ function addTrain(lane, z0, opts = {}) {
 function addBarrier(lane, z, kind) {
   const mesh = getBarrier(kind);
   const d = OBST[kind];
-  const o = { kind, lane, x: laneX(lane), z, len: d.depth * 2, mesh, hw: d.hw, v: 0, roofH: 0 };
+  const o = { kind, lane, x: laneX(lane), z, pz: z, len: d.depth * 2, mesh, hw: d.hw, v: 0, roofH: 0 };
   mesh.position.set(o.x, GROUND, z);
   obstacles.push(o);
   return o;
@@ -301,7 +313,7 @@ function addSpotter(side, z, onPlatform = false) {
   const x = onPlatform ? side * 10.2 : side * 4.9;
   mesh.position.set(x, onPlatform ? PH : 0.0, z);
   mesh.rotation.y = side * (Math.PI / 2 - 0.45);
-  spotters.push({ mesh, x, z, side, hit: false, vel: null, t: 0, spin: null, plat: onPlatform, special });
+  spotters.push({ mesh, x, z, pz: z, side, hit: false, vel: null, t: 0, spin: null, plat: onPlatform, special });
 }
 
 // ---------------------------------------------------------------- patronen
@@ -369,7 +381,7 @@ function spawnPattern() {
     coinLine(safe, z0, Math.min(14, Math.round(len / 2.4)), 2.4);
   } else if (type === 'ramp') {
     const l = pick(others);
-    const o = addTrain(l, z0, { ramp: true, v: 5 + rand() * 5 });
+    const o = addTrain(l, z0, { ramp: true, cars: 4 + ((rand() * 3) | 0), v: 2 + rand() * 3 });
     items.push(o);
     trainLanes.push(l);
     len = o.total;
@@ -380,7 +392,7 @@ function spawnPattern() {
     // tweede trein, soms ook met schans
     const rest = others.filter((x) => x !== l);
     if (rand() < 0.35) {
-      const o2 = addTrain(rest[0], z0 - rand() * 4, { ramp: rand() < 0.5, v: 5 + rand() * 6 });
+      const o2 = addTrain(rest[0], z0 - rand() * 4, { ramp: rand() < 0.5, cars: 3 + ((rand() * 2) | 0), v: 2 + rand() * 3 });
       items.push(o2);
       trainLanes.push(rest[0]);
       len = Math.max(len, o2.total);
@@ -558,43 +570,33 @@ function skinIcon(skin) {
   }, { yaw: 0, pitch: 0.1 });
 }
 
-// voertuig-knop rechtsonder
+// voertuig-knop rechtsonder: een rondje met het gekozen voertuig. Wisselen kan alleen in de winkel.
 function vehHud() {
   const id = P.vehicle;
+  const box = $('vehBox');
   const btn = $('vehBtn');
-  const have = ownedVehicles();
-  $('vehPrev').style.visibility = $('vehNext').style.visibility = have.length > 1 ? 'visible' : 'hidden';
+  if (!id || !owns(id)) { box.hidden = true; return; }
+  box.hidden = false;
   btn.className = '';
   btn.style.setProperty('--p', '0%');
-  if (!id || !have.length) {
-    btn.classList.add('locked');
-    $('vehIcon').removeAttribute('src');
-    $('vehName').textContent = 'Geen voertuig';
-    $('vehState').textContent = 'Koop er een in de winkel';
-    return;
-  }
-  const v = VEHICLES[id];
   const src = vehIcon(id);
   if ($('vehIcon').getAttribute('src') !== src) $('vehIcon').src = src;
-  $('vehName').textContent = v.name;
-  if (S.veh && S.veh.id === id) {
+  const charged = S.vehCharge[id] || S.infRefill;
+  if (S.veh) {
     btn.classList.add('active');
     btn.style.setProperty('--p', (S.veh.t / VEHICLE_TIME * 100).toFixed(1) + '%');
-    $('vehState').textContent = 'Nog ' + Math.ceil(S.veh.t) + ' s';
-  } else if (S.veh) {
-    btn.classList.add('used');
-    $('vehState').textContent = 'Ander voertuig actief';
-  } else if (S.vehCharge[id]) {
+    $('vehState').textContent = Math.ceil(S.veh.t) + ' s';
+  } else if (charged) {
     btn.classList.add('ready');
-    $('vehState').textContent = coarse ? 'Tik om te starten' : 'Druk op spatie';
+    $('vehState').textContent = coarse ? 'Tik' : 'Spatie';
   } else {
-    btn.classList.add('used');
-    $('vehState').textContent = 'Verbruikt: pak een refill';
+    btn.classList.add('spent');
+    $('vehState').textContent = 'Refill';
   }
 }
 let lastVehKey = '';
 function vehHudMaybe() {
-  const key = [P.vehicle, S.veh ? Math.ceil(S.veh.t) : 'x', S.veh ? S.veh.id : '', S.vehCharge[P.vehicle], ownedVehicles().length].join('|');
+  const key = [P.vehicle, S.veh ? Math.ceil(S.veh.t) : 'x', S.veh ? S.veh.id : '', S.vehCharge[P.vehicle], S.infRefill, ownedVehicles().length].join('|');
   if (key !== lastVehKey) { lastVehKey = key; vehHud(); }
   if (S.veh) $('vehBtn').style.setProperty('--p', (S.veh.t / VEHICLE_TIME * 100).toFixed(1) + '%');
 }
@@ -603,8 +605,8 @@ function vehHudMaybe() {
 let lastChips = '';
 function chipsUpdate() {
   const items = [];
-  ['shoes', 'plane', 'board'].forEach((k) => {
-    if (S.pw[k] > 0) items.push({ k, frac: S.pw[k] / POWERUPS[k].time });
+  ['shoes', 'plane', 'board', 'magnet'].forEach((k) => {
+    if (S.pw[k] > 0) items.push({ k, frac: k === 'board' ? (S.boardMax === Infinity ? 1 : S.pw.board / S.boardMax) : S.pw[k] / POWERUPS[k].time });
   });
   const key = items.map((i) => i.k + Math.round(i.frac * 20)).join(',');
   if (key === lastChips) return;
@@ -756,7 +758,9 @@ function resetRun() {
     hazardT: 0, veh: null, flying: false, flyTarget: 0, shield: false, speedMul: 1, coinMul: 1, aim: null, fireCd: 0,
     launched: false, introT: 0,
   });
-  S.pw = { shoes: 0, plane: 0, board: 0 };
+  S.pw = { shoes: 0, plane: 0, board: 0, magnet: 0 };
+  S.vehEndT = -999;
+  S.chase = null;
   S.vehCharge = {};
   ownedVehicles().forEach((v) => { S.vehCharge[v] = 1; });
   cursor = -50;
@@ -882,15 +886,23 @@ async function finishRun() {
   $('overRank').textContent = res ? 'Je score staat op de online ranglijst.' : 'Geen verbinding: je score is lokaal bewaard.';
 }
 
+function startChase() {
+  S.chase = { t: 12, leave: false };
+  mob.setup(2);
+  mob.group.visible = true;
+  toast('De boze kabouters zijn achter je aan! Loop niet nog een keer tegen een trein.', 2600);
+}
+
 function die(why, o) {
   if (S.god || S.mode !== 'playing') return;
   S.mode = 'dead';
   S.deadT = 0;
-  S.deadKind = o && o.kind === 'train' ? 'splat' : 'tumble';
+  S.deadKind = why === 'caught' ? 'tumble' : o && o.kind === 'train' ? 'splat' : 'tumble';
   S.shake = 1;
   S.aim = null;
   audio.stopMusic();
   audio.stopRumble();
+  if (why === 'caught') { audio.mob(); if (!S.chase) startChase(); }
   if (S.deadKind === 'splat') {
     audio.splat();
     S.speed = 0; // alles staat meteen stil: Te-Un blijft tegen de neus plakken
@@ -901,7 +913,7 @@ function die(why, o) {
   } else audio.crash();
   sparks.emit(S.x, 1.0, 0, 30, '#ffd24a', 7, 5);
   sparks.emit(S.x, 0.8, 0, 14, '#ffffff', 5, 4);
-  $('overMsg').textContent = why === 'high' ? 'Te-Un had moeten rollen.' : why === 'low' || why === 'crate' || why === 'cone' ? 'Te-Un had moeten springen.' : 'Een NS-trein was sneller dan Te-Un.';
+  $('overMsg').textContent = why === 'caught' ? 'De boze kabouters hebben Te-Un te pakken!' : why === 'high' ? 'Te-Un had moeten rollen.' : why === 'low' || why === 'crate' || why === 'cone' ? 'Te-Un had moeten springen.' : 'Een NS-trein was sneller dan Te-Un.';
   const delay = S.deadKind === 'splat' ? 3500 : 1500;
   finishRun();
   setTimeout(() => {
@@ -921,16 +933,19 @@ function activateVehicle() {
   const id = P.vehicle;
   if (!id || !owns(id)) { toast('Koop eerst een voertuig in de winkel'); return; }
   if (S.veh) return;
-  if (!S.vehCharge[id]) { toast('Dit voertuig is verbruikt. Pak een refill!'); return; }
+  if (!S.vehCharge[id] && !S.infRefill) { toast('Dit voertuig is verbruikt. Pak een refill!'); return; }
   const v = VEHICLES[id];
   S.veh = { id, t: VEHICLE_TIME };
   S.vehCharge[id] = 0;
-  S.speedMul = v.speed;
   S.coinMul = v.coins;
+  recomputeSpeed();
   const m = getVehicleModel(id);
   m.visible = true;
   endVehicleVisualExcept(id);
-  if (id === 'wheelchair') { S.flying = true; S.flyTarget = 4.2; }
+  // tijdens de rit liggen er geen refills meer op het spoor
+  for (let i = pickups.length - 1; i >= 0; i--) {
+    if (pickups[i].type === 'refill') { scene.remove(pickups[i].mesh); (pickupPool[pickups[i].mesh.userData.poolKey] ||= []).push(pickups[i].mesh); pickups.splice(i, 1); }
+  }
   audio.vehicle(id);
   pop(_v.set(S.x, 2.6, 0), v.name + '!', 'msg');
   sparks.emit(S.x, 1, 0, 30, '#9fe8ff', 6, 4);
@@ -943,14 +958,22 @@ function endVehicle() {
   if (!S.veh) return;
   const id = S.veh.id;
   S.veh = null;
-  S.speedMul = 1;
   S.coinMul = 1;
-  if (id === 'wheelchair' && S.pw.plane <= 0) { S.flying = false; S.grounded = false; S.vy = 0; }
+  S.vehEndT = S.t;
+  recomputeSpeed();
   endVehicleVisual();
   S.inv = 2;
   sparks.emit(S.x, 1.2, 0, 24, '#ffffff', 5, 4);
-  toast('Voertuig is op. Gebruik een refill om opnieuw te rijden!');
+  if (S.infRefill) { S.vehCharge[id] = 1; toast('Developer: voertuig meteen weer klaar'); }
+  else toast('Voertuig is op. Pak een refill om opnieuw te rijden!');
   lastVehKey = '';
+}
+
+// snelheid: het snelste van het voertuig en het koe-hoverboard (die tellen niet op)
+function recomputeSpeed() {
+  const veh = S.veh ? VEHICLES[S.veh.id].speed : 1;
+  const board = S.pw.board > 0 && P.board === 'cow' ? 2.5 : 1;
+  S.speedMul = Math.max(veh, board);
 }
 
 function collectPickup(p) {
@@ -966,18 +989,19 @@ function collectPickup(p) {
     S.flyTarget = 4.6;
     gnome.setPlane(true);
   } else if (t === 'board') {
-    S.pw.board = POWERUPS.board.time;
+    // oranje shirt: blijft tot je hem nodig hebt. Koe: 2,5x sneller, maar maar 20 seconden.
+    S.boardMax = P.board === 'cow' ? 20 : Infinity;
+    S.pw.board = S.boardMax === Infinity ? 1e9 : S.boardMax;
     S.shield = true;
     if (!boardMeshes[P.board]) boardMeshes[P.board] = createBoard(P.board);
     gnome.setBoard(boardMeshes[P.board]);
+    recomputeSpeed();
+  } else if (t === 'magnet') {
+    S.pw.magnet = POWERUPS.magnet.time;
   } else if (t === 'refill') {
     const id = P.vehicle;
-    if (!id || !owns(id)) { toast('Je hebt nog geen voertuig om op te laden'); }
-    else {
-      S.vehCharge[id] = 1;
-      if (S.veh && S.veh.id === id) S.veh.t = VEHICLE_TIME;
-      toast(VEHICLES[id].name + ' is weer opgeladen!');
-    }
+    S.vehCharge[id] = 1;
+    toast(VEHICLES[id].name + ' is weer opgeladen!');
     lastVehKey = '';
   }
 }
@@ -985,7 +1009,10 @@ function collectPickup(p) {
 function endPlane() {
   S.pw.plane = 0;
   gnome.setPlane(false);
-  if (!(S.veh && S.veh.id === 'wheelchair')) { S.flying = false; S.grounded = false; S.vy = 0; S.inv = Math.max(S.inv, 1.5); }
+  S.flying = false;
+  S.grounded = false;
+  S.vy = 0;
+  S.inv = Math.max(S.inv, 1.5);
 }
 
 // ---------------------------------------------------------------- waterpistool
@@ -1096,7 +1123,6 @@ function action(a) {
     if (!S.grounded) { S.vy = -26; S.rollQueued = true; }
     else startRoll();
   } else if (a === 'vehicle') activateVehicle();
-  else if (a === 'cycle') { cycleVehicle(1); lastVehKey = ''; vehHudMaybe(); audio.click(); }
   else if (a === 'fire') fire();
 }
 
@@ -1125,14 +1151,16 @@ function floorAt() {
   }
   let h = 0;
   for (const o of obstacles) {
-    if (o.kind !== 'train') continue;
+    if (o.kind !== 'train' || o.smashed) continue;
     if (Math.abs(S.x - o.x) > o.hw - 0.05) continue;
+    const nose = o.z + o.len / 2;
     if (o.ramp) {
-      const nose = o.z + o.len / 2;
       const rl = o.ramp.len;
       if (nose <= 0 && nose >= -rl && Math.abs(S.x - o.x) < 1.2) h = Math.max(h, o.roofH * (1 + nose / rl));
     }
-    if (Math.abs(o.z) <= o.len / 2 && S.y >= o.roofH - 0.45) h = Math.max(h, o.roofH);
+    // net voorbij de neus van de trein: nog steeds op het dak als je van de schans komt
+    const tol = o.ramp && nose < 2.5 ? 1.2 : 0.45;
+    if (Math.abs(o.z) <= o.len / 2 && S.y >= o.roofH - tol) h = Math.max(h, o.roofH);
   }
   return h;
 }
@@ -1176,33 +1204,48 @@ function smash(o) {
   o.smashed = true;
 }
 
+// zat dit object tijdens het afgelopen beeldje op de hoogte van de speler? (voorkomt dat je er bij hoge snelheid doorheen vliegt)
+const sweep = (z, pz, reach) => Math.min(z, pz) - reach <= 0 && Math.max(z, pz) + reach >= 0;
+
 function collide() {
   const flyingHigh = S.flying && S.y > 2.6;
   const ph = S.rolling ? 0.62 : 1.45;
-  const invul = S.inv > 0 || !!S.veh || flyingHigh;
+  const invul = S.inv > 0 || flyingHigh;
+  const vehId = S.veh && S.veh.id;
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const o = obstacles[i];
     if (o.smashed) continue;
     const half = o.kind === 'train' ? o.len / 2 : OBST[o.kind].depth;
-    if (Math.abs(o.z) > half + 0.3) continue;
+    if (!sweep(o.z, o.pz ?? o.z, half + 0.3)) continue;
     if (Math.abs(S.x - o.x) > o.hw + 0.3) continue;
     let hit = false;
-    if (o.kind === 'train') hit = S.y < o.roofH - 0.4;
-    else if (o.kind === 'high') hit = S.y + ph > OBST.high.bottom && S.y < OBST.high.top;
+    if (o.kind === 'train') {
+      hit = S.y < o.roofH - 0.4;
+      if (hit && o.ramp && Math.abs(S.x - o.x) < 1.3) {
+        // op de schans of net erbovenop: geen botsing, ook niet als je een beeldje achterloopt
+        const nose = o.z + o.len / 2;
+        const rl = o.ramp.len;
+        const surface = nose >= 0 ? o.roofH : o.roofH * (1 + nose / rl);
+        if (nose >= -rl && nose <= 2.5 && S.y >= surface - 1.0) hit = false;
+      }
+    } else if (o.kind === 'high') hit = S.y + ph > OBST.high.bottom && S.y < OBST.high.top;
     else hit = S.y < OBST[o.kind].top - 0.05;
     if (!hit) continue;
-    if (S.veh) { smash(o); o.mesh.visible = false; continue; }
+    // voertuigen breken kleine obstakels; alleen de NS-trein gaat door alles heen, ook door treinen
+    if (vehId && (o.kind !== 'train' || vehId === 'train')) { smash(o); o.mesh.visible = false; continue; }
     if (invul) continue;
     const alongside = o.kind === 'train' && o.z + o.len / 2 > 1.2;
     if (alongside && S.fromLane !== null && S.lane !== S.fromLane) {
-      // tegen de zijkant van een trein aangelopen: terugstuiteren
+      // tegen de zijkant van een trein aangelopen: eerste keer struikelen en de boze kabouters komen achter je aan, tweede keer ben je gepakt
+      if (S.chase) { die('caught', o); return; }
       S.lane = S.fromLane;
       S.fromLane = null;
-      S.inv = 0.35;
-      S.shake = 0.4;
-      S.speed *= 0.9;
+      S.inv = 0.5;
+      S.shake = 0.5;
+      S.speed *= 0.85;
       audio.stumble();
       sparks.emit(S.x, 0.8, 0, 12, '#ffffff', 4, 3);
+      startChase();
       continue;
     }
     if (S.shield) {
@@ -1210,6 +1253,7 @@ function collide() {
       S.shield = false;
       S.pw.board = 0;
       gnome.setBoard(null);
+      recomputeSpeed();
       S.inv = 1.6;
       smash(o);
       pop(_v.set(S.x, 2.4, 0), 'Hoverboard gebroken!', 'msg');
@@ -1227,7 +1271,7 @@ function collide() {
   const flyTol = S.flying ? 5.2 : 1.2;
   for (const c of coinList) {
     if (c.got) continue;
-    if (Math.abs(c.z) > 0.9 || Math.abs(c.x - S.x) > (S.flying ? 1.6 : 1.05)) continue;
+    if (!sweep(c.z, c.pz ?? c.z, 0.9) || Math.abs(c.x - S.x) > (S.flying ? 1.6 : 1.05)) continue;
     if (Math.abs(c.y - (S.y + 0.8)) > flyTol) continue;
     c.got = true;
     S.coins += S.coinMul;
@@ -1237,14 +1281,16 @@ function collide() {
   // power-ups
   for (const p of pickups) {
     if (p.taken) continue;
-    if (Math.abs(p.z) > 1.2 || Math.abs(p.x - S.x) > 1.4) continue;
+    if (!sweep(p.z, p.pz ?? p.z, 1.2) || Math.abs(p.x - S.x) > 1.4) continue;
     if (Math.abs(p.y - (S.y + 0.9)) > (S.flying ? 5.2 : 1.7)) continue;
+    // een refill pak je alleen op als je voertuig leeg is en niet tijdens of vlak na een rit
+    if (p.type === 'refill' && (S.veh || S.vehCharge[P.vehicle] || S.t - S.vehEndT < 15 || !P.vehicle)) continue;
     collectPickup(p);
   }
   // treinspotters aanrijden
   for (const sp of spotters) {
     if (sp.hit || sp.plat) continue;
-    if (Math.abs(sp.z) > 1.0) continue;
+    if (!sweep(sp.z, sp.pz ?? sp.z, 1.0)) continue;
     if (Math.abs(S.x - sp.x) > 2.15 || Math.sign(S.x) !== Math.sign(sp.x)) continue;
     if (S.y > 1.1) continue;
     hitSpotter(sp, 'ram');
@@ -1275,7 +1321,7 @@ function update(dt) {
     if (run < 8 && mob.group.visible) world.setDay(clamp(run / 5, 0, 1));
     if (run >= 5 && world.dayK < 1) world.setDay(1);
   }
-  if (S.mode === 'playing' && S.introT - S.launchT > 6.5 && mob.group.visible) mob.hide();
+  if (S.mode === 'playing' && S.introT - S.launchT > 6.5 && mob.group.visible && !S.chase) mob.hide();
 
   // ----- snelheid
   let target = 0;
@@ -1301,7 +1347,6 @@ function update(dt) {
     S.x += (tx - S.x) * (1 - Math.exp(-17 * dt));
     if (Math.abs(S.x - tx) < 0.05) S.fromLane = null;
     S.vx = (S.x - ox) / dt;
-    if (S.launched || S.introVariant === 2) physics(dt);
     S.jumpBuffer = Math.max(0, S.jumpBuffer - dt);
     if (S.rolling) {
       S.rollTime += dt;
@@ -1324,7 +1369,8 @@ function update(dt) {
     if (S.mode === 'playing') {
       if (S.pw.shoes > 0) { S.pw.shoes -= dt; if (S.pw.shoes <= 0) { S.pw.shoes = 0; gnome.setShoes(false); } }
       if (S.pw.plane > 0) { S.pw.plane -= dt; if (S.pw.plane <= 0) endPlane(); }
-      if (S.pw.board > 0) { S.pw.board -= dt; if (S.pw.board <= 0) { S.pw.board = 0; S.shield = false; gnome.setBoard(null); } }
+      if (S.pw.board > 0 && S.pw.board < 1e8) { S.pw.board -= dt; if (S.pw.board <= 0) { S.pw.board = 0; S.shield = false; gnome.setBoard(null); recomputeSpeed(); } }
+      if (S.pw.magnet > 0) S.pw.magnet = Math.max(0, S.pw.magnet - dt);
       if (S.veh) { S.veh.t -= dt; if (S.veh.t <= 0) endVehicle(); }
     }
   }
@@ -1343,6 +1389,7 @@ function update(dt) {
   // ----- hindernissen bewegen
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const o = obstacles[i];
+    o.pz = o.z;
     o.z += dz + (o.v || 0) * dt * (mode === 'dead' ? 0 : 1);
     o.mesh.position.z = o.z;
     if (o.kind === 'train') {
@@ -1368,7 +1415,17 @@ function update(dt) {
   }
   for (let i = coinList.length - 1; i >= 0; i--) {
     const c = coinList[i];
-    if (c.p) {
+    c.pz = c.z;
+    // magneet: munten in de buurt vliegen naar Te-Un toe
+    if (S.pw.magnet > 0 && !c.got && !c.pull && c.z > -18 && c.z < 3 && Math.abs(c.x - S.x) < 9 && Math.abs(c.y - (S.y + 0.8)) < 7) { c.pull = true; c.p = null; }
+    if (c.pull) {
+      const k = 1 - Math.exp(-dt * 8);
+      c.z += dz;
+      c.x += (S.x - c.x) * k;
+      c.y += ((S.y + 0.8) - c.y) * k;
+      c.z += (0 - c.z) * k;
+      if (rand() < dt * 30) sparks.emit(c.x, GROUND + c.y, c.z, 1, '#ffd54a', 0.8, 0.4);
+    } else if (c.p) {
       if (c.p.smashed || !obstacles.includes(c.p)) { coinList.splice(i, 1); continue; }
       c.z = c.p.z + c.lz;
     } else c.z += dz;
@@ -1379,6 +1436,7 @@ function update(dt) {
   // ----- power-ups
   for (let i = pickups.length - 1; i >= 0; i--) {
     const p = pickups[i];
+    p.pz = p.z;
     if (p.p) {
       if (!obstacles.includes(p.p)) { scene.remove(p.mesh); pickupPool[p.mesh.userData.poolKey].push(p.mesh); pickups.splice(i, 1); continue; }
       p.z = p.p.z + p.lz;
@@ -1395,6 +1453,7 @@ function update(dt) {
   // ----- treinspotters
   for (let i = spotters.length - 1; i >= 0; i--) {
     const sp = spotters[i];
+    sp.pz = sp.z;
     sp.z += dz;
     if (sp.hit) {
       sp.t += dt;
@@ -1455,12 +1514,22 @@ function update(dt) {
     setTimeout(() => hitSpotter(h.sp, 'water'), 420);
   }
 
+  // eerst de hoogte bijwerken met de nieuwe positie van treinen en schansen, daarna pas botsingen
+  if (live && (S.launched || S.introVariant === 2)) physics(dt);
   if (mode === 'playing') collide();
   sparks.update(dt, dz);
 
   // ----- kabouter en voertuig tonen
   updateGnomeVisual(dt);
-  if (mob.group.visible) {
+  if (S.chase) {
+    // boze kabouters rennen vlak achter Te-Un; bij de tweede botsing pakken ze hem
+    if (mode === 'playing') {
+      S.chase.t -= dt;
+      if (S.chase.t <= 0) S.chase.leave = true;
+    }
+    mob.update(dt, S.t, 'chase', S.speed, { follow: mode === 'dead' ? 'catch' : S.chase.leave ? 'leave' : 'near', torchK: 0.35 });
+    if (S.chase.leave && mob.allGone()) { mob.hide(); S.chase = null; }
+  } else if (mob.group.visible) {
     const phase = S.launched ? 'chase' : 'stand';
     const push = S.introVariant !== 2 && !S.launched ? clamp((S.introT - (S.launchT - 0.7)) / 0.5, 0, 1) : (S.launched && S.introVariant !== 2 ? 1 : null);
     mob.update(dt, S.t, phase, S.speed, { pushT: push, torchK: 1 - clamp((S.introT - S.launchT) / 6, 0, 1) * 0.9 });
@@ -1668,8 +1737,6 @@ $('nameInput').addEventListener('input', (e) => {
   save();
 });
 $('vehBtn').addEventListener('click', () => action('vehicle'));
-$('vehPrev').addEventListener('click', () => { cycleVehicle(-1); lastVehKey = ''; vehHudMaybe(); });
-$('vehNext').addEventListener('click', () => { cycleVehicle(1); lastVehKey = ''; vehHudMaybe(); });
 $('btnSound').addEventListener('click', () => {
   audio.unlock();
   audio.setMuted(!audio.muted);
@@ -1688,30 +1755,37 @@ window.addEventListener('blur', () => {
   (trainPool[t + 1] ||= []).push(createTrain(t, 1, rand));
 });
 
-// ---- developer-modus: 12x snel klikken op je munten geeft 1 miljoen munten om alles te testen
-function devTaps(target, onGrant) {
+// ---- developer-trucjes (om alles te kunnen testen)
+// 3x snel tikken links boven in beeld: +100.000 munten
+// 12x snel tikken op je voertuig tijdens het rennen: oneindig refill
+function devTaps(target, count, onGrant) {
   let n = 0;
   let t = 0;
-  target.style.cursor = 'pointer';
   target.addEventListener('click', () => {
     const now = performance.now();
-    n = now - t > 2000 ? 1 : n + 1;
+    n = now - t > 1800 ? 1 : n + 1;
     t = now;
-    if (n >= 12) {
-      n = 0;
-      P.coins += 1000000;
-      save();
-      audio.unlock();
-      audio.powerup();
-      toast('Developer-modus: +1.000.000 munten!', 2600);
-      onGrant();
-    }
+    if (n >= count) { n = 0; onGrant(); }
   });
 }
-devTaps($('menuCoins').parentElement, () => refreshMenuStats());
-devTaps($('shopCoins').parentElement, () => renderShop());
-devTaps(ui.coinBox, () => { lastVehKey = ''; });
-ui.coinBox.style.pointerEvents = 'auto';
+devTaps($('devCorner'), 3, () => {
+  P.coins += 100000;
+  save();
+  audio.unlock();
+  audio.powerup();
+  toast('Developer: +100.000 munten', 2400);
+  refreshMenuStats();
+  if (!$('shop').hidden) renderShop();
+});
+devTaps($('vehBtn'), 12, () => {
+  if (S.mode !== 'playing' && S.mode !== 'intro') return;
+  S.infRefill = true;
+  const id = P.vehicle;
+  if (id && owns(id)) S.vehCharge[id] = 1;
+  lastVehKey = '';
+  audio.powerup();
+  toast('Developer: oneindig refill aan', 2600);
+});
 
 updateSoundIcon();
 goMenu();

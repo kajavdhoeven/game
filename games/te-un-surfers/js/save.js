@@ -8,9 +8,9 @@ export const PRICES = {
 };
 
 export const VEHICLES = {
-  wheelchair: { id: 'wheelchair', name: 'Rolstoel', price: PRICES.wheelchair, speed: 1.25, coins: 2, desc: 'Teun vliegt 30 seconden, 1,25x sneller, 2x munten.' },
-  cow: { id: 'cow', name: 'Koe', price: PRICES.cow, speed: 2, coins: 5, desc: 'Teun rijdt 30 seconden op een koe, 2x sneller, 5x munten.' },
-  train: { id: 'train', name: 'NS-trein', price: PRICES.train, speed: 3, coins: 10, desc: 'Teun surft 30 seconden op een NS-trein, 3x sneller, 10x munten.' },
+  wheelchair: { id: 'wheelchair', name: 'Rolstoel', price: PRICES.wheelchair, speed: 1.25, coins: 2, desc: 'Teun rolt 30 seconden, 1,25x sneller, 2x munten. Breekt kleine obstakels.' },
+  cow: { id: 'cow', name: 'Koe', price: PRICES.cow, speed: 2, coins: 5, desc: 'Teun rijdt 30 seconden op een koe, 2x sneller, 5x munten. Breekt kleine obstakels.' },
+  train: { id: 'train', name: 'NS-trein', price: PRICES.train, speed: 3, coins: 10, desc: 'Teun surft 30 seconden op een NS-trein, 3x sneller, 10x munten. Gaat door alles heen, ook door treinen.' },
 };
 export const VEHICLE_ORDER = ['wheelchair', 'cow', 'train'];
 export const VEHICLE_TIME = 30;
