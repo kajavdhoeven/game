@@ -1,5 +1,5 @@
 import { el, esc, fmt, ago, toast, modal } from './ui.js';
-import { avatarSVG } from './art.js';
+import { avatarSVG, teunSVG } from './art.js';
 import { GENRES, genreName } from './games.js';
 import { api, configured } from './api.js';
 
@@ -19,9 +19,18 @@ export const USER_PERMS = [
 
 const has = (p, k) => !!p && (p.is_owner || (p.is_admin && p.permissions && p.permissions[k] === true));
 
+const PALETTE = ['#2563eb', '#f97316', '#10b981', '#ec4899', '#8b5cf6', '#eab308', '#06b6d4'];
+const GAME_EMOJI = { 'te-un-surfers': '🚆', 'te-un-puzzel': '🧩', 'te-un-x3m': '🏍️', 'te-un-drive': '🚙' };
+
 function bars(items) {
   const max = Math.max(1, ...items.map((i) => i.value));
-  return `<div class="ad-bars">${items.map((i) => `<div class="ad-bar"><span title="${esc(i.label)}">${esc(i.label)}</span><div><i style="width:${(i.value / max) * 100}%"></i></div><b>${fmt(i.value)}</b></div>`).join('') || '<p class="ad-muted">Nog geen gegevens.</p>'}</div>`;
+  return `<div class="ad-bars">${items.map((i, n) => `<div class="ad-bar"><span title="${esc(i.label)}">${esc(i.label)}</span><div><i style="width:${(i.value / max) * 100}%;background:linear-gradient(90deg,${PALETTE[n % PALETTE.length]},${PALETTE[(n + 1) % PALETTE.length]})"></i></div><b>${fmt(i.value)}</b></div>`).join('') || '<p class="ad-muted">Nog geen gegevens.</p>'}</div>`;
+}
+// kleine tegel met het logo (of plaatje) van een game
+function gameTile(g, n = 0, cls = '') {
+  const c = PALETTE[n % PALETTE.length];
+  const inner = g.logo ? `<img src="${esc(g.logo)}" alt="" loading="lazy">` : g.thumb ? `<span style="background-image:url('${esc(g.thumb)}')"></span>` : `<em>${GAME_EMOJI[g.id] || '🎮'}</em>`;
+  return `<div class="ad-gt ${cls}" style="--c:${c}">${inner}</div>`;
 }
 
 function line(points) {
@@ -48,9 +57,9 @@ export async function renderAdmin(app) {
     return f;
   }
   const tabs = [
-    ['overview', 'Overzicht', has(me, 'view_stats')],
-    ['games', 'Games', has(me, 'manage_games')],
-    ['users', 'Gebruikers', has(me, 'view_users') || has(me, 'manage_users')],
+    ['overview', 'Overzicht', has(me, 'view_stats'), '📊'],
+    ['games', 'Games', has(me, 'manage_games'), '🎮'],
+    ['users', 'Gebruikers', has(me, 'view_users') || has(me, 'manage_users'), '👥'],
   ].filter((t) => t[2]);
   if (!tabs.length) {
     f.appendChild(el(`<div class="ad-denied"><div><h1>Geen rechten</h1><p>Je bent beheerder, maar de eigenaar heeft je nog geen rechten gegeven.</p><a class="ad-btn primary" href="/">Naar het platform</a></div></div>`));
@@ -62,8 +71,9 @@ export async function renderAdmin(app) {
 
   const page = el(`<div class="ad">
     <aside class="ad-side">
-      <div class="ad-brand"><span>Te-Un Games</span><small>Beheer</small></div>
-      <nav>${tabs.map(([id, name]) => `<a href="/admin?tab=${id}" class="${id === tab ? 'on' : ''}" data-tab="${id}">${name}</a>`).join('')}</nav>
+      <div class="ad-brand"><img src="/assets/logo-wide.png" alt="Te-Un Games"><small>Beheer</small></div>
+      <nav>${tabs.map(([id, name, , icon]) => `<a href="/admin?tab=${id}" class="${id === tab ? 'on' : ''}" data-tab="${id}"><i>${icon}</i>${name}</a>`).join('')}</nav>
+      <div class="ad-mascot"><div class="ad-mascot-svg">${teunSVG({ cls: 'wave' })}</div><p>Hoi ${esc(me.username || 'beheerder')}!</p></div>
       <a class="ad-back" href="/">&larr; Terug naar het platform</a>
     </aside>
     <main class="ad-main"><div class="ad-load">Laden...</div></main></div>`);
@@ -78,16 +88,20 @@ export async function renderAdmin(app) {
     const byPlays = [...games].sort((a, b) => b.plays - a.plays);
     const byLikes = [...games].sort((a, b) => b.likes - a.likes);
     const top = byPlays[0];
+    const hour = new Date().getHours();
+    const greet = hour < 6 ? 'Goedenacht' : hour < 12 ? 'Goedemorgen' : hour < 18 ? 'Goedemiddag' : 'Goedenavond';
     main.innerHTML = `${head('Overzicht', 'Kerncijfers van Te-Un Games.', '<button class="ad-btn" id="adRefresh">Vernieuwen</button>')}${demo}
+      <section class="ad-hero"><div><h2>${greet}, ${esc(me.username || 'beheerder')}!</h2><p>Dit is wat er gebeurt op jouw Te-Un Games. ${top ? `<b>${esc(top.title)}</b> is nu de populairste game.` : 'Voeg je eerste game toe om te beginnen.'}</p></div><div class="ad-hero-art"><span class="a1">⭐</span><span class="a2">🎮</span><span class="a3">✨</span><div>${teunSVG({ cls: 'wave' })}</div></div></section>
       <div class="ad-kpis">
-        <div class="ad-kpi"><small>Aangemelde spelers</small><b>${fmt(ov.users)}</b><span>${fmt(ov.new_users_7d)} nieuw in 7 dagen</span></div>
-        <div class="ad-kpi"><small>Games</small><b>${fmt(ov.games)}</b><span>${fmt(games.filter((g) => g.published).length)} gepubliceerd</span></div>
-        <div class="ad-kpi"><small>Keer gespeeld</small><b>${fmt(ov.plays)}</b><span>in totaal</span></div>
-        <div class="ad-kpi"><small>Likes</small><b>${fmt(ov.likes)}</b><span>op alle games</span></div>
+        <div class="ad-kpi k1"><i>👥</i><small>Aangemelde spelers</small><b>${fmt(ov.users)}</b><span>${fmt(ov.new_users_7d)} nieuw in 7 dagen</span></div>
+        <div class="ad-kpi k2"><i>🎮</i><small>Games</small><b>${fmt(ov.games)}</b><span>${fmt(games.filter((g) => g.published).length)} gepubliceerd</span></div>
+        <div class="ad-kpi k3"><i>▶️</i><small>Keer gespeeld</small><b>${fmt(ov.plays)}</b><span>in totaal</span></div>
+        <div class="ad-kpi k4"><i>❤️</i><small>Likes</small><b>${fmt(ov.likes)}</b><span>op alle games</span></div>
       </div>
+      <section class="ad-strip"><h3>Onze games</h3><div class="ad-strip-row">${byPlays.map((g, n) => `<div class="ad-gcard" style="--c:${PALETTE[n % PALETTE.length]}">${gameTile(g, n, 'lg')}<b>${esc(g.title)}</b><small>${esc(genreName(g.category))}</small><div class="ad-gstats"><span>▶ ${fmt(g.plays)}</span><span>❤ ${fmt(g.likes)}</span></div></div>`).join('')}</div></section>
       <div class="ad-grid">
         <section class="ad-card wide"><h3>Gespeeld per dag</h3><p class="ad-muted">Laatste 14 dagen</p>${line(ov.plays_per_day || [])}</section>
-        <section class="ad-card"><h3>Meest gespeelde game</h3>${top ? `<div class="ad-top"><div class="ad-thumb" style="background-image:url('${esc(top.thumb)}')"></div><div><b>${esc(top.title)}</b><p class="ad-muted">${fmt(top.plays)} keer gespeeld, ${fmt(top.likes)} likes</p></div></div>` : '<p class="ad-muted">Nog geen games.</p>'}</section>
+        <section class="ad-card"><h3>Meest gespeelde game</h3>${top ? `<div class="ad-top">${top.logo ? gameTile(top, 0, 'lg') : `<div class="ad-thumb" style="background-image:url('${esc(top.thumb)}')"></div>`}<div><b>${esc(top.title)}</b><p class="ad-muted">${fmt(top.plays)} keer gespeeld, ${fmt(top.likes)} likes</p></div></div>` : '<p class="ad-muted">Nog geen games.</p>'}</section>
         <section class="ad-card"><h3>Meest gespeeld</h3>${bars(byPlays.map((g) => ({ label: g.title, value: g.plays })))}</section>
         <section class="ad-card"><h3>Meeste likes</h3>${bars(byLikes.map((g) => ({ label: g.title, value: g.likes })))}</section>
         ${users.length ? `<section class="ad-card"><h3>Nieuwste spelers</h3><ul class="ad-list">${[...users].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5).map((u) => `<li><span class="ad-av">${avatarSVG(u.avatar)}</span><b>${esc(u.username)}</b><small>${ago(u.created_at)}</small></li>`).join('')}</ul></section>` : ''}
@@ -99,7 +113,7 @@ export async function renderAdmin(app) {
     const games = await api.adminListGames();
     main.innerHTML = `${head('Games', 'Beheer alle games op het platform.', '<button class="ad-btn primary" id="gNew">Nieuwe game</button>')}${demo}
       <section class="ad-card flush"><div class="ad-table-wrap"><table class="ad-table"><thead><tr><th>Game</th><th>Genre</th><th>Gespeeld</th><th>Likes</th><th>Status</th><th></th></tr></thead>
-      <tbody>${games.map((g) => `<tr><td><div class="ad-cell"><span class="ad-thumb sm" style="background-image:url('${esc(g.thumb)}')"></span><div><b>${esc(g.title)}</b><small>/g/${esc(g.id)}</small></div></div></td>
+      <tbody>${games.map((g, n) => `<tr><td><div class="ad-cell">${gameTile(g, n)}<div><b>${esc(g.title)}</b><small>/g/${esc(g.id)}</small></div></div></td>
         <td>${esc(genreName(g.category))}</td><td>${fmt(g.plays)}</td><td>${fmt(g.likes)}</td>
         <td><span class="ad-tag ${g.published ? 'ok' : ''}">${g.published ? 'Gepubliceerd' : 'Verborgen'}</span>${g.featured ? '<span class="ad-tag blue">Uitgelicht</span>' : ''}</td>
         <td class="ad-actions"><button class="ad-btn sm" data-edit="${esc(g.id)}">Bewerken</button><button class="ad-btn sm" data-toggle="${esc(g.id)}">${g.published ? 'Verbergen' : 'Publiceren'}</button><button class="ad-btn sm danger" data-del="${esc(g.id)}">Verwijderen</button></td></tr>`).join('') || '<tr><td colspan="6" class="ad-muted">Nog geen games.</td></tr>'}</tbody></table></div></section>`;
