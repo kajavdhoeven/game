@@ -28,7 +28,7 @@ export function renderHome(app) {
   f.appendChild(cats);
 
   const fresh = [...live].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  f.appendChild(sectionRow('Nieuw', [...fresh, ...COMING_SOON.slice(5).map((s) => ({ ...s, soon: true }))], { sub: 'Net toegevoegd en binnenkort' }));
+  f.appendChild(sectionRow('Nieuw', [...fresh, ...COMING_SOON.slice(5).map((s) => ({ ...s, soon: true }))], { sub: 'Net toegevoegd' }));
 
   CATEGORIES.slice(0, 4).forEach((c) => {
     const items = [...live.filter((g) => g.category === c.id || (g.tags || []).includes(c.id)), ...soonOf(c.id)];

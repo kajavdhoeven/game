@@ -256,7 +256,7 @@ async function route() {
     case 'c': { const c = CATEGORIES.find((x) => x.id === arg); nav = 'c/' + arg; title = (c ? c.name : 'Categorie') + ' games'; content = renderCategory(app, arg); break; }
     case 'g': { const g = state.games.find((x) => x.id === arg); nav = 'home'; title = g ? g.title : 'Game'; content = await renderGame(app, arg); break; }
     case 'popular': nav = 'popular'; title = 'Populair'; content = renderList(app, 'Populair', [...live()].sort((a, b) => (b.plays + b.likes * 3) - (a.plays + a.likes * 3)).concat(allSoon().slice(0, 4)), ['Nog geen populaire games', 'Speel een game en like hem!']); break;
-    case 'new': nav = 'new'; title = 'Nieuw'; content = renderList(app, 'Nieuw en binnenkort', [...live()].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).concat(allSoon()), ['Nog niets nieuws', 'Kom snel terug!']); break;
+    case 'new': nav = 'new'; title = 'Nieuw'; content = renderList(app, 'Nieuw', [...live()].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).concat(allSoon()), ['Nog niets nieuws', 'Kom snel terug!']); break;
     case 'favorites':
       nav = 'favorites'; title = 'Favorieten';
       content = state.user
@@ -296,7 +296,7 @@ function renderCategoryIndex() {
   const grid = el('<div class="cat-grid page"></div>');
   CATEGORIES.forEach((c) => {
     const n = live().filter((g) => g.category === c.id || (g.tags || []).includes(c.id)).length;
-    grid.appendChild(el(`<a class="cat-card" href="#/c/${c.id}" style="--c1:${c.color[0]};--c2:${c.color[1]}"><span class="cat-emoji">${categoryIcon(c.id)}</span><b>${esc(c.name)}</b><small>${n} game${n === 1 ? '' : 's'} · ${COMING_SOON.filter((s) => s.category === c.id).length} binnenkort</small></a>`));
+    grid.appendChild(el(`<a class="cat-card" href="#/c/${c.id}" style="--c1:${c.color[0]};--c2:${c.color[1]}"><span class="cat-emoji">${categoryIcon(c.id)}</span><b>${esc(c.name)}</b><small>${n} game${n === 1 ? '' : 's'}</small></a>`));
   });
   f.appendChild(grid);
   void gameTile;

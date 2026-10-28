@@ -26,17 +26,7 @@ export const DEFAULT_GAMES = [
   },
 ];
 
-// Spellen die er aan komen: laten de categorieën levendig zien
-export const COMING_SOON = [
-  { id: 'soon-racers', title: 'Te-Un Racers', category: 'racen', tagline: 'Kabouterkarretjes door het spoorbos.' },
-  { id: 'soon-puzzel', title: 'Kabouter Puzzel', category: 'puzzel', tagline: 'Schuif de mutsjes op hun plek.' },
-  { id: 'soon-voetbal', title: 'Te-Un Voetbal', category: 'sport', tagline: 'Penalty\'s met een puntmuts.' },
-  { id: 'soon-mutsje', title: 'Het Verloren Mutsje', category: 'avontuur', tagline: 'Zoek je weg door het kabouterdorp.' },
-  { id: 'soon-spotter', title: 'Spotter Rush', category: 'arcade', tagline: 'Fotografeer zoveel mogelijk treinen.' },
-  { id: 'soon-quiz', title: 'Te-Un Quiz', category: 'denken', tagline: 'Hoeveel weet jij over treinen?' },
-  { id: 'soon-dorp', title: 'Kabouterdorp Bouwen', category: 'kinderen', tagline: 'Bouw een gezellig dorp.' },
-  { id: 'soon-online', title: 'Te-Un Online', category: 'multiplayer', tagline: 'Race tegen je vrienden.' },
-  { id: 'soon-fight', title: 'Hooivork Duel', category: 'actie', tagline: 'Verdedig het dorp.' },
-];
+// Geen aangekondigde games meer: alleen echte games staan op het platform.
+export const COMING_SOON = [];
 
 export const catById = (id) => CATEGORIES.find((c) => c.id === id) || { id, name: id, color: ['#888', '#444'] };
