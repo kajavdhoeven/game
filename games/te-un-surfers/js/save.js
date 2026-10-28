@@ -5,6 +5,7 @@ export const PRICES = {
   train: 15000,
   skin_conductor: 50000,
   board_cow: 10000,
+  skin_photo: 100000,
 };
 
 export const VEHICLES = {

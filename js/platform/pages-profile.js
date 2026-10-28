@@ -28,7 +28,7 @@ export async function renderProfile(app) {
     for (const gid of new Set(AVATARS.filter((a) => a.unlock).map((a) => a.unlock.game))) progress[gid] = await api.getProgress(gid).catch(() => null);
     AVATARS.forEach((a) => {
       const open = avatarUnlocked(a, a.unlock && progress[a.unlock.game]);
-      const b = el(`<button class="av-opt ${profile && profile.avatar === a.id ? 'on' : ''} ${open ? '' : 'locked'}" data-id="${a.id}"><div class="avatar lg">${avatarSVG(a.id)}</div><b>${esc(a.name)}${open ? '' : ' 🔒'}</b><small>${open ? esc(a.desc) : 'Zo krijg je hem: ' + esc(a.unlock.how)}</small></button>`);
+      const b = el(`<button class="av-opt ${profile && profile.avatar === a.id ? 'on' : ''} ${open ? '' : 'locked'}" data-id="${a.id}"><div class="avatar lg">${avatarSVG(a.id)}</div><b>${esc(a.name)}${open ? '' : ' 🔒'}</b><small>${!a.unlock ? esc(a.desc) : open ? 'Verdiend met: ' + esc(a.unlock.how) : 'Zo krijg je hem: ' + esc(a.unlock.how)}</small></button>`);
       b.addEventListener('click', async () => {
         if (!open) return toast('Nog vergrendeld. ' + a.unlock.how + '.');
         if (!app.can('can_edit_profile')) return toast('Je mag je profiel niet aanpassen.');

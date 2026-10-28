@@ -101,12 +101,12 @@ function racerAvatar() {
 }
 
 // Profielfoto's. Wie een vergrendelde wil, moet de opdracht in de game doen. 'check' krijgt de voortgang van die game.
-const SURFERS_ALL = ['wheelchair', 'cow', 'train', 'skin_conductor', 'board_cow'];
+const SURFERS_ALL = ['wheelchair', 'cow', 'train', 'skin_conductor', 'skin_photo', 'board_cow'];
 export const AVATARS = [
   { id: 'teun', name: 'Te-Un', desc: 'De kabouter zelf' },
   { id: 'train', name: 'NS-trein', desc: 'Een gele trein', unlock: { game: 'te-un-surfers', how: 'Koop alles in de winkel van Te-Un Surfers', check: (d) => SURFERS_ALL.every((k) => d.owned && d.owned[k]) } },
   { id: 'teun50k', name: 'Te-Un 50K', desc: 'Te-Un met gouden medaille', unlock: { game: 'te-un-surfers', how: 'Haal 50.000 punten in Te-Un Surfers', check: (d) => (d.best || 0) >= 50000 } },
-  { id: 'puzzle', name: 'Puzzel-Te-Un', desc: 'Te-Un met puzzelstukje', unlock: { game: 'te-un-puzzel', how: 'Maak level 1 t/m 4 van Te-Un Puzzel af', check: (d) => [1, 2, 3, 4].every((n) => d.done && d.done[n]) } },
+  { id: 'puzzle', name: 'Puzzel-Te-Un', desc: 'Te-Un met puzzelstukje', unlock: { game: 'te-un-puzzel', how: 'Maak alle 4 de levels van Te-Un Puzzel af binnen de tijd (30 sec, 1 min, 2,5 min en 10 min)', check: (d) => [1, 2, 3, 4].every((n) => d.fast && d.fast[n]) } },
   { id: 'racer', name: 'Te-Un Racer', desc: 'Te-Un met motorhelm', unlock: { game: 'te-un-x3m', how: 'Haal 3 sterren op alle 25 levels van Te-Un X3M', check: (d) => Array.from({ length: 25 }, (_, i) => i + 1).every((n) => (d.stars && d.stars[n]) >= 3) } },
 ];
 

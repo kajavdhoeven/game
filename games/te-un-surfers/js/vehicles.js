@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { canvasTex, rng, softCircleTexture } from './textures.js';
 import { mergeStatic } from './merge.js';
 import { createVehicleTrain } from './train.js';
+import { createEnergyHat } from './gnome.js';
 
 const M = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6, ...o });
 
@@ -212,14 +213,23 @@ export function createNSVehicle() {
 export function createBoard(kind = 'orange') {
   const g = new THREE.Group();
   if (kind === 'cow') {
-    const cow = createCow({ hover: true });
-    cow.scale.setScalar(0.62);
-    cow.rotation.y = 0;
-    g.add(cow);
-    cow.position.y = -0.55;
-    g.userData.update = (dt, t) => { cow.userData.update(dt, t, 0); };
+    // drinkhoed met energy-blikjes boven een kogelvrij vest
+    const hat = createEnergyHat();
+    hat.scale.setScalar(1.5);
+    hat.position.y = 0.2;
+    g.add(hat);
+    const vest = M('#27343b', { roughness: 0.85 });
+    const m1 = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.62, 0.1), vest);
+    m1.position.y = -0.38;
+    g.add(m1);
+    const m2 = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.4, 0.06), M('#161d21', { roughness: 0.8 }));
+    m2.position.set(0, -0.34, 0.07);
+    g.add(m2);
+    const m3 = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.04, 0.07), M('#ffd400'));
+    m3.position.set(0, -0.16, 0.08);
+    g.add(m3);
+    g.userData.update = (dt, t) => { hat.rotation.y = Math.sin(t * 2) * 0.3; };
     g.userData.top = 0.45;
-    addGlow(g);
     return g;
   }
   // oranje T-shirt waar Teun op zweeft

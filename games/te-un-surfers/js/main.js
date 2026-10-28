@@ -677,11 +677,17 @@ function renderShop() {
       onSelect: () => { P.skin = 'conductor'; save(); buildGnome(); renderShop(); },
     });
     card({
-      id: 'orange', title: 'Oranje shirt-hoverboard', desc: 'Zweef op een oranje shirtje. Vangt één botsing op.', img: boardIcon('orange'),
+      id: 'skin_photo', title: 'Treinspotter-fotograaf', desc: 'Oranje shirt en een camera. Hij fotografeert de treinspotters met flits om ze te pakken.', img: skinIcon('photographer'),
+      price: PRICES.skin_photo, owned: owns('skin_photo'), selected: P.skin === 'photographer',
+      onBuy: (x) => { if (buy(x)) { P.skin = 'photographer'; save(); buildGnome(); audio.pickup(); renderShop(); } },
+      onSelect: () => { P.skin = 'photographer'; save(); buildGnome(); renderShop(); },
+    });
+    card({
+      id: 'orange', title: 'Oranje shirt', desc: 'Te-Un trekt een oranje shirt aan. Vangt één botsing op, daarna is het weg.', img: boardIcon('orange'),
       price: 0, owned: true, selected: P.board === 'orange', onSelect: () => { P.board = 'orange'; save(); renderShop(); },
     });
     card({
-      id: 'board_cow', title: 'Koe-hoverboard', desc: 'Zweef op een koe. Zelfde kracht, meer muu.', img: boardIcon('cow'),
+      id: 'board_cow', title: 'Drinkhoed + kogelvrij vest', desc: 'Een hoed met twee blikjes energy en een kogelvrij vest. 20 seconden 2,5x sneller, vangt ook één botsing op.', img: boardIcon('cow'),
       price: PRICES.board_cow, owned: owns('board_cow'), selected: P.board === 'cow',
       onBuy: (x) => { if (buy(x)) { P.board = 'cow'; save(); audio.pickup(); renderShop(); } },
       onSelect: () => { P.board = 'cow'; save(); renderShop(); },
@@ -785,7 +791,7 @@ function resetRun() {
   stars.visible = false;
   gnome.setShoes(false);
   gnome.setPlane(false);
-  gnome.setBoard(null);
+  gnome.setOutfit(null);
   gnome.root.rotation.set(0, 0, 0);
   gnome.root.visible = true;
   $('pwBar').innerHTML = '';
@@ -985,7 +991,7 @@ function endVehicle() {
   lastVehKey = '';
 }
 
-// snelheid: het snelste van het voertuig en het koe-hoverboard (die tellen niet op)
+// snelheid: het snelste van het voertuig en de drinkhoed met vest (die tellen niet op)
 function recomputeSpeed() {
   const veh = S.veh ? VEHICLES[S.veh.id].speed : 1;
   const board = S.pw.board > 0 && P.board === 'cow' ? 2.5 : 1;
@@ -1009,8 +1015,7 @@ function collectPickup(p) {
     S.boardMax = P.board === 'cow' ? 20 : Infinity;
     S.pw.board = S.boardMax === Infinity ? 1e9 : S.boardMax;
     S.shield = true;
-    if (!boardMeshes[P.board]) boardMeshes[P.board] = createBoard(P.board);
-    gnome.setBoard(boardMeshes[P.board]);
+    gnome.setOutfit(P.board === 'cow' ? 'cans' : 'shirt');
     recomputeSpeed();
   } else if (t === 'magnet') {
     S.pw.magnet = POWERUPS.magnet.time;
@@ -1031,7 +1036,7 @@ function endPlane() {
   S.inv = Math.max(S.inv, 1.5);
 }
 
-// ---------------------------------------------------------------- waterpistool
+// ---------------------------------------------------------------- waterpistool, fluitje of camera
 function fire() {
   if (S.fireCd > 0 || (S.mode !== 'playing' && S.mode !== 'intro')) return;
   if (S.mode === 'intro' && !S.launched) return;
@@ -1049,7 +1054,10 @@ function fire() {
   }
   const side = best ? (Math.sign(best.x - S.x) || best.side) : (S.x > 1 ? 1 : -1) || 1;
   S.aim = { side, t: 0 };
-  audio.squirt();
+  const how = P.skin === 'conductor' ? 'whistle' : P.skin === 'photographer' ? 'flash' : 'water';
+  if (how === 'whistle') audio.whistle();
+  else if (how === 'flash') { audio.shutter(); screenFlash(); }
+  else audio.squirt();
   const ox = S.x + side * 0.4;
   const oy = GROUND + S.y + 1.0;
   if (best) {
@@ -1057,11 +1065,19 @@ function fire() {
     const dy = 1.4 + (best.plat ? PH : 0) - oy;
     const dz = best.z - 0;
     const dist = Math.hypot(dx, dy, dz);
-    sparks.emitDir(ox, oy, 0, dx, dy, dz, 40, '#7fd8ff', 24, 0.05, 0.5, 2);
-    pendingHits.push({ sp: best, t: dist / 24 });
+    sparks.emitDir(ox, oy, 0, dx, dy, dz, how === 'water' ? 40 : 26, how === 'water' ? '#7fd8ff' : '#ffffff', how === 'flash' ? 40 : 24, 0.05, 0.5, 2);
+    pendingHits.push({ sp: best, t: dist / (how === 'flash' ? 60 : 24), how });
   } else {
-    sparks.emitDir(ox, oy, 0, side, 0.25, -0.1, 34, '#7fd8ff', 20, 0.1, 0.6, 7);
+    sparks.emitDir(ox, oy, 0, side, 0.25, -0.1, 30, how === 'water' ? '#7fd8ff' : '#ffffff', 20, 0.1, 0.6, 7);
   }
+}
+
+function screenFlash() {
+  const f = $('flash');
+  if (!f) return;
+  f.style.transition = 'none';
+  f.style.opacity = '0.9';
+  requestAnimationFrame(() => requestAnimationFrame(() => { f.style.transition = 'opacity .35s ease-out'; f.style.opacity = '0'; }));
 }
 
 function hitSpotter(sp, how) {
@@ -1265,14 +1281,14 @@ function collide() {
       continue;
     }
     if (S.shield) {
-      // hoverboard vangt de klap op
+      // het shirt of kogelvrije vest vangt de klap op
       S.shield = false;
       S.pw.board = 0;
-      gnome.setBoard(null);
+      gnome.setOutfit(null);
       recomputeSpeed();
       S.inv = 1.6;
       smash(o);
-      pop(_v.set(S.x, 2.4, 0), 'Hoverboard gebroken!', 'msg');
+      pop(_v.set(S.x, 2.4, 0), P.board === 'cow' ? 'Vest hield stand! Hoed weg' : 'Shirt gescheurd!', 'msg');
       if (o.kind === 'train') {
         // door de trein heen duwen: trein weg
         o.mesh.visible = false;
@@ -1385,7 +1401,7 @@ function update(dt) {
     if (S.mode === 'playing') {
       if (S.pw.shoes > 0) { S.pw.shoes -= dt; if (S.pw.shoes <= 0) { S.pw.shoes = 0; gnome.setShoes(false); } }
       if (S.pw.plane > 0) { S.pw.plane -= dt; if (S.pw.plane <= 0) endPlane(); }
-      if (S.pw.board > 0 && S.pw.board < 1e8) { S.pw.board -= dt; if (S.pw.board <= 0) { S.pw.board = 0; S.shield = false; gnome.setBoard(null); recomputeSpeed(); } }
+      if (S.pw.board > 0 && S.pw.board < 1e8) { S.pw.board -= dt; if (S.pw.board <= 0) { S.pw.board = 0; S.shield = false; gnome.setOutfit(null); recomputeSpeed(); } }
       if (S.pw.magnet > 0) S.pw.magnet = Math.max(0, S.pw.magnet - dt);
       if (S.veh) { S.veh.t -= dt; if (S.veh.t <= 0) endVehicle(); }
     }
@@ -1533,10 +1549,21 @@ function update(dt) {
     pendingHits.splice(i, 1);
     if (h.sp.hit || h.sp.soaked) continue;
     h.sp.soaked = true;
-    soak(h.sp.mesh);
-    sparks.emit(h.sp.x, 1.4 + (h.sp.plat ? PH : 0), h.sp.z, 26, '#9fe0ff', 5, 4);
-    audio.splash();
-    setTimeout(() => hitSpotter(h.sp, 'water'), 420);
+    if (h.how === 'whistle') {
+      // het fluitje schrikt hem zo dat hij omvalt
+      sparks.emit(h.sp.x, 1.9 + (h.sp.plat ? PH : 0), h.sp.z, 18, '#ffffff', 6, 3);
+      setTimeout(() => hitSpotter(h.sp, 'whistle'), 160);
+    } else if (h.how === 'flash') {
+      // de flits verblindt hem en de foto is geschoten
+      sparks.emit(h.sp.x, 1.6 + (h.sp.plat ? PH : 0), h.sp.z, 40, '#ffffff', 9, 3);
+      sparks.emit(h.sp.x, 1.6 + (h.sp.plat ? PH : 0), h.sp.z, 14, '#fff2a8', 5, 5);
+      setTimeout(() => hitSpotter(h.sp, 'flash'), 120);
+    } else {
+      soak(h.sp.mesh);
+      sparks.emit(h.sp.x, 1.4 + (h.sp.plat ? PH : 0), h.sp.z, 26, '#9fe0ff', 5, 4);
+      audio.splash();
+      setTimeout(() => hitSpotter(h.sp, 'water'), 420);
+    }
   }
 
   // eerst de hoogte bijwerken met de nieuwe positie van treinen en schansen, daarna pas botsingen
@@ -1570,7 +1597,7 @@ function update(dt) {
 
 function updateGnomeVisual(dt) {
   const sp01 = clamp((S.speed - 16) / 24, 0, 1);
-  const boardLift = S.pw.board > 0 ? 0.32 : 0;
+  const boardLift = 0;
   gnome.root.visible = true;
   const base = GROUND + S.y + boardLift;
   gnome.root.position.set(S.x, base, 0);

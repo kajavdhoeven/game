@@ -57,3 +57,6 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: radial-gradi
 #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: rgba(0,0,0,.8); padding: 10px 18px; border-radius: 12px; opacity: 0; pointer-events: none; transition: .25s; z-index: 80; }
 #toast.on { opacity: 1; transform: translateX(-50%); }
 @media (max-width: 620px) { .bar { flex-wrap: wrap; gap: 6px; } .info { gap: 10px; font-size: 15px; white-space: nowrap; } .info b { font-size: 17px; } .btn { padding: 8px 12px; font-size: 14px; } .tools { gap: 6px; width: 100%; justify-content: center; } .tools .btn { flex: 1; } }
+
+.info #clock.late, #clock.late { color: #ff6b5e; }
+.lv .meta small + small { opacity: .9; font-size: 13px; }

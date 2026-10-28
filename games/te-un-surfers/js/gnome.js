@@ -79,20 +79,58 @@ export { cowTexture };
 const easeOut = (x) => 1 - Math.pow(1 - x, 3);
 
 // Te-Un en varianten. Kijkrichting is -z (de loopbaan).
-// opts.skin: 'teun' | 'conductor' | 'mob'
+// fotocamera met flitser (voor de treinspotter-fotograaf)
+function buildCamera() {
+  const c = new THREE.Group();
+  const body = M('#1b1d22', { roughness: 0.5 });
+  const silver = M('#cfd4da', { metalness: 0.8, roughness: 0.25 });
+  mesh(new THREE.BoxGeometry(0.17, 0.1, 0.08), body, c, 0, 0, 0);
+  mesh(new THREE.BoxGeometry(0.17, 0.03, 0.08), silver, c, 0, 0.065, 0);
+  mesh(new THREE.CylinderGeometry(0.04, 0.045, 0.06, 16), silver, c, 0, 0, -0.07).rotation.x = Math.PI / 2;
+  mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.02, 16), M('#10304a', { roughness: 0.1, metalness: 0.3 }), c, 0, 0, -0.1).rotation.x = Math.PI / 2;
+  mesh(new THREE.BoxGeometry(0.05, 0.03, 0.02), M('#ffffff', { emissive: '#ffffff', emissiveIntensity: 0.6 }), c, -0.05, 0.095, -0.02);
+  return c;
+}
+
+// drinkhoed met twee blikjes energy en rietjes (ook los te gebruiken als power-up)
+export function createEnergyHat() {
+  const h = new THREE.Group();
+  const band = mesh(new THREE.TorusGeometry(0.25, 0.022, 8, 28), M('#ffd400', { roughness: 0.5 }), h, 0, 0.06, 0);
+  band.rotation.x = Math.PI / 2;
+  const cols = ['#19c3ff', '#b8ff1a'];
+  [-1, 1].forEach((s, i) => {
+    const can = new THREE.Group();
+    can.position.set(s * 0.29, 0.1, 0);
+    can.rotation.z = -s * 0.22;
+    h.add(can);
+    mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.17, 16), M(cols[i], { roughness: 0.3, metalness: 0.5 }), can, 0, 0, 0);
+    mesh(new THREE.CylinderGeometry(0.054, 0.054, 0.03, 16), M('#dfe3e8', { roughness: 0.2, metalness: 0.9 }), can, 0, 0.1, 0);
+    mesh(new THREE.CylinderGeometry(0.054, 0.054, 0.03, 16), M('#dfe3e8', { roughness: 0.2, metalness: 0.9 }), can, 0, -0.1, 0);
+    mesh(new THREE.BoxGeometry(0.02, 0.1, 0.108), M('#ffffff', { roughness: 0.4 }), can, 0, 0, 0);
+    const path = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(s * 0.3, 0.2, 0), new THREE.Vector3(s * 0.32, 0.3, -0.05), new THREE.Vector3(s * 0.18, 0.3, -0.19), new THREE.Vector3(s * 0.05, 0.02, -0.25), new THREE.Vector3(s * 0.015, -0.1, -0.245),
+    ]);
+    const straw = new THREE.Mesh(new THREE.TubeGeometry(path, 20, 0.009, 6), M(i ? '#ffffff' : '#ff3b3b', { roughness: 0.4 }));
+    h.add(straw);
+  });
+  return h;
+}
+
+// opts.skin: 'teun' | 'conductor' | 'photographer' | 'mob'
 export function createGnome(opts = {}) {
   const skinName = opts.skin || 'teun';
   const conductor = skinName === 'conductor';
+  const photographer = skinName === 'photographer';
   // 'classic' is de oude baardige kabouter (de boze menigte); Te-Un zelf ziet eruit zoals op zijn logo
   const classic = !!opts.classic;
   const photo = !classic;
   const skin = M('#f1c4a0', { roughness: 0.6 });
-  const tunicColor = opts.tunic || (conductor ? '#102a5c' : photo ? '#1f5fe6' : '#2f7a4b');
+  const tunicColor = opts.tunic || (conductor ? '#102a5c' : photographer ? '#ff7a1a' : photo ? '#1f5fe6' : '#2f7a4b');
   const useKnit = classic && !conductor;
   const tunicMap = useKnit ? knitTexture(tunicColor, new THREE.Color(tunicColor).offsetHSL(0, 0, 0.07).getStyle(), new THREE.Color(tunicColor).offsetHSL(0, 0, -0.08).getStyle(), 7, 3) : null;
   const tunic = M('#ffffff', { map: tunicMap, roughness: 0.85 });
   if (!useKnit) tunic.color.set(tunicColor);
-  const trousers = M(conductor ? '#0c1d40' : photo ? '#15161b' : '#6a4a2e', { roughness: 0.9 });
+  const trousers = M(conductor ? '#0c1d40' : photographer ? '#23252b' : photo ? '#15161b' : '#6a4a2e', { roughness: 0.9 });
   const hairMat = M('#4a2f1f', { roughness: 0.7 });
   const white = M('#f8f8f4', { roughness: 0.95 });
   const hatColor = opts.hat || '#d3202a';
@@ -243,18 +281,31 @@ export function createGnome(opts = {}) {
   const armL = makeArm(-1);
   const armR = makeArm(1);
 
-  // waterpistool (alleen zichtbaar tijdens schieten)
+  // wapen (alleen zichtbaar tijdens schieten): waterpistool, fluitje (conducteur) of camera (fotograaf)
   const gun = new THREE.Group();
   gun.visible = false;
   gun.position.set(0, -0.27, -0.06);
   gun.rotation.x = -Math.PI / 2;
   armR.el.add(gun);
-  mesh(new THREE.BoxGeometry(0.07, 0.12, 0.26), M('#18b6e8', { roughness: 0.3 }), gun, 0, 0.02, 0);
-  mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.16, 8), M('#0a6a8c'), gun, 0, 0.02, -0.2).rotation.x = Math.PI / 2;
-  mesh(new THREE.BoxGeometry(0.06, 0.12, 0.07), M('#ffe14a', { roughness: 0.4 }), gun, 0, -0.08, 0.06);
-  const tank = mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.16, 12), new THREE.MeshPhysicalMaterial({ color: '#7fd8ff', transparent: true, opacity: 0.7, roughness: 0.1 }), gun, 0, 0.12, 0.02);
-  tank.rotation.x = Math.PI / 2;
-  tank.castShadow = false;
+  if (conductor) {
+    gun.rotation.x = 0;
+    gun.position.set(0, -0.3, 0);
+    const silver = M('#d9dde2', { metalness: 0.8, roughness: 0.25 });
+    mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.1, 12), silver, gun, 0, 0, 0).rotation.z = Math.PI / 2;
+    mesh(new THREE.SphereGeometry(0.04, 12, 10), silver, gun, 0.05, 0, 0);
+    mesh(new THREE.BoxGeometry(0.05, 0.02, 0.03), M('#e8272f'), gun, -0.02, 0.035, 0);
+  } else if (photographer) {
+    gun.rotation.x = 0;
+    gun.position.set(0, -0.28, -0.08);
+    gun.add(buildCamera());
+  } else {
+    mesh(new THREE.BoxGeometry(0.07, 0.12, 0.26), M('#18b6e8', { roughness: 0.3 }), gun, 0, 0.02, 0);
+    mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.16, 8), M('#0a6a8c'), gun, 0, 0.02, -0.2).rotation.x = Math.PI / 2;
+    mesh(new THREE.BoxGeometry(0.06, 0.12, 0.07), M('#ffe14a', { roughness: 0.4 }), gun, 0, -0.08, 0.06);
+    const tank = mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.16, 12), new THREE.MeshPhysicalMaterial({ color: '#7fd8ff', transparent: true, opacity: 0.7, roughness: 0.1 }), gun, 0, 0.12, 0.02);
+    tank.rotation.x = Math.PI / 2;
+    tank.castShadow = false;
+  }
 
   // --- hoofd ---
   const head = new THREE.Group();
@@ -445,6 +496,43 @@ export function createGnome(opts = {}) {
   mergeOwn(hatBase);
   mergeOwn(planePack);
 
+  // --- power-up kleding: oranje shirt, of drinkhoed + kogelvrij vest ---
+  const shirtOn = new THREE.Group();
+  {
+    const mat = M('#ff7a1a', { roughness: 0.7 });
+    const sb = new THREE.Mesh(new THREE.LatheGeometry(tunicShape, 24), mat);
+    sb.position.y = -0.02;
+    sb.scale.set(1.08, 1.03, 0.9);
+    sb.castShadow = true;
+    shirtOn.add(sb);
+    const white2 = M('#ffffff', { roughness: 0.6 });
+    const nk = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.018, 8, 20), white2);
+    nk.position.set(0, 0.44, 0);
+    nk.rotation.x = Math.PI / 2;
+    shirtOn.add(nk);
+    torso.add(shirtOn);
+  }
+  const vestOn = new THREE.Group();
+  {
+    const vest = M('#27343b', { roughness: 0.85 });
+    const dark = M('#161d21', { roughness: 0.8 });
+    const vb = new THREE.Mesh(new THREE.LatheGeometry(tunicShape.map((p) => new THREE.Vector2(p.x, Math.min(p.y, 0.4))), 24), vest);
+    vb.position.y = -0.02;
+    vb.scale.set(1.1, 1.0, 0.93);
+    vb.castShadow = true;
+    vestOn.add(vb);
+    mesh(new THREE.BoxGeometry(0.25, 0.27, 0.035), dark, vestOn, 0, 0.22, -0.185);
+    mesh(new THREE.BoxGeometry(0.09, 0.07, 0.04), vest, vestOn, -0.08, 0.1, -0.2);
+    mesh(new THREE.BoxGeometry(0.09, 0.07, 0.04), vest, vestOn, 0.08, 0.1, -0.2);
+    mesh(new THREE.BoxGeometry(0.22, 0.02, 0.01), M('#ffd400'), vestOn, 0, 0.34, -0.205);
+    torso.add(vestOn);
+  }
+  const hatOn = createEnergyHat();
+  head.add(hatOn);
+  shirtOn.visible = vestOn.visible = hatOn.visible = false;
+  const chestCam = photographer ? buildCamera() : null;
+  if (chestCam) { chestCam.position.set(0, 0.2, -0.22); torso.add(chestCam); }
+
   // ------------------------------------------------------------ animatie
   const st = {
     phase: 0, waveT: 0, gesture: null, gestureT: 0, nextGesture: 3 + Math.random() * 3,
@@ -536,6 +624,11 @@ export function createGnome(opts = {}) {
       shoeGlow.forEach((g) => { g.visible = on; });
     },
     setPlane(on) { planePack.visible = on; },
+    // 'shirt' | 'cans' | null: kleding die je door een power-up aantrekt
+    setOutfit(kind) {
+      shirtOn.visible = kind === 'shirt';
+      vestOn.visible = hatOn.visible = kind === 'cans';
+    },
     setBoard(mesh3d) {
       while (boardGroup.children.length) boardGroup.remove(boardGroup.children[0]);
       boardGroup.visible = !!mesh3d;
@@ -565,6 +658,7 @@ export function createGnome(opts = {}) {
       const laneK = 1 - st.laneT;
       const gun3 = extra.aim != null;
       gun.visible = gun3;
+      if (chestCam) chestCam.visible = !gun3;
 
       if (state === 'run') {
         st.phase += dt * (9 + speed01 * 5);
@@ -841,7 +935,27 @@ export function createGnome(opts = {}) {
       }
 
       // waterpistool: richt op de spotter, terugslag
-      if (gun3) {
+      if (gun3 && conductor) {
+        // fluitje in de mond
+        const side = extra.aim || 1;
+        torso.rotation.y = -side * 0.5;
+        armR.sh.rotation.x = 2.4;
+        armR.sh.rotation.z = -0.25;
+        armR.el.rotation.x = 1.9;
+        armL.sh.rotation.x = 0.3;
+        head.rotation.y = side * 0.6;
+        head.rotation.x = -0.12;
+      } else if (gun3 && photographer) {
+        // camera voor het gezicht, beide handen omhoog
+        const side = extra.aim || 1;
+        torso.rotation.y = -side * 1.0;
+        armR.sh.rotation.x = 1.95;
+        armR.el.rotation.x = 1.15;
+        armL.sh.rotation.x = 1.95;
+        armL.sh.rotation.z = 0.35;
+        armL.el.rotation.x = 1.15;
+        head.rotation.y = side * 0.85;
+      } else if (gun3) {
         const side = extra.aim || 1;
         const rec = Math.max(0, 1 - (extra.fireT || 0) / 0.18);
         torso.rotation.y = -side * 1.15;

@@ -92,13 +92,13 @@ export async function renderGame(app, id) {
     if (!d) { box.innerHTML = '<h3>Jouw voortgang</h3><p class="muted">Speel een ronde en je voortgang verschijnt hier.</p>'; return; }
     if (g.id === 'te-un-x3m') {
       const st = d.stars || {};
-      const lv = Object.keys(st).length, sum = Object.values(st).reduce((a, b2) => a + b2, 0);
-      box.innerHTML = `<h3>Jouw voortgang</h3><div class="prog-grid"><div><b>${lv}/25</b><small>Levels af</small></div><div><b>${sum}</b><small>Sterren</small></div><div><b>${Object.keys(d.owned || {}).length}/3</b><small>Voertuigen</small></div></div>`;
+      const lv = Object.keys(st).length, sum = Object.values(st).reduce((a, b2) => a + b2, 0) + (d.bonus || 0) - (d.spent || 0);
+      box.innerHTML = `<h3>Jouw voortgang</h3><div class="prog-grid"><div><b>${lv}/25</b><small>Levels af</small></div><div><b>${sum}</b><small>Sterren (nog te besteden)</small></div><div><b>${Object.keys(d.owned || {}).length}/3</b><small>Voertuigen</small></div></div>`;
       return;
     }
     if (g.id === 'te-un-puzzel') {
       const dn = [1, 2, 3, 4].filter((n) => d.done && d.done[n]).length;
-      box.innerHTML = `<h3>Jouw voortgang</h3><div class="prog-grid"><div><b>${dn}/4</b><small>Levels af</small></div><div><b>${dn === 4 ? 'Open' : 'Dicht'}</b><small>Profielfoto</small></div></div>`;
+      box.innerHTML = `<h3>Jouw voortgang</h3><div class="prog-grid"><div><b>${dn}/4</b><small>Levels af</small></div><div><b>${[1, 2, 3, 4].filter((n) => d.fast && d.fast[n]).length}/4</b><small>Binnen de tijd</small></div></div>`;
       return;
     }
     const veh = Object.keys(d.owned || {}).filter((k) => ['wheelchair', 'cow', 'train'].includes(k)).length;

@@ -84,8 +84,8 @@ const FALLBACK_GAMES = [{
   logo: '/assets/te-un-surfers-logo.png', hero: '/assets/te-un-surfers-hero.jpg', thumb: '/assets/te-un-surfers.jpg', created_at: '2025-01-01T00:00:00Z', controls: [],
 }, {
   id: 'te-un-puzzel', title: 'Te-Un Puzzel', category: 'puzzel',
-  tagline: 'Vier legpuzzels met Te-Un. Maak ze allemaal af voor een nieuwe profielfoto.',
-  description: 'Sleep de door elkaar liggende stukjes naar de juiste plek en maak de afbeelding af. Vier levels, van rustig tot serieus moeilijk.',
+  tagline: 'Vier legpuzzels met Te-Un, elk met een tijdslimiet.',
+  description: 'Sleep de door elkaar liggende stukjes naar de juiste plek en maak de afbeelding af. Vier levels, van rustig tot serieus moeilijk, elk met een tijdslimiet.',
   logo: '/assets/te-un-puzzel-logo.png', hero: '/assets/te-un-puzzel-hero.jpg', thumb: '/assets/te-un-puzzel.jpg', created_at: '2025-06-01T00:00:00Z', controls: [],
 }, {
   id: 'te-un-x3m', title: 'Te-Un X3M', category: 'racen',

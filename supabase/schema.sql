@@ -259,8 +259,8 @@ values (
 insert into public.games (id, title, category, tags, tagline, description, controls, thumb, hero, url, published, featured)
 values (
   'te-un-puzzel', 'Te-Un Puzzel', 'puzzel', array['puzzel','kinderen'],
-  'Vier legpuzzels met Te-Un. Maak ze allemaal af voor een nieuwe profielfoto.',
-  'Sleep de door elkaar liggende stukjes naar de juiste plek en maak de afbeelding af. Level 1 is rustig, level 4 is serieus moeilijk: 54 stukjes die je ook nog moet draaien. Wie alle vier de levels haalt, speelt de profielfoto Te-Un met puzzelstukje vrij.',
+  'Vier legpuzzels met Te-Un, elk met een tijdslimiet.',
+  'Sleep de door elkaar liggende stukjes naar de juiste plek en maak de afbeelding af. Level 1 is rustig, level 4 is serieus moeilijk: 54 stukjes die je ook nog moet draaien. Elk level heeft een tijdslimiet: 30 seconden, 1 minuut, 2,5 minuut en 10 minuten.',
   '[["Slepen","Een stukje verplaatsen, het klikt vast op zijn plek"],["Tikken","Een stukje draaien (level 4)"],["Voorbeeld","Laat de afbeelding zien"],["Randen","Maakt de middenstukjes doorzichtig, zo vind je de randen sneller"]]'::jsonb,
   '/assets/te-un-puzzel.jpg', '/assets/te-un-puzzel-hero.jpg', '/games/te-un-puzzel/', true, false
 ) on conflict (id) do nothing;
@@ -270,10 +270,19 @@ insert into public.games (id, title, category, tags, tagline, description, contr
 values (
   'te-un-x3m', 'Te-Un X3M', 'racen', array['racen','actie'],
   'Spring en stunt met een fatbike, motor of gouden vape door 25 levels.',
-  'Rijd door gevaarlijke levels vol lava, spijkers, zagen en vuur. Wees snel voor drie sterren, upgrade van fatbike naar motor en naar de gouden vape waarmee je vliegt, en speel nieuwe personages vrij: de oranje-shirt jongen in level 5, de groene bril in level 10 en de gouden regenboog Te-Un in level 20.',
+  'Rijd door gevaarlijke levels vol lava, spijkers, zagen en vuur. Wees snel voor drie sterren, upgrade van fatbike naar motor en naar de gouden vape waarmee je vliegt, en speel nieuwe personages vrij: de oranje-shirt jongen in level 5, Te-Un Racer in level 10 en de gouden regenboog Te-Un in level 20.',
   '[["↑  of  W","Gas"],["↓  of  S","Remmen en achteruit"],["←  →  of  A D","Leunen: achterover of voorover"],["R","Level opnieuw"],["Esc  of  P","Pauze"],["Telefoon","Knoppen onderin beeld"]]'::jsonb,
   '/assets/te-un-x3m.jpg', '/assets/te-un-x3m-hero.jpg', '/games/te-un-x3m/', true, false
 ) on conflict (id) do nothing;
+
+-- teksten van de nieuwere games bijwerken (veilig om vaker te draaien)
+update public.games set
+  tagline = 'Vier legpuzzels met Te-Un, elk met een tijdslimiet.',
+  description = 'Sleep de door elkaar liggende stukjes naar de juiste plek en maak de afbeelding af. Level 1 is rustig, level 4 is serieus moeilijk: 54 stukjes die je ook nog moet draaien. Elk level heeft een tijdslimiet: 30 seconden, 1 minuut, 2,5 minuut en 10 minuten.'
+where id = 'te-un-puzzel';
+update public.games set
+  description = 'Rijd door gevaarlijke levels vol lava, spijkers, zagen en vuur. Wees snel voor drie sterren, upgrade van fatbike naar motor en naar de gouden vape waarmee je vliegt, en speel nieuwe personages vrij: de oranje-shirt jongen in level 5, Te-Un Racer in level 10 en de gouden regenboog Te-Un in level 20.'
+where id = 'te-un-x3m';
 
 -- titel-logo voor de eerste game
 update public.games set logo = '/assets/te-un-surfers-logo.png' where id = 'te-un-surfers' and coalesce(logo, '') = '';

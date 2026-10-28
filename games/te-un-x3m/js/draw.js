@@ -477,7 +477,9 @@ export class Renderer {
   }
 
   drawVape(c, b, g, time) {
-    // gouden vape, zwevend, met een kleine gloed eronder
+    // gouden vape, zwevend, met een kleine gloed eronder. Gespiegeld: het mondstuk zit achter, daar komt de damp uit.
+    c.save();
+    c.scale(-1, 1);
     if (b.thrusting) {
       const gl = c.createRadialGradient(0, -0.4, 0.1, 0, -0.4, 1.4);
       gl.addColorStop(0, 'rgba(255,230,120,.55)'); gl.addColorStop(1, 'rgba(255,230,120,0)');
@@ -509,6 +511,7 @@ export class Renderer {
     // sterretjes
     c.fillStyle = '#fff'; for (let i = 0; i < 2; i++) { const a = time * 3 + i * 2; c.globalAlpha = 0.5 + 0.5 * Math.sin(a * 2); c.beginPath(); c.arc(-0.9 + i * 1.4, 0.05 + 0.1 * Math.sin(a), 0.035, 0, TAU); c.fill(); }
     c.globalAlpha = 1;
+    c.restore();
   }
 
   // ---------------------------------------------------------------- bestuurder
@@ -567,10 +570,13 @@ export function riderPose(b, g, time) {
   const hand = [rig.hand[0] + k.lean * 0.1, rig.hand[1]];
   let cough = 0, headTilt = 0;
   if (b.vid === 'vape' && g.cough && g.cough.t > 0) {
-    cough = Math.max(0, Math.min(1, g.cough.t / 0.18, (0.95 - g.cough.t) / 0.15));
+    const el = 1.5 - g.cough.t;
+    cough = Math.max(0, Math.min(1, g.cough.t / 0.2, el / 0.12));
+    let pulse = 0;
+    for (const s0 of [0, 0.42, 0.82]) if (el >= s0) pulse = Math.max(pulse, Math.exp(-(el - s0) * 9));
     hand[0] += (head[0] + 0.22 - hand[0]) * cough; hand[1] += (head[1] - 0.12 - hand[1]) * cough;
-    headTilt = -0.22 * cough + Math.sin(time * 40) * 0.07 * cough;
-    head[1] += Math.sin(time * 40) * 0.025 * cough;
+    headTilt = -0.2 * cough - pulse * 0.18 + Math.sin(time * 40) * 0.04 * cough;
+    head[1] += -pulse * 0.05 + Math.sin(time * 40) * 0.015 * cough;
   }
   return { x: b.x, y: b.y, a: b.a, hip, sh, head, headTilt, hand, footB, footF, torsoA: ta, legs: true, mode: b.vid, speed: Math.abs(b.vx), vx: b.vx, k, ground: b.air < 0.05 };
 }

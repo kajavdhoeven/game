@@ -25,7 +25,7 @@ export const POWERUPS = {
   shoes: { id: 'shoes', label: 'Superschoenen', color: '#3aa0ff', time: 14, desc: 'Spring zo hoog dat je op treinen landt' },
   plane: { id: 'plane', label: 'Mini-vliegtuig', color: '#ff4a4a', time: 7.5, desc: 'Vlieg 7,5 seconde boven het spoor' },
   refill: { id: 'refill', label: 'Voertuig-refill', color: '#4cff8a', time: 0, desc: 'Vul je geselecteerde voertuig weer op' },
-  board: { id: 'board', label: 'Hoverboard', color: '#ff8a2a', time: 0, desc: 'Zweef op een hoverboard, vangt één botsing op' },
+  board: { id: 'board', label: 'Shirt', color: '#ff8a2a', time: 0, desc: 'Trek een shirt of vest aan, vangt één botsing op' },
   magnet: { id: 'magnet', label: 'Magneet', color: '#ff4d6d', time: 10, desc: 'Trekt alle munten in de buurt naar je toe' },
 };
 

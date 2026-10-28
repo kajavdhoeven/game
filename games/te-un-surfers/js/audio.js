@@ -282,6 +282,36 @@ Object.assign(audio, {
     noise(t, 0.28, 0.35, 8000, 2500);
     tone(900, t, 0.12, 'sine', 0.08, null, 1600);
   },
+  // fluitje van de conducteur: een trillend hoog geluid
+  whistle() {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    const lfo = ctx.createOscillator();
+    const lg = ctx.createGain();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(2300, t);
+    o.frequency.linearRampToValueAtTime(2900, t + 0.08);
+    o.frequency.linearRampToValueAtTime(2600, t + 0.55);
+    lfo.frequency.value = 34; lg.gain.value = 170;
+    lfo.connect(lg); lg.connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.35, t + 0.03);
+    g.gain.setValueAtTime(0.35, t + 0.4);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+    o.connect(g); g.connect(master || ctx.destination);
+    o.start(t); lfo.start(t); o.stop(t + 0.65); lfo.stop(t + 0.65);
+    noise(t, 0.5, 0.12, 9000, 3000);
+  },
+  // sluiter en flits van de camera
+  shutter() {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    noise(t, 0.03, 0.5, 6000, 1500);
+    noise(t + 0.06, 0.04, 0.45, 5000, 1200);
+    tone(2400, t + 0.1, 0.35, 'sine', 0.05, null, 5200);
+  },
   splash() {
     if (!ctx) return;
     const t = ctx.currentTime;

@@ -1,10 +1,10 @@
 // Te-Un Puzzel: vier legpuzzels. Alles wordt in de browser getekend, er is geen build nodig.
 const GAME_ID = 'te-un-puzzel';
 const LEVELS = [
-  { n: 1, name: 'Te-Un', img: 'img/level1.jpg', cols: 3, rows: 4, ghost: 0.28, rotate: false },
-  { n: 2, name: 'Arcade', img: 'img/level2.jpg', cols: 4, rows: 6, ghost: 0.12, rotate: false },
-  { n: 3, name: 'Op het toilet', img: 'img/level3.jpg', cols: 6, rows: 6, ghost: 0, rotate: false },
-  { n: 4, name: 'Het leger', img: 'img/level4.jpg', cols: 9, rows: 6, ghost: 0, rotate: true },
+  { n: 1, name: 'Te-Un', img: 'img/level1.jpg', cols: 3, rows: 4, ghost: 0.28, rotate: false, limit: 30 },
+  { n: 2, name: 'Arcade', img: 'img/level2.jpg', cols: 4, rows: 6, ghost: 0.12, rotate: false, limit: 60 },
+  { n: 3, name: 'Op het toilet', img: 'img/level3.jpg', cols: 6, rows: 6, ghost: 0, rotate: false, limit: 150 },
+  { n: 4, name: 'Het leger', img: 'img/level4.jpg', cols: 9, rows: 6, ghost: 0, rotate: true, limit: 600 },
 ];
 
 const $ = (id) => document.getElementById(id);
@@ -12,7 +12,7 @@ const rand = (a, b) => a + Math.random() * (b - a);
 
 // ---------------------------------------------------------------- opslaan + platform
 const KEY = 'teun-puzzel-v1';
-let P = { done: {}, updatedAt: 0 };
+let P = { done: {}, fast: {}, updatedAt: 0 };
 try { P = Object.assign(P, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* geen opslag */ }
 const post = (type, extra = {}) => {
   if (window.parent === window) return;
@@ -23,7 +23,7 @@ function save(quiet) {
   if (!quiet) P.updatedAt = Date.now();
   try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) { /* geen opslag */ }
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => post('teun:save', { data: { done: P.done, updatedAt: P.updatedAt } }), 500);
+  saveTimer = setTimeout(() => post('teun:save', { data: { done: P.done, fast: P.fast, updatedAt: P.updatedAt } }), 500);
 }
 window.addEventListener('message', (e) => {
   if (e.origin !== location.origin) return;
@@ -33,13 +33,14 @@ window.addEventListener('message', (e) => {
     const d = m.data;
     if ((d.updatedAt || 0) > (P.updatedAt || 0)) {
       P.done = Object.assign({}, d.done || {});
+      P.fast = Object.assign({}, d.fast || {});
       P.updatedAt = d.updatedAt;
       save(true);
       renderMenu();
-    } else if ((d.updatedAt || 0) < (P.updatedAt || 0)) post('teun:save', { data: { done: P.done, updatedAt: P.updatedAt } });
+    } else if ((d.updatedAt || 0) < (P.updatedAt || 0)) post('teun:save', { data: { done: P.done, fast: P.fast, updatedAt: P.updatedAt } });
   }
 });
-const allDone = () => LEVELS.every((l) => P.done[l.n]);
+const allFast = () => LEVELS.every((l) => P.fast && P.fast[l.n]);
 const fmtTime = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
 // ---------------------------------------------------------------- geluid
@@ -206,10 +207,17 @@ async function startLevel(n) {
   cur.tick = setInterval(() => {
     if (!cur || cur.over || !cur.t0) return;
     cur.elapsed = (performance.now() - cur.t0) / 1000;
-    $('clock').textContent = fmtTime(cur.elapsed);
+    paintClock();
   }, 250);
-  $('clock').textContent = '0:00';
+  paintClock();
   if (level.rotate) toast('Tik op een stukje om het te draaien');
+}
+
+function paintClock() {
+  const lim = cur.level.limit;
+  const el = $('clock');
+  el.textContent = `${fmtTime(cur.elapsed || 0)} / ${fmtTime(lim)}`;
+  el.classList.toggle('late', (cur.elapsed || 0) > lim);
 }
 
 function setPos(p) {
@@ -307,20 +315,23 @@ function finish() {
   cur.over = true;
   clearInterval(cur.tick);
   const t = cur.t0 ? (performance.now() - cur.t0) / 1000 : 0;
-  const n = cur.level.n;
-  const prev = P.done[n];
-  const wasAll = allDone();
-  const record = !!prev && t < prev;
-  P.done[n] = prev ? Math.min(prev, Math.max(1, Math.round(t))) : Math.max(1, Math.round(t));
+  const lvl = cur.level, n = lvl.n;
+  const inTime = t <= lvl.limit;
+  const wasAll = allFast();
+  const sec = Math.max(1, Math.round(t));
+  P.done[n] = P.done[n] ? Math.min(P.done[n], sec) : sec;
+  if (inTime) P.fast[n] = P.fast[n] ? Math.min(P.fast[n], sec) : sec;
   save();
   setTimeout(() => {
     sndWin();
-    $('winTitle').textContent = `Level ${n} af!`;
-    $('winText').textContent = `Tijd: ${fmtTime(t)}${record ? ' (nieuw record!)' : ''}`;
-    const unlocked = allDone() && !wasAll;
+    $('winTitle').textContent = inTime ? `Level ${n} af, binnen de tijd!` : `Level ${n} af, maar te langzaam`;
+    $('winText').innerHTML = inTime
+      ? `Jouw tijd: <b>${fmtTime(t)}</b> (limiet ${fmtTime(lvl.limit)})`
+      : `Jouw tijd: <b>${fmtTime(t)}</b><br>Je had <b>${fmtTime(lvl.limit)}</b> of sneller nodig. Probeer het nog eens.`;
+    const unlocked = allFast() && !wasAll;
     const box = $('winReward');
     box.hidden = !unlocked;
-    if (unlocked) box.innerHTML = `${puzzleBadge()}Nieuwe profielfoto vrijgespeeld: Te-Un met puzzelstukje! Je vindt hem op je profielpagina.`;
+    if (unlocked) box.innerHTML = `${puzzleBadge()}Alle 4 de puzzels binnen de tijd! Je hebt een nieuwe profielfoto: Te-Un met puzzelstukje.`;
     $('winNext').hidden = n >= LEVELS.length;
     $('winNext').textContent = `Level ${n + 1}`;
     $('win').hidden = false;
@@ -338,16 +349,12 @@ function renderMenu() {
   LEVELS.forEach((l) => {
     const open = l.n === 1 || P.done[l.n - 1];
     const b = document.createElement('button');
-    b.className = 'lv' + (P.done[l.n] ? ' done' : '');
+    b.className = 'lv' + (P.fast && P.fast[l.n] ? ' done' : '');
     b.disabled = !open;
-    b.innerHTML = `<img src="${l.img}" alt="" draggable="false"><div class="meta"><b>Level ${l.n}</b><small>${l.cols * l.rows} stukjes${l.rotate ? ', draaien' : ''}${P.done[l.n] ? ' · ' + fmtTime(P.done[l.n]) : ''}</small></div>`;
+    b.innerHTML = `<img src="${l.img}" alt="" draggable="false"><div class="meta"><b>Level ${l.n}</b><small>${l.cols * l.rows} stukjes${l.rotate ? ', draaien' : ''}</small><small>Tijdslimiet ${fmtTime(l.limit)}${P.fast && P.fast[l.n] ? ' · gehaald in ' + fmtTime(P.fast[l.n]) : P.done[l.n] ? ' · af, maar te langzaam' : ''}</small></div>`;
     b.addEventListener('click', () => startLevel(l.n));
     box.appendChild(b);
   });
-  const r = $('reward');
-  r.className = 'reward' + (allDone() ? ' got' : '');
-  const left = LEVELS.filter((l) => !P.done[l.n]).length;
-  r.textContent = allDone() ? 'Profielfoto Te-Un met puzzelstukje vrijgespeeld!' : `Nog ${left} ${left === 1 ? 'level' : 'levels'} tot de nieuwe profielfoto`;
 }
 function toMenu() {
   if (cur) clearInterval(cur.tick);
