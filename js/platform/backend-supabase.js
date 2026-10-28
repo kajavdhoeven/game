@@ -44,7 +44,11 @@ export const remote = {
   async signUp({ email, password, username }) {
     const { data, error } = await client.auth.signUp({ email, password, options: { data: { username }, emailRedirectTo: location.origin } });
     fail(error);
-    return { needsConfirm: !data.session };
+    if (data.session) return { needsConfirm: false };
+    // geen sessie terug (e-mailbevestiging staat aan in Supabase): meteen zelf inloggen
+    const r = await client.auth.signInWithPassword({ email, password });
+    if (r.error) return { needsConfirm: true };
+    return { needsConfirm: false };
   },
   async signIn({ email, password }) {
     const { error } = await client.auth.signInWithPassword({ email, password });

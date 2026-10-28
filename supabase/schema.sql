@@ -88,6 +88,20 @@ $$;
 drop trigger if exists protect_admin on public.profiles;
 create trigger protect_admin before update on public.profiles for each row execute function public.protect_admin_flag();
 
+-- nieuwe accounts meteen als bevestigd markeren: niemand hoeft zijn e-mail te verifieren
+create or replace function public.auto_confirm_user()
+returns trigger language plpgsql security definer set search_path = public, auth as $$
+begin
+  new.email_confirmed_at := coalesce(new.email_confirmed_at, now());
+  return new;
+end;
+$$;
+drop trigger if exists auto_confirm on auth.users;
+create trigger auto_confirm before insert on auth.users for each row execute function public.auto_confirm_user();
+
+-- bestaande, nog onbevestigde accounts ook bevestigen
+update auth.users set email_confirmed_at = now() where email_confirmed_at is null;
+
 -- een game-start tellen (ook voor gasten)
 create or replace function public.record_play(p_game text)
 returns void language plpgsql security definer set search_path = public as $$
