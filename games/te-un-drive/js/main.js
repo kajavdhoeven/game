@@ -13,16 +13,16 @@ const $ = (id) => document.getElementById(id);
 
 // ---------------------------------------------------------------- opslaan
 const KEY = 'teun-drive-v1';
-let P = { done: {}, car: 'bike', dev: false, updatedAt: 0 };
+let P = { done: {}, car: 'bike', dev: false, bikeCrash: false, updatedAt: 0 };
 try { P = Object.assign(P, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* geen opslag */ }
-const snapshot = () => ({ done: P.done, car: P.car, dev: P.dev, updatedAt: P.updatedAt });
+const snapshot = () => ({ done: P.done, car: P.car, dev: P.dev, bikeCrash: P.bikeCrash, updatedAt: P.updatedAt });
 const post = (type, extra = {}) => {
   if (window.parent === window) return;
   try { window.parent.postMessage({ type, game: GAME_ID, ...extra }, location.origin); } catch (e) { /* geen ouder */ }
 };
 let saveTimer = null;
 // de tekst boven Hermano's fiets wisselt tijdens het spelen
-const HERM = ["HERMANO'S", 'FLINKE SCHAFER', 'OUTFITJE 52K'];
+const HERM = ['FLINKE SCHAFER GEMAAKT GEK', 'HERMANOS EVEN EEN OUTFITJE'];
 let hermT = 0, hermI = 0;
 function save(quiet) {
   if (!quiet) P.updatedAt = Date.now();
@@ -185,6 +185,7 @@ function setScreen(s) {
 
 function crash(reason) {
   g.state = 'crashed'; g.crashT = 0; g.car.crash = reason; g.cam.shake = 0.5;
+  if (g.car.id === 'bike' && !P.bikeCrash) { P.bikeCrash = true; save(); }
   const c = g.car;
   if (reason === 'water') {
     splashSound();

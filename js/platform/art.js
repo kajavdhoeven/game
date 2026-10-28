@@ -62,6 +62,8 @@ export function avatarSVG(kind = 'teun') {
   if (kind === 'teun50k') return `<div class="av-face">${teunSVG({ crop: 'face' })}${MEDAL_BADGE}</div>`;
   if (kind === 'racer') return racerAvatar();
   if (kind === 'slider') return sliderAvatar();
+  if (kind === 'schaver') return schaverAvatar();
+  if (kind === 'lambo') return lamboAvatar();
   return `<div class="av-face">${teunSVG({ crop: 'face' })}</div>`;
 }
 
@@ -98,6 +100,41 @@ function sliderAvatar() {
   return `<div class="av-face slide">${cells.join('')}</div>`;
 }
 
+// Hermano's fiets met de tekst "OUTFITJE 52K" (profielfoto uit Te-Un Drive)
+function schaverAvatar() {
+  return `<svg class="avsvg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flinke schaver gemaakt">
+<defs><linearGradient id="shbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd86b"/><stop offset="1" stop-color="#ff8a3d"/></linearGradient></defs>
+<rect width="100" height="100" fill="url(#shbg)"/>
+<path d="M0 80 L100 80 L100 100 L0 100Z" fill="#6b5a48"/><path d="M0 80 L100 80" stroke="#3c3126" stroke-width="2"/>
+<path d="M12 90h14M60 94h22M34 92h8" stroke="#3c3126" stroke-width="2" stroke-linecap="round" opacity=".5"/>
+<g fill="none" stroke="#15110e" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="27" cy="68" r="14" fill="rgba(0,0,0,.08)"/><circle cx="75" cy="68" r="14" fill="rgba(0,0,0,.08)"/>
+<path d="M27 68 L44 50 L66 50 L75 68 M44 50 L50 68 L27 68 M66 50 L62 42 M58 42 L68 42"/>
+<path d="M44 50 L41 43 M36 43 L47 43" />
+</g>
+<g stroke="#d7191f" stroke-width="3" stroke-linecap="round" fill="none"><path d="M47 56 L62 56"/><path d="M50 68 L72 52" opacity="0"/></g>
+<path d="M18 74 l6 -3 M22 78 l8 -4 M80 72 l6 3 M84 66 l5 2" stroke="#e8423a" stroke-width="2" stroke-linecap="round" opacity=".85"/>
+<text x="50" y="26" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="14.5" fill="#ffd23a" stroke="#b3121c" stroke-width="3.2" paint-order="stroke" transform="rotate(-4 50 20)">OUTFITJE</text>
+<text x="50" y="42" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="15" fill="#ffd23a" stroke="#b3121c" stroke-width="3.2" paint-order="stroke" transform="rotate(-4 50 36)">52K</text>
+</svg>`;
+}
+
+// Te-Un in een Lamborghini (profielfoto voor alle auto's uit Te-Un Drive)
+function lamboAvatar() {
+  return `<div class="av-face lambo" style="background:linear-gradient(180deg,#27304a,#6a7aa8 62%,#3a3f4a 62%)">
+<div style="position:absolute;left:31%;top:12%;width:40%;height:44%">${teunSVG({ crop: 'face' })}</div>
+<svg class="avsvg" style="position:absolute;inset:0" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Te-Un in een Lamborghini">
+<defs><linearGradient id="lbody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe94a"/><stop offset="1" stop-color="#e3a400"/></linearGradient></defs>
+<path d="M2 58 L98 58" stroke="#8a90a6" stroke-width="1" opacity=".5"/>
+<path d="M6 78 L8 66 Q12 62 30 60 L46 52 Q58 49 70 56 L92 62 Q98 66 97 78 Z" fill="url(#lbody)" stroke="#15110e" stroke-width="2.6" stroke-linejoin="round"/>
+<path d="M30 60 L46 52 Q54 51 60 54 L52 60 Z" fill="#12151c" stroke="#15110e" stroke-width="2"/>
+<path d="M14 70 L90 68" stroke="#b37a00" stroke-width="1.6"/><path d="M72 62 L92 64 L90 70 L70 68Z" fill="#c78d00" opacity=".6"/>
+<path d="M88 72 L96 72" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><rect x="6" y="70" width="6" height="3" fill="#ff3b30"/>
+<circle cx="26" cy="79" r="10" fill="#15110e"/><circle cx="26" cy="79" r="5.5" fill="#cfd4da"/><circle cx="26" cy="79" r="2" fill="#15110e"/>
+<circle cx="76" cy="79" r="10" fill="#15110e"/><circle cx="76" cy="79" r="5.5" fill="#cfd4da"/><circle cx="76" cy="79" r="2" fill="#15110e"/>
+</svg></div>`;
+}
+
 // Te-Un Racer: motorhelm met klep en bril
 function racerAvatar() {
   return `<svg class="avsvg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Te-Un Racer">
@@ -122,6 +159,8 @@ export const AVATARS = [
   { id: 'puzzle', name: 'Puzzel-Te-Un', desc: 'Te-Un met puzzelstukje', unlock: { game: 'te-un-puzzel', how: 'Maak alle 4 de levels van Te-Un Puzzel af binnen de tijd (30 sec, 1 min, 2,5 min en 10 min)', check: (d) => [1, 2, 3, 4].every((n) => d.fast && d.fast[n]) } },
   { id: 'slider', name: 'Schuif-Te-Un', desc: 'Te-Un als schuifpuzzel, met een paar verkeerd geschoven vakjes', unlock: { game: 'te-un-puzzel', how: 'Maak alle 4 de levels van de schuifpuzzel in Te-Un Puzzel af', check: (d) => [1, 2, 3, 4].every((n) => d.slide && d.slide[n]) } },
   { id: 'racer', name: 'Te-Un Racer', desc: 'Te-Un met motorhelm', unlock: { game: 'te-un-x3m', how: 'Haal 3 sterren op alle 25 levels van Te-Un X3M', check: (d) => Array.from({ length: 25 }, (_, i) => i + 1).every((n) => (d.stars && d.stars[n]) >= 3) } },
+  { id: 'schaver', name: 'Flinke schaver gemaakt', desc: 'Hermano\'s fiets met OUTFITJE 52K', unlock: { game: 'te-un-drive', how: 'Ga een keer af met Hermano\'s fiets in Te-Un Drive', check: (d) => !!d.dev || !!d.bikeCrash } },
+  { id: 'lambo', name: 'Te-Un in een Lambo', desc: 'Te-Un in een gele Lamborghini', unlock: { game: 'te-un-drive', how: 'Speel alle auto\'s vrij in Te-Un Drive (haal level 5, 15 en 20)', check: (d) => !!d.dev || [5, 15, 20].every((n) => d.done && d.done[n]) } },
 ];
 
 // een profielfoto met een slot: de voortgang van de bijbehorende game bepaalt of hij open is

@@ -12,7 +12,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #4cc3ff; col
 .hint.off { opacity: 0; }
 /* Hermano's, de hele tijd in beeld: een flinke klapper */
 .hermano { position: absolute; left: 50%; top: max(70px, 11vh); transform: translateX(-50%) rotate(-3deg); animation: herm 1.6s ease-in-out infinite; z-index: 5; }
-.hermano span { display: block; font-size: clamp(38px, 8.5vw, 92px); font-weight: 700; letter-spacing: 2px; color: #ffd23a; -webkit-text-stroke: 5px #b3121c; paint-order: stroke fill; text-shadow: 0 6px 0 #6d0a12, 0 0 28px rgba(255,210,58,.85), 0 0 60px rgba(255,77,106,.55); white-space: nowrap; }
+.hermano span { display: block; font-size: clamp(24px, 5.2vw, 62px); font-weight: 700; letter-spacing: 2px; color: #ffd23a; -webkit-text-stroke: 4px #b3121c; paint-order: stroke fill; text-shadow: 0 6px 0 #6d0a12, 0 0 28px rgba(255,210,58,.85), 0 0 60px rgba(255,77,106,.55); white-space: nowrap; }
 .hermano::before, .hermano::after { content: '✦'; position: absolute; top: -10px; font-size: 38px; color: #fff; text-shadow: 0 0 14px #ffd23a; animation: spark 1.2s ease-in-out infinite; }
 .hermano::before { left: -34px; } .hermano::after { right: -34px; animation-delay: .6s; }
 @keyframes herm { 0%, 100% { transform: translateX(-50%) rotate(-3deg) scale(1); } 50% { transform: translateX(-50%) rotate(2deg) scale(1.07); } }
