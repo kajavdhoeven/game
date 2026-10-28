@@ -172,6 +172,7 @@ function finish() {
     const prev = P.done[cur.n];
     const best = !prev || t < prev.time;
     P.done[cur.n] = { time: best ? t : prev.time, red: Math.max(prev ? prev.red : 0, w.gemsGot.red), blue: Math.max(prev ? prev.blue : 0, w.gemsGot.blue) };
+    if ((prev && prev.all) || (w.gemsGot.red === w.gemsTotal.red && w.gemsGot.blue === w.gemsTotal.blue)) P.done[cur.n].all = true;
     save();
     submitTime(GAME_ID, 'l' + cur.n, t);
     $('ovTitle').textContent = 'Level gehaald!';
@@ -271,6 +272,7 @@ initTutorial({
 });
 initDev([
   { label: 'Alle levels openen', run: () => { P.dev = true; save(); renderMenu(); return 'Alle levels open'; } },
+  { label: 'Profielfoto krijgen (alle diamanten als verzameld markeren)', run: () => { for (let i = 1; i <= LEVEL_COUNT; i++) P.done[i] = Object.assign({ time: 60, red: 0, blue: 0 }, P.done[i], { all: true }); save(); renderMenu(); return 'Alle diamanten verzameld'; } },
   { label: 'Alle levels als gehaald markeren', run: () => { for (let i = 1; i <= LEVEL_COUNT; i++) P.done[i] = P.done[i] || { time: 60, red: 0, blue: 0 }; save(); renderMenu(); return 'Alles gehaald'; } },
 ]);
 post('teun:ready');

@@ -64,6 +64,7 @@ export function avatarSVG(kind = 'teun') {
   if (kind === 'slider') return sliderAvatar();
   if (kind === 'schaver') return schaverAvatar();
   if (kind === 'lambo') return lamboAvatar();
+  if (kind === 'diamant') return diamantAvatar();
   return `<div class="av-face">${teunSVG({ crop: 'face' })}</div>`;
 }
 
@@ -135,6 +136,20 @@ function lamboAvatar() {
 </svg></div>`;
 }
 
+// Te-Un met een diamant en een zonnebril, want het schittert te hard (profielfoto uit VuurTe-Un & WaterTe-Un)
+function diamantAvatar() {
+  return `<div class="av-face" style="background:linear-gradient(160deg,#fff6b8,#ffb43c)">${teunSVG({ crop: 'face' })}
+<svg class="avsvg" style="position:absolute;inset:0" viewBox="24 -10 152 168" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Te-Un met diamant en zonnebril">
+<g stroke="#ffe27a" stroke-width="4" stroke-linecap="round" opacity=".9"><path d="M30 2 L44 14M26 26 L42 30M52 -6 L56 10M160 6 L146 16"/></g>
+<circle cx="32" cy="10" r="12" fill="#fff3a0" opacity=".85"/>
+<g fill="#0c0d12" stroke="#0b0b0d" stroke-width="5"><ellipse cx="80" cy="126" rx="19" ry="16"/><ellipse cx="120" cy="126" rx="19" ry="16"/></g>
+<path d="M99 124 L101 124" stroke="#0b0b0d" stroke-width="5"/>
+<path d="M68 118 L78 112M108 118 L118 112" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity=".6"/>
+<g transform="translate(128 142) scale(.62)"><path d="M0 -26 L22 -8 L0 26 L-22 -8Z" fill="#38a6ff" stroke="#0b0b0d" stroke-width="3.5" stroke-linejoin="round"/><path d="M0 -26 L22 -8 L0 -8Z" fill="#b4e3ff"/><path d="M0 -8 L22 -8 L0 26Z" fill="#0d6ad0"/><path d="M0 -26 L-22 -8 L0 -8Z" fill="#8ccfff"/>
+<path d="M-30 -22 l8 4M30 -28 l-6 6M-6 -34 v8" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>
+</svg></div>`;
+}
+
 // Te-Un Racer: motorhelm met klep en bril
 function racerAvatar() {
   return `<svg class="avsvg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Te-Un Racer">
@@ -159,6 +174,7 @@ export const AVATARS = [
   { id: 'puzzle', name: 'Puzzel-Te-Un', desc: 'Te-Un met puzzelstukje', unlock: { game: 'te-un-puzzel', how: 'Maak alle 4 de levels van Te-Un Puzzel af binnen de tijd (30 sec, 1 min, 2,5 min en 10 min)', check: (d) => [1, 2, 3, 4].every((n) => d.fast && d.fast[n]) } },
   { id: 'slider', name: 'Schuif-Te-Un', desc: 'Te-Un als schuifpuzzel, met een paar verkeerd geschoven vakjes', unlock: { game: 'te-un-puzzel', how: 'Maak alle 4 de levels van de schuifpuzzel in Te-Un Puzzel af', check: (d) => [1, 2, 3, 4].every((n) => d.slide && d.slide[n]) } },
   { id: 'racer', name: 'Te-Un Racer', desc: 'Te-Un met motorhelm', unlock: { game: 'te-un-x3m', how: 'Haal 3 sterren op alle 25 levels van Te-Un X3M', check: (d) => Array.from({ length: 25 }, (_, i) => i + 1).every((n) => (d.stars && d.stars[n]) >= 3) } },
+  { id: 'diamant', name: 'Te-Un met diamant', desc: 'Te-Un met een diamant en een zonnebril, want het schittert te hard', unlock: { game: 'vuur-water', how: 'Verzamel alle diamanten (rood en blauw) in alle 32 levels van VuurTe-Un & WaterTe-Un', check: (d) => Array.from({ length: 32 }, (_, i) => i + 1).every((n) => d.done && d.done[n] && d.done[n].all) } },
   { id: 'schaver', name: 'Flinke schaver gemaakt', desc: 'Hermano\'s fiets met OUTFITJE 52K', unlock: { game: 'te-un-drive', how: 'Ga een keer af met Hermano\'s fiets in Te-Un Drive', check: (d) => !!d.dev || !!d.bikeCrash } },
   { id: 'lambo', name: 'Te-Un in een Lambo', desc: 'Te-Un in een gele Lamborghini', unlock: { game: 'te-un-drive', how: 'Speel alle auto\'s vrij in Te-Un Drive (haal level 5, 15 en 20)', check: (d) => !!d.dev || [5, 15, 20].every((n) => d.done && d.done[n]) } },
 ];
