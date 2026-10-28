@@ -275,6 +275,16 @@ values (
   '/assets/te-un-x3m.jpg', '/assets/te-un-x3m-hero.jpg', '/games/te-un-x3m/', true, false
 ) on conflict (id) do nothing;
 
+-- vierde game: Te-Un Drive
+insert into public.games (id, title, category, tags, tagline, description, controls, thumb, hero, url, published, featured)
+values (
+  'te-un-drive', 'Te-Un Drive', 'racen', array['racen','actie'],
+  'Rijd je blokkenauto door 25 levels vol bruggen, gaten en spijkers.',
+  'Rijd je blokkenauto over heuvels, trappen, houten bruggen en gaten vol water naar de finish. Pas op voor spijkers! Speel nieuwe auto''s vrij: vanaf level 5 Hermano''s fiets, vanaf level 15 de gouden regenboogauto en vanaf level 20 de tuinkabouterauto.',
+  '[["→  of  D","Gas"],["←  of  A","Remmen en achteruit"],["R","Level opnieuw"],["Esc  of  P","Pauze"],["In de lucht","Gas tilt de neus op, rem duwt hem omlaag"],["Telefoon","Knoppen onderin beeld"]]'::jsonb,
+  '/assets/te-un-drive.jpg', '/assets/te-un-drive-hero.jpg', '/games/te-un-drive/', true, false
+) on conflict (id) do nothing;
+
 -- teksten van de nieuwere games bijwerken (veilig om vaker te draaien)
 update public.games set
   tagline = 'Vier legpuzzels en vier schuifpuzzels met Te-Un.',

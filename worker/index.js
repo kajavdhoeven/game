@@ -92,6 +92,11 @@ const FALLBACK_GAMES = [{
   tagline: 'Spring en stunt met een fatbike, motor of gouden vape door 25 levels.',
   description: 'Rijd door gevaarlijke levels vol lava, spijkers, zagen en vuur. Upgrade van fatbike naar motor en naar de gouden vape waarmee je vliegt, en speel nieuwe personages vrij.',
   logo: '/assets/te-un-x3m-logo.png', hero: '/assets/te-un-x3m-hero.jpg', thumb: '/assets/te-un-x3m.jpg', created_at: '2025-07-01T00:00:00Z', controls: [],
+}, {
+  id: 'te-un-drive', title: 'Te-Un Drive', category: 'racen',
+  tagline: 'Rijd je blokkenauto door 25 levels vol bruggen, gaten en spijkers.',
+  description: 'Rijd je blokkenauto over heuvels, trappen, houten bruggen en gaten vol water naar de finish. Pas op voor spijkers! Speel nieuwe auto\'s vrij: vanaf level 5 Hermano\'s fiets, vanaf level 15 de gouden regenboogauto en vanaf level 20 de tuinkabouterauto.',
+  logo: '', hero: '/assets/te-un-drive-hero.jpg', thumb: '/assets/te-un-drive.jpg', created_at: '2025-08-01T00:00:00Z', controls: [],
 }];
 
 const GENRE = (id) => { const t = String(id || 'game'); return t[0].toUpperCase() + t.slice(1); };

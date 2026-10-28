@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#18a8ff">
+  <meta name="description" content="Te-Un Drive: rijd je blokkenauto over bruggen, trappen en gaten naar de finish. 25 levels en vier auto's om vrij te spelen.">
+  <title>Te-Un Drive</title>
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.min.js" } }
+  </script>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="hud" hidden>
+    <button id="btnPause" class="round" aria-label="Pauze">&#10074;&#10074;</button>
+    <div class="lvl-badge"><span id="hudLevel">Level 1</span><b id="hudTime">0.0</b></div>
+    <div id="hermano" class="hermano" hidden><span>HERMANO'S</span></div>
+    <div id="hint" class="hint">Gas: &#8594; of D &nbsp; Rem en achteruit: &#8592; of A &nbsp; Opnieuw: R</div>
+  </div>
+  <div id="touch" hidden>
+    <button data-k="brake" aria-label="Rem">REM</button>
+    <button data-k="gas" class="gas" aria-label="Gas">GAS</button>
+  </div>
+  <div id="devCorner" aria-hidden="true"></div>
+
+  <main id="menu" class="screen">
+    <h1 class="logo"><span>Te-Un</span><b>Drive</b></h1>
+    <p class="sub">Rijd je blokkenauto over bruggen, trappen en gaten naar de finish. Speel nieuwe auto's vrij!</p>
+    <div class="row"><button id="mPlay" class="big">Spelen</button><button id="mGarage" class="big alt">Garage</button></div>
+  </main>
+
+  <section id="levels" class="screen" hidden>
+    <header class="top"><button id="lBack" class="small">&#8592; Menu</button><h2>Kies een level</h2><span></span></header>
+    <div id="lGrid" class="grid"></div>
+  </section>
+
+  <section id="garage" class="screen" hidden>
+    <header class="top"><button id="gBack" class="small">&#8592; Menu</button><h2>Garage</h2><span></span></header>
+    <div id="gCars" class="cards"></div>
+  </section>
+
+  <div id="pause" class="overlay" hidden>
+    <div class="card"><h2>Pauze</h2>
+      <div class="col"><button id="pResume" class="big">Verder</button><button id="pRetry" class="big alt">Opnieuw</button><button id="pMenu" class="big alt">Levels</button></div>
+    </div>
+  </div>
+  <div id="end" class="overlay" hidden>
+    <div class="card"><h2 id="eTitle">Level klaar!</h2>
+      <p id="eText"></p>
+      <div id="eUnlock" class="unlock" hidden></div>
+      <div class="row"><button id="eMenu" class="big alt">Levels</button><button id="eRetry" class="big alt">Opnieuw</button><button id="eNext" class="big">Volgende</button></div>
+    </div>
+  </div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

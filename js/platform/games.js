@@ -39,6 +39,17 @@ export const DEFAULT_GAMES = [
     logo: '/assets/te-un-x3m-logo.png', thumb: '/assets/te-un-x3m.jpg', hero: '/assets/te-un-x3m-hero.jpg', url: '/games/te-un-x3m/',
     published: true, featured: false, created_at: '2025-07-01T00:00:00Z', plays: 0, likes: 0,
   },
+  {
+    id: 'te-un-drive', title: 'Te-Un Drive', category: 'racen', tags: [],
+    tagline: 'Rijd je blokkenauto door 25 levels vol bruggen, gaten en spijkers.',
+    description: 'Rijd je blokkenauto over heuvels, trappen, houten bruggen en gaten vol water naar de finish. Pas op voor spijkers! Speel nieuwe auto\'s vrij: vanaf level 5 Hermano\'s fiets, vanaf level 15 de gouden regenboogauto en vanaf level 20 de tuinkabouterauto.',
+    controls: [
+      ['→  of  D', 'Gas'], ['←  of  A', 'Remmen en achteruit'], ['R', 'Level opnieuw'], ['Esc  of  P', 'Pauze'],
+      ['In de lucht', 'Gas tilt de neus op, rem duwt hem omlaag'], ['Telefoon', 'Knoppen onderin beeld'],
+    ],
+    logo: '', thumb: '/assets/te-un-drive.jpg', hero: '/assets/te-un-drive-hero.jpg', url: '/games/te-un-drive/',
+    published: true, featured: false, created_at: '2025-08-01T00:00:00Z', plays: 0, likes: 0,
+  },
 ];
 
 export const genreName = (id) => {

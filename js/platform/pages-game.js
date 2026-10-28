@@ -90,6 +90,12 @@ export async function renderGame(app, id) {
     }
     const d = data || (await api.getProgress(g.id));
     if (!d) { box.innerHTML = '<h3>Jouw voortgang</h3><p class="muted">Speel een ronde en je voortgang verschijnt hier.</p>'; return; }
+    if (g.id === 'te-un-drive') {
+      const dn = Object.keys(d.done || {}).length;
+      const cars = 1 + [5, 15, 20].filter((n) => d.dev || (d.done && d.done[n])).length;
+      box.innerHTML = `<h3>Jouw voortgang</h3><div class="prog-grid"><div><b>${dn}/25</b><small>Levels af</small></div><div><b>${cars}/4</b><small>Auto's</small></div></div>`;
+      return;
+    }
     if (g.id === 'te-un-x3m') {
       const st = d.stars || {};
       const lv = Object.keys(st).length, sum = Object.values(st).reduce((a, b2) => a + b2, 0) + (d.bonus || 0) - (d.spent || 0);
