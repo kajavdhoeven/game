@@ -1419,12 +1419,21 @@ function update(dt) {
     // magneet: munten in de buurt vliegen naar Te-Un toe
     if (S.pw.magnet > 0 && !c.got && !c.pull && c.z > -18 && c.z < 3 && Math.abs(c.x - S.x) < 9 && Math.abs(c.y - (S.y + 0.8)) < 7) { c.pull = true; c.p = null; }
     if (c.pull) {
-      const k = 1 - Math.exp(-dt * 8);
-      c.z += dz;
-      c.x += (S.x - c.x) * k;
-      c.y += ((S.y + 0.8) - c.y) * k;
-      c.z += (0 - c.z) * k;
-      if (rand() < dt * 30) sparks.emit(c.x, GROUND + c.y, c.z, 1, '#ffd54a', 0.8, 0.4);
+      // met vaste snelheid naar Te-Un toe (sneller dan de wereld), en direct oppakken
+      const tx = S.x - c.x, ty = (S.y + 0.8) - c.y, tz = 0 - c.z;
+      const dist = Math.hypot(tx, ty, tz);
+      const step = (S.speed + 24) * dt;
+      if (dist <= Math.max(step, 0.9)) {
+        c.got = true;
+        S.coins += S.coinMul;
+        audio.coin();
+        sparks.emit(c.x, GROUND + c.y, c.z, 5, '#ffd54a', 2.5, 2.5);
+      } else {
+        c.x += (tx / dist) * step;
+        c.y += (ty / dist) * step;
+        c.z += (tz / dist) * step;
+        if (rand() < dt * 30) sparks.emit(c.x, GROUND + c.y, c.z, 1, '#ffd54a', 0.8, 0.4);
+      }
     } else if (c.p) {
       if (c.p.smashed || !obstacles.includes(c.p)) { coinList.splice(i, 1); continue; }
       c.z = c.p.z + c.lz;
@@ -1758,6 +1767,7 @@ window.addEventListener('blur', () => {
 // ---- developer-trucjes (om alles te kunnen testen)
 // 3x snel tikken links boven in beeld: +100.000 munten
 // 12x snel tikken op je voertuig tijdens het rennen: oneindig refill
+// 12x snel tikken op een muntenteller (menu, winkel, tijdens het spel): +1.000.000 munten
 function devTaps(target, count, onGrant) {
   let n = 0;
   let t = 0;
@@ -1768,14 +1778,31 @@ function devTaps(target, count, onGrant) {
     if (n >= count) { n = 0; onGrant(); }
   });
 }
-devTaps($('devCorner'), 3, () => {
-  P.coins += 100000;
+function devCoins(amount) {
+  P.coins += amount;
   save();
   audio.unlock();
   audio.powerup();
-  toast('Developer: +100.000 munten', 2400);
+  toast('Developer: +' + amount.toLocaleString('nl-NL') + ' munten', 2400);
   refreshMenuStats();
   if (!$('shop').hidden) renderShop();
+}
+// de hoek luistert op window-niveau, zodat geen paneel of overlay de tikken kan blokkeren
+{
+  let n = 0;
+  let t = 0;
+  window.addEventListener('pointerdown', (e) => {
+    if (e.clientX > 90 || e.clientY > 90) return;
+    const now = performance.now();
+    n = now - t > 1800 ? 1 : n + 1;
+    t = now;
+    if (n >= 3) { n = 0; devCoins(100000); }
+  }, true);
+}
+[$('menuCoins')?.parentElement, $('shopCoins')?.parentElement, ui.coinBox].forEach((el) => {
+  if (!el) return;
+  el.style.pointerEvents = 'auto';
+  devTaps(el, 12, () => devCoins(1000000));
 });
 devTaps($('vehBtn'), 12, () => {
   if (S.mode !== 'playing' && S.mode !== 'intro') return;
