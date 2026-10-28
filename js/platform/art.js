@@ -83,7 +83,7 @@ export const AVATARS = [
   { id: 'train', name: 'NS-trein', desc: 'Een gele trein' },
 ];
 
-// Het officiele logo staat in /assets/logot.jpg. Ontbreekt het bestand, dan tekenen we de kabouter zelf.
+// Het officiele logo staat in /assets/logo-256.png. Ontbreekt het bestand, dan tekenen we de kabouter zelf.
 const LOGO_FALLBACK = `<svg class="logo-mark" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
 <defs><linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5252"/><stop offset="1" stop-color="#b3121c"/></linearGradient></defs>
 <path d="M16 38 Q18 20 34 6 C38 2 44 4 42 10 C38 18 46 28 50 38 Q33 46 16 38 Z" fill="url(#lg1)"/>
@@ -92,7 +92,7 @@ const LOGO_FALLBACK = `<svg class="logo-mark" viewBox="0 0 64 64" xmlns="http://
 <path d="M18 50 Q33 70 48 50 Q42 56 33 56 Q24 56 18 50 Z" fill="#fff"/></svg>`;
 export function logoSVG() {
   const fb = encodeURIComponent(LOGO_FALLBACK.replace('class="logo-mark" ', ''));
-  return `<img class="logo-mark" src="/assets/logot.jpg" alt="Te-Un Games logo" width="64" height="64" decoding="async" onerror="this.onerror=null;this.src='data:image/svg+xml,${fb}'">`;
+  return `<img class="logo-mark" src="/assets/logo-256.png" alt="Te-Un Games logo" width="64" height="64" decoding="async" onerror="this.onerror=null;this.src='data:image/svg+xml,${fb}'">`;
 }
 
 // ---------- easter eggs (originele figuren) ----------
