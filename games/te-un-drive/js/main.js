@@ -6,6 +6,7 @@ import { buildWorld } from './world.js';
 import { createCar } from './cars3d.js';
 import { initDev, setDevVisible } from '/js/devmode.js';
 import { initTutorial } from '/js/tutorial.js';
+import { submitTime, openTimeBoard } from '/js/leaderboard.js';
 
 const GAME_ID = 'te-un-drive';
 const $ = (id) => document.getElementById(id);
@@ -193,6 +194,7 @@ function crash(reason) {
 function finishLevel() {
   g.state = 'done';
   const first = !P.done[g.n];
+  submitTime('te-un-drive', g.n, Math.round(g.tl * 100) / 100);
   P.done[g.n] = Math.min(P.done[g.n] || 1e9, Math.round(g.tl * 10) / 10);
   save();
   [523, 659, 784, 1047].forEach((f, i) => beep(f, 0.3, 'triangle', 0.22, i * 0.13));
@@ -336,6 +338,9 @@ $('gPlay').addEventListener('click', () => {
   while (n < LEVEL_COUNT && P.done[n] && levelOpen(n + 1)) n++;
   startLevel(levelOpen(n) ? n : 1);
 });
+const boardLevels = Array.from({ length: LEVEL_COUNT }, (_, i) => ({ key: i + 1, label: String(i + 1) }));
+$('mBoard').addEventListener('click', () => { audio(); openTimeBoard({ game: 'te-un-drive', title: 'Te-Un Drive', levels: boardLevels, start: 1 }); });
+$('eBoard').addEventListener('click', () => openTimeBoard({ game: 'te-un-drive', title: 'Te-Un Drive', levels: boardLevels, start: g ? g.n : 1 }));
 $('mPlay').addEventListener('click', () => { audio(); setScreen('levels'); });
 $('mGarage').addEventListener('click', () => { audio(); setScreen('garage'); });
 $('lBack').addEventListener('click', () => setScreen('menu'));

@@ -74,11 +74,14 @@ export async function renderGame(app, id) {
   const onMsg = async (e) => {
     if (e.origin !== location.origin || !iframe || e.source !== iframe.contentWindow) return;
     const m = e.data;
+    if (m && m.type === 'teun:login') { app.openAuth('login'); return; }
     if (!m || m.game !== g.id) return;
     if (m.type === 'teun:ready') {
       const prog = (await api.getProgress(g.id)) || { updatedAt: 0 };
       iframe.contentWindow.postMessage({ type: 'teun:progress', game: g.id, data: prog }, location.origin);
-      if (app.state.profile) iframe.contentWindow.postMessage({ type: 'teun:user', game: g.id, name: app.state.profile.username, force: true }, location.origin);
+      // wie ben je? Het spel gebruikt altijd jouw gebruikersnaam (nooit je e-mail) en heeft geen eigen naamveld meer
+      const who = app.state.profile && app.state.user ? { name: app.state.profile.username, id: app.state.user.id } : { name: null, id: null };
+      iframe.contentWindow.postMessage({ type: 'teun:user', game: g.id, name: who.name, id: who.id, force: true }, location.origin);
     } else if (m.type === 'teun:save') {
       if (app.state.user) api.saveProgress(g.id, m.data).catch(() => {});
       paintProgress(m.data);

@@ -15,7 +15,8 @@ import { softCircleTexture } from './textures.js';
 import { P, load, save, buy, owns, ownedVehicles, VEHICLES, VEHICLE_ORDER, VEHICLE_TIME, PRICES } from './save.js';
 import { initDev, setDevVisible } from '/js/devmode.js';
 import { initTutorial } from '/js/tutorial.js';
-import { fetchBoard, submitScore, cleanName, isOnline } from './net.js';
+import { fetchBoard, submitScore, isOnline } from './net.js';
+import { loggedIn, askLogin, getIdent } from '/js/leaderboard.js';
 import { initBridge } from './bridge.js';
 
 const $ = (id) => document.getElementById(id);
@@ -555,7 +556,6 @@ function updateSoundIcon() {
 function refreshMenuStats() {
   $('menuBest').textContent = P.best;
   $('menuCoins').textContent = P.coins;
-  $('nameInput').value = P.name;
 }
 
 // pictogrammen (eenmalig gerenderd uit de 3D-modellen)
@@ -722,7 +722,8 @@ function renderBoardList() {
   const rows = (boardData && boardData[boardTab]) || [];
   rows.forEach((r, i) => {
     const li = document.createElement('li');
-    const mine = r.pid === P.pid.slice(0, 8) || r.pid === P.pid;
+    const who = getIdent();
+    const mine = who && who.id && r.pid === who.id.slice(0, 8);
     if (mine) li.className = 'me';
     const val = boardTab === 'score' ? String(r.score) : boardTab === 'distance' ? r.distance + ' m' : String(r.coins);
     li.innerHTML = `<span class="rk">${i + 1}</span><span></span><span class="sc">${val}</span>`;
@@ -743,6 +744,7 @@ async function openBoard(from) {
   show('menu', false);
   show('over', false);
   show('leader', true);
+  $('boardLogin').hidden = loggedIn();
   $('boardList').innerHTML = '<li><span></span><span>Laden...</span><span></span></li>';
   boardData = await fetchBoard();
   renderBoardList();
@@ -822,7 +824,6 @@ function startRun() {
   audio.unlock();
   if (gnomeSkin !== P.skin) buildGnome();
   resetRun();
-  P.name = cleanName($('nameInput').value) || P.name;
   save();
   S.mode = 'intro';
   S.introT = 0;
@@ -907,7 +908,7 @@ async function finishRun() {
   $('overRank').textContent = 'Score wordt opgeslagen...';
   const res = await submitScore(S.dist, S.coins);
   if (isRecord && sc >= 50000 && prevBest < 50000) toast('Profielfoto Te-Un 50K vrijgespeeld! Kies hem op je profiel.', 6000);
-  $('overRank').textContent = res ? 'Je score staat op de online ranglijst.' : 'Geen verbinding: je score is lokaal bewaard.';
+  $('overRank').textContent = !loggedIn() ? 'Log in om met je score op de ranglijst te komen.' : res ? 'Je score staat op de online ranglijst.' : 'Geen verbinding: je score is lokaal bewaard.';
 }
 
 function startChase() {
@@ -1110,7 +1111,6 @@ function action(a) {
     return;
   }
   if (S.mode === 'menu') {
-    if (a === 'confirm' && document.activeElement && document.activeElement.id === 'nameInput') { document.activeElement.blur(); return; }
     if (a === 'confirm' || a === 'vehicle') startRun();
     return;
   }
@@ -1331,6 +1331,7 @@ void camBase;
 function baseSpeed() { return Math.min(40, 18 + S.dist * 0.0042); }
 
 let devShown = null;
+let devInfRefill = false;
 function update(dt) {
   const wantDev = S.mode === 'menu';
   if (wantDev !== devShown) { devShown = wantDev; setDevVisible(wantDev); }
@@ -1771,6 +1772,7 @@ $('btnOverShop').addEventListener('click', () => openShop('over'));
 $('shopClose').addEventListener('click', closeShop);
 $('btnLeader').addEventListener('click', () => openBoard('menu'));
 $('leaderClose').addEventListener('click', closeBoard);
+$('boardLoginBtn').addEventListener('click', () => askLogin());
 document.querySelectorAll('#shop .tab').forEach((b) => b.addEventListener('click', () => {
   shopTab = b.dataset.tab;
   document.querySelectorAll('#shop .tab').forEach((x) => x.classList.toggle('on', x === b));
@@ -1781,11 +1783,6 @@ document.querySelectorAll('#leader .tab').forEach((b) => b.addEventListener('cli
   document.querySelectorAll('#leader .tab').forEach((x) => x.classList.toggle('on', x === b));
   renderBoardList();
 }));
-$('nameInput').addEventListener('input', (e) => {
-  const n = cleanName(e.target.value);
-  P.name = n;
-  save();
-});
 $('vehBtn').addEventListener('click', () => action('vehicle'));
 $('btnSound').addEventListener('click', () => {
   audio.unlock();
@@ -1832,14 +1829,14 @@ initDev([
   { label: '+1.000.000 munten', run: () => devCoins(1000000) },
   { label: 'Alles kopen (voertuigen, skins, kleding)', run: () => { Object.keys(PRICES).forEach((k) => { P.owned[k] = true; }); P.vehicle = P.vehicle || 'wheelchair'; save(); refreshMenuStats(); if (!$('shop').hidden) renderShop(); return 'Alles gekocht'; } },
   { label: 'Profielfoto\'s krijgen (NS-trein en Te-Un 50K)', run: () => { Object.keys(PRICES).forEach((k) => { P.owned[k] = true; }); P.vehicle = P.vehicle || 'wheelchair'; P.best = Math.max(P.best, 50000); save(); refreshMenuStats(); return 'Alles gekocht en record 50.000: beide profielfoto\'s zijn vrij'; } },
-  { label: 'Oneindig refill (tijdens een rit)', run: () => {
-    if (S.mode !== 'playing' && S.mode !== 'intro') return 'Start eerst een rit';
-    S.infRefill = true;
+  { label: 'Oneindig refill aan/uit (geldt voor alle volgende ritten)', run: () => {
+    devInfRefill = !devInfRefill;
+    S.infRefill = devInfRefill;
     const id = P.vehicle;
-    if (id && owns(id)) S.vehCharge[id] = 1;
+    if (devInfRefill && id && owns(id)) S.vehCharge[id] = 1;
     lastVehKey = '';
     audio.powerup();
-    return 'Oneindig refill aan';
+    return devInfRefill ? 'Oneindig refill is AAN' : 'Oneindig refill is uit';
   } },
 ]);
 

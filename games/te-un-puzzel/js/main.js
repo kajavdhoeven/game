@@ -1,6 +1,7 @@
 // Te-Un Puzzel: vier legpuzzels. Alles wordt in de browser getekend, er is geen build nodig.
 import { initDev, setDevVisible } from '/js/devmode.js';
 import { initTutorial } from '/js/tutorial.js';
+import { submitTime, openTimeBoard } from '/js/leaderboard.js';
 const GAME_ID = 'te-un-puzzel';
 const LEVELS = [
   { n: 1, name: 'Te-Un', img: 'img/level1.jpg', cols: 3, rows: 4, ghost: 0.28, rotate: false, limit: 30 },
@@ -325,6 +326,7 @@ function finish() {
   const inTime = t <= lvl.limit;
   const wasAll = allFast();
   const sec = Math.max(1, Math.round(t));
+  submitTime('te-un-puzzel', 'jig-' + n, Math.round(t * 100) / 100);
   P.done[n] = P.done[n] ? Math.min(P.done[n], sec) : sec;
   if (inTime) P.fast[n] = P.fast[n] ? Math.min(P.fast[n], sec) : sec;
   save();
@@ -386,6 +388,10 @@ function toMenu() {
 $('back').addEventListener('click', toMenu);
 $('winMenu').addEventListener('click', toMenu);
 $('winNext').addEventListener('click', () => (sl ? startSlide(sl.level.n + 1) : startLevel(cur.level.n + 1)));
+let lastBoardKey = 'jig-1';
+const boardLevels = [...LEVELS.map((l) => ({ key: 'jig-' + l.n, label: 'Leg ' + l.n })), ...LEVELS.map((l) => ({ key: 'slide-' + l.n, label: 'Schuif ' + l.n }))];
+$('mBoard').addEventListener('click', () => openTimeBoard({ game: 'te-un-puzzel', title: 'Te-Un Puzzel', levels: boardLevels, start: menuMode === 'slide' ? 'slide-1' : 'jig-1' }));
+$('winBoard').addEventListener('click', () => openTimeBoard({ game: 'te-un-puzzel', title: 'Te-Un Puzzel', levels: boardLevels, start: sl ? 'slide-' + sl.level.n : cur ? 'jig-' + cur.level.n : lastBoardKey }));
 $('modeJig').addEventListener('click', () => { menuMode = 'jig'; renderMenu(); });
 $('modeSlide').addEventListener('click', () => { menuMode = 'slide'; renderMenu(); });
 $('sBack').addEventListener('click', toMenu);
@@ -496,6 +502,7 @@ function slideWin() {
   const t = (performance.now() - sl.t0) / 1000;
   const n = sl.level.n, wasAll = allSlide();
   const sec = Math.max(1, Math.round(t));
+  submitTime('te-un-puzzel', 'slide-' + n, Math.round(t * 100) / 100);
   P.slide[n] = P.slide[n] ? Math.min(P.slide[n], sec) : sec;
   save();
   sl.tiles[sl.total - 1].classList.add('show');

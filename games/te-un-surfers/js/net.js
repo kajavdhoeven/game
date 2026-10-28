@@ -1,4 +1,5 @@
 import { P, save } from './save.js';
+import { getIdent } from '/js/leaderboard.js';
 
 const API = '/api';
 let online = null;
@@ -35,12 +36,15 @@ export async function submitScore(distance, coins) {
   P.bestDist = Math.max(P.bestDist, Math.floor(distance));
   P.bestCoins = Math.max(P.bestCoins, coins);
   save();
+  // alleen met een account: de naam is je gebruikersnaam van het platform
+  const who = getIdent();
+  if (!who || !who.id) return null;
   return req('/score', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      pid: P.pid,
-      name: P.name || 'Naamloos',
+      pid: who.id,
+      name: who.name,
       distance: Math.floor(distance),
       coins,
     }),

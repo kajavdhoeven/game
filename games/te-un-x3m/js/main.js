@@ -3,6 +3,7 @@ import { makeLevel, LEVEL_COUNT, ceilAt } from './levels.js';
 import { Terrain, makeBike, stepBike, crashTest, VEH, VEH_ORDER, headPos, G } from './sim.js';
 import { initDev, setDevVisible } from '/js/devmode.js';
 import { initTutorial } from '/js/tutorial.js';
+import { submitTime, openTimeBoard, loggedIn } from '/js/leaderboard.js';
 import { Renderer, CHARS, CHAR_ORDER, limpPose } from './draw.js';
 
 const GAME_ID = 'te-un-x3m';
@@ -153,6 +154,7 @@ function finishLevel() {
   const t = g.tl;
   const stars = t <= par ? 3 : t <= par * 1.5 ? 2 : 1;
   const prevStars = P.stars[g.n] || 0;
+  submitTime('te-un-x3m', g.n, Math.round(t * 100) / 100);
   const all3 = () => Array.from({ length: LEVEL_COUNT }, (_, i) => i + 1).every((k) => (P.stars[k] || 0) >= 3);
   const wasAll3 = all3();
   const wasChar = Object.fromEntries(Object.keys(UNLOCK).map((k) => [k, charOpen(k)]));
@@ -357,6 +359,9 @@ $('btnPause').addEventListener('click', () => setPaused(true));
 $('pResume').addEventListener('click', () => setPaused(false));
 $('pMenu').addEventListener('click', () => { paused = false; setScreen('menu'); });
 $('btnSound').addEventListener('click', () => { soundOn = !soundOn; $('btnSound').textContent = soundOn ? '🔊' : '🔇'; if (!soundOn) engine(0, false, 'fatbike', false); });
+const boardLevels = Array.from({ length: LEVEL_COUNT }, (_, i) => ({ key: i + 1, label: String(i + 1) }));
+$('mBoard').addEventListener('click', () => { audio(); openTimeBoard({ game: 'te-un-x3m', title: 'Te-Un X3M', levels: boardLevels, start: 1 }); });
+$('eBoard').addEventListener('click', () => openTimeBoard({ game: 'te-un-x3m', title: 'Te-Un X3M', levels: boardLevels, start: g ? g.n : 1 }));
 $('mPlay').addEventListener('click', () => { audio(); setScreen('levels'); });
 $('mGarage').addEventListener('click', () => { audio(); setScreen('garage'); });
 $('lBack').addEventListener('click', () => setScreen('menu'));

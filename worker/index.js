@@ -4,6 +4,7 @@
 const MAX_DIST = 500000;
 const MAX_COINS = 2000000;
 const KEEP = 1500;
+const TIME_GAMES = new Set(['te-un-puzzel', 'te-un-x3m', 'te-un-drive']);
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -28,6 +29,37 @@ export class Leaderboard {
 
   async fetch(request) {
     const url = new URL(request.url);
+    // ---- tijden-ranglijsten voor de levelgames (puzzel, X3M, Drive): per game en level de snelste tijd per speler
+    if (url.pathname === '/api/times' && request.method === 'GET') {
+      const game = (url.searchParams.get('game') || '').slice(0, 30);
+      const level = (url.searchParams.get('level') || '').slice(0, 16);
+      if (!TIME_GAMES.has(game) || !level) return json({ error: 'bad request' }, 400);
+      const entries = Object.values((await this.state.storage.get(`t:${game}:${level}`)) || {});
+      entries.sort((a, b) => a.time - b.time);
+      return json({ times: entries.slice(0, 25).map((e) => ({ uid: e.uid.slice(0, 8), name: e.name, time: e.time })) });
+    }
+    if (url.pathname === '/api/time' && request.method === 'POST') {
+      let b;
+      try { b = await request.json(); } catch (e) { return json({ error: 'bad json' }, 400); }
+      const game = String(b.game || '').slice(0, 30), level = String(b.level || '').slice(0, 16);
+      const uid = String(b.uid || '').slice(0, 64);
+      const time = Math.round(+b.time * 100) / 100;
+      if (!TIME_GAMES.has(game) || !level || !uid || !Number.isFinite(time)) return json({ error: 'bad data' }, 400);
+      if (time < 1.5 || time > 7200) return json({ error: 'unrealistic' }, 400);
+      const now = Date.now();
+      const rl = `${uid}:${game}:${level}`;
+      if (now - (this.last.get(rl) || 0) < 1500) return json({ error: 'slow down' }, 429);
+      this.last.set(rl, now);
+      const key = `t:${game}:${level}`;
+      const entries = (await this.state.storage.get(key)) || {};
+      const cur = entries[uid];
+      if (!cur || time < cur.time) entries[uid] = { uid, name: cleanName(b.name), time, t: now };
+      else cur.name = cleanName(b.name);
+      const all = Object.values(entries);
+      if (all.length > 400) { all.sort((x, y) => x.time - y.time); const keep = {}; all.slice(0, 300).forEach((x) => { keep[x.uid] = x; }); await this.state.storage.put(key, keep); }
+      else await this.state.storage.put(key, entries);
+      return json({ ok: true });
+    }
     if (request.method === 'GET') {
       const entries = Object.values(await this.load());
       const top = (key) => entries

@@ -61,9 +61,6 @@
       <img class="menu-logo" src="/assets/logo-256.png" alt="Te-Un Games" onerror="this.style.display='none'">
       <h1 class="title"><img class="title-logo" src="/assets/te-un-surfers-logo.png" alt="Te-Un Surfers" width="917" height="448"></h1>
       <p class="tagline">Help de kabouter over het spoor. Pas op voor de treinen!</p>
-      <label class="namebox">Jouw naam
-        <input id="nameInput" type="text" maxlength="14" placeholder="Naam voor de ranglijst" autocomplete="off" spellcheck="false">
-      </label>
       <button id="btnPlay" class="btn big">Spelen</button>
       <div class="row2">
         <button id="btnShop" class="btn">Winkel</button>
@@ -110,6 +107,7 @@
         <button class="tab" data-board="distance">Afstand</button>
         <button class="tab" data-board="coins">Munten</button>
       </div>
+      <div id="boardLogin" class="note" hidden style="background:#fff3cd;color:#5a4300;border-radius:12px;padding:10px 12px;margin:6px 0;display:flex;gap:10px;align-items:center;justify-content:space-between"><span>Wil je inloggen? Dan komt je score op de ranglijst, met je gebruikersnaam.</span><button id="boardLoginBtn" class="btn" style="flex:none;padding:6px 14px;font-size:15px">Inloggen</button></div>
       <ol id="boardList" class="board"></ol>
       <p id="boardNote" class="note"></p>
     </div>
