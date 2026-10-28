@@ -11,6 +11,7 @@ export const DEFAULT_GAMES = [
       ['Spatie', 'Voertuig activeren'], ['F  of dubbelklik', 'Waterpistool'],
       ['Telefoon', 'Swipe = één spoor, dubbeltik = waterpistool'],
     ],
+    logo: '/assets/te-un-surfers-logo.png',
     thumb: '/assets/te-un-surfers.jpg', hero: '/assets/te-un-surfers-hero.jpg', url: '/games/te-un-surfers/',
     published: true, featured: true, created_at: '2025-01-01T00:00:00Z', plays: 0, likes: 0,
   },

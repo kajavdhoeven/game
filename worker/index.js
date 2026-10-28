@@ -78,7 +78,7 @@ const FALLBACK_GAMES = [{
   id: 'te-un-surfers', title: 'Te-Un Surfers', category: 'actie',
   tagline: 'Ren over het spoor, spring op treinen en spuit treinspotters nat.',
   description: 'Help Te-Un de kabouter ontsnappen aan de boze kabouters. Ren over drie sporen, ontwijk rijdende NS-treinen, spring via schansen op de daken en pak power-ups.',
-  hero: '/assets/te-un-surfers-hero.jpg', thumb: '/assets/te-un-surfers.jpg', created_at: '2025-01-01T00:00:00Z', controls: [],
+  logo: '/assets/te-un-surfers-logo.png', hero: '/assets/te-un-surfers-hero.jpg', thumb: '/assets/te-un-surfers.jpg', created_at: '2025-01-01T00:00:00Z', controls: [],
 }];
 
 const GENRE = (id) => { const t = String(id || 'game'); return t[0].toUpperCase() + t.slice(1); };

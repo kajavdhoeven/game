@@ -59,6 +59,7 @@ create table if not exists public.progress (
 -- rechten en eigenaar (veilig opnieuw uit te voeren)
 alter table public.profiles add column if not exists is_owner    boolean not null default false;
 alter table public.profiles add column if not exists permissions jsonb   not null default '{}';
+alter table public.games    add column if not exists logo        text    not null default '';
 
 -- het eerst aangemelde beheerdersaccount wordt de eigenaar (alleen als er nog geen eigenaar is)
 update public.profiles set is_owner = true
@@ -146,7 +147,8 @@ $$;
 grant execute on function public.record_play(text) to anon, authenticated;
 
 -- cijfers per game, openbaar leesbaar (alleen aantallen)
-create or replace view public.game_stats as
+drop view if exists public.game_stats;
+create view public.game_stats as
   select g.*,
          coalesce((select count(*) from public.plays p where p.game_id = g.id), 0) as plays,
          coalesce((select count(*) from public.likes l where l.game_id = g.id), 0) as likes
@@ -252,6 +254,9 @@ values (
   '[["← →  of  A D","Een spoor opzij"],["↑  of  W","Springen"],["↓  of  S","Rollen"],["Spatie","Voertuig activeren"],["C","Ander voertuig"],["F  of dubbelklik","Waterpistool"],["Telefoon","Swipe = één spoor, dubbeltik = waterpistool"]]'::jsonb,
   '/assets/te-un-surfers.jpg', '/assets/te-un-surfers-hero.jpg', '/games/te-un-surfers/', true, true
 ) on conflict (id) do nothing;
+
+-- titel-logo voor de eerste game
+update public.games set logo = '/assets/te-un-surfers-logo.png' where id = 'te-un-surfers' and coalesce(logo, '') = '';
 
 -- ---------- JIJ ALS EIGENAAR ----------
 -- 1. Maak eerst een account op je eigen site (te-ungames.nl).

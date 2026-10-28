@@ -124,7 +124,7 @@ export const remote = {
   async adminSaveGame(g) {
     const row = {
       id: g.id, title: g.title, category: g.category, tags: g.tags || [], tagline: g.tagline || '', description: g.description || '',
-      controls: g.controls || [], thumb: g.thumb || '', hero: g.hero || g.thumb || '', url: g.url, published: !!g.published, featured: !!g.featured,
+      controls: g.controls || [], logo: g.logo || '', thumb: g.thumb || '', hero: g.hero || g.thumb || '', url: g.url, published: !!g.published, featured: !!g.featured,
     };
     fail((await client.from('games').upsert(row)).error);
   },

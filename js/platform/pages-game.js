@@ -1,7 +1,7 @@
 import { el, esc, fmt, toast } from './ui.js';
 import { icon, teunSVG } from './art.js';
 import { genreName } from './games.js';
-import { gameCard } from './components.js';
+import { gameCard, titleHTML } from './components.js';
 import { api } from './api.js';
 
 let cleanup = null;
@@ -24,7 +24,7 @@ export async function renderGame(app, id) {
         <div class="player" id="player" style="--poster:url('${esc(g.hero || g.thumb)}')">
           <div class="player-poster"><div class="poster-card">
             <div class="poster-teun">${teunSVG({ cls: 'wave' })}</div>
-            <h2>${esc(g.title)}</h2>
+            ${titleHTML(g, 'poster-logo', 'h2')}
             <button class="btn primary big" id="btnStart">${icon('play', 22)} Speel nu</button>
             <small>Gratis, zonder download</small></div></div>
         </div>

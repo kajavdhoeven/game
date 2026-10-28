@@ -346,3 +346,12 @@ select option { color: #111; }
   .block-head h2 { font-size: 22px; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation-duration: .01s !important; transition-duration: .01s !important; } }
+
+/* ---- titel-logo's van games ---- */
+.feat-logo-wrap { margin: 2px 0 4px; line-height: 0; font-size: 0; }
+.feat-logo { width: min(340px, 100%); height: auto; filter: drop-shadow(0 8px 14px rgba(0,0,0,.45)); }
+.cg-logo-wrap { margin: 0; line-height: 0; font-size: 0; }
+.cg-logo { height: 46px; width: auto; max-width: 100%; margin-bottom: 4px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.4)); }
+.poster-logo-wrap { margin: 0; line-height: 0; font-size: 0; }
+.poster-logo { width: min(420px, 78vw); height: auto; filter: drop-shadow(0 10px 18px rgba(0,0,0,.55)); }
+@media (max-width: 760px) { .cg-logo { height: 38px; } .feat-logo { width: min(280px, 100%); } }

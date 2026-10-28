@@ -236,3 +236,9 @@ h2 { margin: 0 0 6px; font-size: 40px; color: var(--yellow); text-shadow: 0 3px 
 @media (max-aspect-ratio: 1/1) { .menu-logo { width: 60px; height: 60px; } }
 
 .hud-coins { user-select: none; -webkit-user-select: none; }
+
+.title { margin: 0 0 6px; line-height: 0; }
+.title-logo { width: min(330px, 100%); height: auto; display: block; filter: drop-shadow(0 6px 10px rgba(0,0,0,.45)); animation: titleIn .7s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes titleIn { from { opacity: 0; transform: translateY(10px) scale(.96); } }
+@media (max-height: 560px) and (min-aspect-ratio: 1/1) { .title-logo { width: 200px; } }
+@media (max-aspect-ratio: 1/1) { .title-logo { width: min(250px, 70%); } }

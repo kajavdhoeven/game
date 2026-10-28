@@ -114,6 +114,7 @@ export async function renderAdmin(app) {
         <label>Korte tekst<input name="tagline" value="${esc(x.tagline)}"></label>
         <label>Beschrijving<textarea name="description" rows="3">${esc(x.description)}</textarea></label>
         <label>Adres van de game<input name="url" required value="${esc(x.url)}" placeholder="/games/mijn-game/"></label>
+        <label>Titel-logo (url, optioneel; vervangt de tekst als titel)<input name="logo" value="${esc(x.logo || '')}" placeholder="/assets/mijn-game-logo.png"></label>
         <div class="ad-two"><label>Plaatje (url)<input name="thumb" value="${esc(x.thumb)}"></label><label>Groot plaatje (url)<input name="hero" value="${esc(x.hero || '')}"></label></div>
         <label>Besturing (per regel: toets | uitleg)<textarea name="controls" rows="3">${esc((x.controls || []).map((c) => c.join(' | ')).join('\n'))}</textarea></label>
         <div class="ad-checks"><label><input type="checkbox" name="published" ${x.published ? 'checked' : ''}> Gepubliceerd</label><label><input type="checkbox" name="featured" ${x.featured ? 'checked' : ''}> Uitgelicht op home</label></div>
@@ -123,7 +124,7 @@ export async function renderAdmin(app) {
         const fd = new FormData(e.target);
         const game = {
           id: fd.get('id').trim(), title: fd.get('title').trim(), category: fd.get('category'), tags: x.tags || [],
-          tagline: fd.get('tagline').trim(), description: fd.get('description').trim(), url: fd.get('url').trim(), thumb: fd.get('thumb').trim(), hero: fd.get('hero').trim(),
+          tagline: fd.get('tagline').trim(), description: fd.get('description').trim(), url: fd.get('url').trim(), logo: fd.get('logo').trim(), thumb: fd.get('thumb').trim(), hero: fd.get('hero').trim(),
           controls: fd.get('controls').split('\n').map((l) => l.split('|').map((s) => s.trim())).filter((p) => p[0]).map((p) => [p[0], p[1] || '']),
           published: !!fd.get('published'), featured: !!fd.get('featured'), created_at: x.created_at,
         };
