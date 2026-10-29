@@ -3,8 +3,13 @@ import { initDev, setDevVisible } from '/js/devmode.js';
 import { initTutorial } from '/js/tutorial.js';
 import { submitTime, openTimeBoard } from '/js/leaderboard.js';
 import { Game } from './sim.js';
-import { levelFor, LEVEL_COUNT, THEMES, colorName } from './levels.js';
+import { levelFor, LEVEL_COUNT } from './levels.js';
 import { CW, CH, buildStatic, drawScene } from './draw.js';
+import { CHAPTERS, LEVELS, levelMeta, chapterOf, BEFORE, AFTER } from './story.js';
+
+const KLUISCODE = '4729';
+// cutscene.js, exterior.js en citymap.js worden pas geladen als ze nodig zijn; ontbreekt er één, dan slaat het spel dat onderdeel over
+const lazy = (name) => import(name).catch(() => null);
 
 const GAME_ID = 'te-un-robber';
 const $ = (id) => document.getElementById(id);
@@ -12,9 +17,9 @@ const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(
 
 // ---------------------------------------------------------------- opslaan + platform
 const KEY = 'te-un-robber-v1';
-let P = { done: {}, dev: false, updatedAt: 0 };
+let P = { done: {}, dev: false, updatedAt: 0, seen: {}, codeFound: false };
 try { P = Object.assign(P, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* geen opslag */ }
-const snapshot = () => ({ done: P.done, dev: P.dev, updatedAt: P.updatedAt });
+const snapshot = () => ({ done: P.done, dev: P.dev, updatedAt: P.updatedAt, seen: P.seen, codeFound: P.codeFound });
 const post = (type, extra = {}) => {
   if (window.parent === window) return;
   try { window.parent.postMessage({ type, game: GAME_ID, ...extra }, location.origin); } catch (e) { /* geen ouder */ }
@@ -31,10 +36,12 @@ window.addEventListener('message', (e) => {
   const m = e.data;
   if (!m || m.game !== GAME_ID || m.type !== 'teun:progress' || !m.data) return;
   const d = m.data;
-  if ((d.updatedAt || 0) > (P.updatedAt || 0)) { P.done = Object.assign({}, d.done || {}); P.updatedAt = d.updatedAt; save(true); renderMenu(); }
+  if ((d.updatedAt || 0) > (P.updatedAt || 0)) { P.done = Object.assign({}, d.done || {}); P.seen = Object.assign({}, d.seen || {}); P.codeFound = !!d.codeFound; P.updatedAt = d.updatedAt; save(true); renderMenu(); }
   else if ((d.updatedAt || 0) < (P.updatedAt || 0)) post('teun:save', { data: snapshot() });
 });
 const unlocked = (n) => n === 1 || P.dev || !!P.done[n - 1];
+const chapterOpen = (i) => i === 0 || P.dev || !!P.done[CHAPTERS[i - 1].levels[4]];
+const nextOpenLevel = () => { for (let n = 1; n <= LEVEL_COUNT; n++) if (!P.done[n]) return n; return LEVEL_COUNT; };
 
 // ---------------------------------------------------------------- geluid
 let actx = null;
@@ -54,7 +61,9 @@ const SFX = {
   hacked: () => [660, 880, 1100].forEach((f, i) => beep(f, 0.09, 'square', 0.06, i * 0.07)),
   switch: () => beep(220, 0.15, 'square', 0.1),
   key: () => { beep(1000, 0.08, 'triangle', 0.1); beep(1500, 0.1, 'triangle', 0.1, 0.07); },
-  unlock: () => beep(300, 0.2, 'sawtooth', 0.08, 0, 200),
+  unlock: () => { beep(300, 0.2, 'sawtooth', 0.08, 0, 200); beep(900, 0.12, 'triangle', 0.08, 0.15); },
+  pick: () => { beep(1200, 0.04, 'square', 0.05); beep(900, 0.04, 'square', 0.05, 0.12); },
+  code: () => [700, 900, 1200, 1500].forEach((f, i) => beep(f, 0.12, 'triangle', 0.1, i * 0.08)),
   portal: () => beep(400, 0.3, 'sine', 0.08, 0, 200),
   hide: () => beep(200, 0.1, 'sine', 0.08),
   stun: () => beep(700, 0.2, 'sawtooth', 0.1, 0, -500),
@@ -65,24 +74,85 @@ const SFX = {
 };
 const toast = (t) => { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2400); };
 
-// ---------------------------------------------------------------- menu
+// ---------------------------------------------------------------- schermen: titel, stadskaart, spel, filmpjes
+let mapCtl = null, mapChapter = 0, busy = false;
+const SCREENS = ['menu', 'map', 'play', 'cine'];
+const getState = (n) => ({ unlocked: unlocked(n), done: !!P.done[n], stars: P.done[n] ? P.done[n].stars : 0 });
 function renderMenu() {
-  const box = $('levels');
-  box.innerHTML = '';
-  for (let n = 1; n <= LEVEL_COUNT; n++) {
-    const d = P.done[n], open = unlocked(n);
-    const b = document.createElement('button');
-    b.className = 'lvl' + (d ? ' done' : '');
-    b.disabled = !open;
-    b.innerHTML = `<b>${n}</b><small>${THEMES[n - 1].name.replace(/^(Het |De )/, '')}</small><span class="st">${d ? '★'.repeat(d.stars) + '☆'.repeat(3 - d.stars) : ''}</span>`;
-    b.onclick = () => startLevel(n);
-    box.appendChild(b);
-  }
+  $('mPlay').textContent = P.done[1] ? 'Verder spelen' : 'Spelen';
+  if (mapCtl) mapCtl.refresh(); else if (!$('map').hidden) renderFallbackMap();
 }
 function show(id) {
-  $('menu').hidden = id !== 'menu'; $('play').hidden = id !== 'play';
-  setDevVisible(id === 'menu');
+  for (const s of SCREENS) $(s).hidden = s !== id;
+  setDevVisible(id === 'menu' || id === 'map');
+  if (id !== 'map' && mapCtl) { mapCtl.destroy(); mapCtl = null; }
   if (id === 'play') requestAnimationFrame(fit);
+  if (id === 'cine') requestAnimationFrame(fitCine);
+  if (id === 'map') requestAnimationFrame(() => { fitMap(); openMap(); });
+}
+function fitBox(cv, w, h) { const s = Math.min(w / CW, h / CH); cv.style.width = Math.floor(CW * s) + 'px'; cv.style.height = Math.floor(CH * s) + 'px'; }
+const fitCine = () => fitBox($('cinecv'), innerWidth, innerHeight);
+const fitMap = () => fitBox($('mapcv'), $('mapStage').clientWidth, $('mapStage').clientHeight);
+window.addEventListener('resize', () => { fitCine(); fitMap(); });
+async function openMap() {
+  const mod = await lazy('./citymap.js');
+  if ($('map').hidden) return;
+  if (mod && mod.createCityMap) {
+    $('fallback').hidden = true; $('mapcv').hidden = false;
+    if (mapCtl) mapCtl.destroy();
+    mapCtl = mod.createCityMap($('mapcv'), { chapter: mapChapter, getState, onPick: pickLevel, onChapter: (i) => { if (!chapterOpen(i)) { toast('Haal eerst het vorige hoofdstuk'); return; } mapChapter = i; mapCtl.setChapter(i); }, sfx: (nm) => SFX[nm] && SFX[nm]() });
+    fitMap();
+  } else renderFallbackMap();
+}
+// als de kaart-module niet laadt: een eenvoudige lijst per hoofdstuk
+function renderFallbackMap() {
+  $('mapcv').hidden = true; const box = $('fallback'); box.hidden = false; box.innerHTML = '';
+  const ch = CHAPTERS[mapChapter];
+  const tabs = document.createElement('div'); tabs.className = 'row';
+  CHAPTERS.forEach((c, i) => { const b = document.createElement('button'); b.className = 'small'; b.textContent = `${i + 1}`; b.disabled = !chapterOpen(i); b.onclick = () => { mapChapter = i; renderFallbackMap(); }; tabs.appendChild(b); });
+  const h = document.createElement('h2'); h.textContent = `${ch.id}. ${ch.name}`;
+  const grid = document.createElement('div'); grid.className = 'levels';
+  for (const n of ch.levels) {
+    const d = P.done[n];
+    const b = document.createElement('button'); b.className = 'lvl' + (d ? ' done' : ''); b.disabled = !unlocked(n);
+    b.innerHTML = `<b>${n}</b><small>${levelMeta(n).name}</small><span class="st">${d ? '★'.repeat(d.stars) + '☆'.repeat(3 - d.stars) : ''}</span>`;
+    b.onclick = () => pickLevel(n); grid.appendChild(b);
+  }
+  box.append(tabs, h, grid);
+}
+const goMap = (n) => { if (n) mapChapter = levelMeta(n).ch - 1; show('map'); };
+
+// filmpjes en de intro bij een gebouw
+const CINE_SFX = {
+  puff: () => beep(160, 0.25, 'sawtooth', 0.06, 0, -120), zip: () => beep(500, 0.15, 'sawtooth', 0.05, 0, 900), creak: () => beep(180, 0.5, 'sawtooth', 0.04, 0, 70), step: () => beep(120, 0.05, 'square', 0.03),
+  whoosh: () => beep(320, 0.35, 'sawtooth', 0.04, 0, -240), siren: () => { beep(700, 0.3, 'square', 0.05); beep(520, 0.3, 'square', 0.05, 0.3); }, crash: () => { beep(90, 0.5, 'sawtooth', 0.12, 0, -50); beep(60, 0.6, 'square', 0.1, 0.05); },
+  boom: () => beep(70, 0.5, 'sine', 0.15, 0, -40), plane: () => beep(200, 0.8, 'sawtooth', 0.03, 0, 80), chime: () => [880, 1320].forEach((f, i) => beep(f, 0.2, 'triangle', 0.08, i * 0.1)),
+};
+const cineSfx = (nm) => { const f = CINE_SFX[nm] || SFX[nm]; if (f) f(); };
+function runCine(kind, a, fast) {
+  return new Promise((res) => {
+    let fin0 = false;
+    const fin = () => { if (fin0) return; fin0 = true; res(); };
+    lazy(kind === 'intro' ? './exterior.js' : './cutscene.js').then((mod) => {
+      if (!mod) return fin();
+      show('cine');
+      try {
+        if (kind === 'intro' && mod.playIntro) mod.playIntro($('cinecv'), levelMeta(a).ext, a, fin, { sfx: cineSfx, fast });
+        else if (kind === 'cut' && mod.playCutscene) mod.playCutscene($('cinecv'), a, fin, { sfx: cineSfx });
+        else fin();
+      } catch (e) { console.warn(e); fin(); }
+    });
+  });
+}
+async function pickLevel(n) {
+  if (busy || !unlocked(n)) return;
+  busy = true;
+  try {
+    const b = BEFORE[n];
+    if (b && !P.seen[b]) { P.seen[b] = 1; save(); await runCine('cut', b); }
+    if (!levelMeta(n).escape) await runCine('intro', n, !!P.done[n]);
+    startLevel(n);
+  } finally { busy = false; }
 }
 
 // ---------------------------------------------------------------- spelen
@@ -90,7 +160,7 @@ const canvas = $('cv'); canvas.width = CW; canvas.height = CH;
 const g2 = canvas.getContext('2d');
 let game = null, stat = null, cur = 0, paused = false, last = 0, acc = 0;
 const keys = new Set();
-const touch = { l: 0, r: 0, u: 0, d: 0 };
+const touch = { l: 0, r: 0, u: 0, d: 0, act: 0 };
 let actPress = false;
 
 function fit() {
@@ -104,14 +174,16 @@ window.addEventListener('resize', fit);
 function startLevel(n) {
   cur = n;
   const L = levelFor(n);
+  const meta = levelMeta(n);
   game = new Game(L);
   stat = buildStatic(L);
   paused = false; acc = 0; last = performance.now();
-  $('lvName').textContent = `${n}. ${L.theme.name}`;
+  $('lvName').textContent = `${n}. ${meta.name}`;
   $('overlay').hidden = true; $('pauseBox').hidden = true;
   show('play');
   buildGoals();
-  setBanner(`${L.theme.name}\n${L.theme.sub}`, 2800);
+  setBanner(`${meta.name}\n${meta.sub}`, 3200);
+  if (L.theme.key === 'mushbank') setTimeout(() => game && cur === n && toast(P.codeFound ? `Kluiscode: ${KLUISCODE}` : 'Je kent de kluiscode nog niet. Die lag in het gemeentehuis.'), 3300);
   actx && actx.state === 'suspended' && actx.resume();
 }
 function setBanner(text, ms) {
@@ -121,11 +193,12 @@ function setBanner(text, ms) {
   el.textContent = text; el.hidden = false;
   if (ms) setBanner.t = setTimeout(() => { el.hidden = true; }, ms);
 }
-const GOAL = { doc: ['📄', 'Papieren'], loot: ['💰', 'Buit'], hack: ['💻', 'Hacken'], switch: ['🔴', 'Lasers uit'] };
+const GOAL = { doc: ['📄', 'Papieren'], loot: ['💰', 'Buit'], hack: ['💻', 'Hacken'], switch: ['🔴', 'Lasers uit'], code: ['🔐', 'Kluiscode'], vault: ['🔓', 'Kluis'] };
+const goalLabel = (t) => (game.L.theme.labels && game.L.theme.labels[t]) || GOAL[t];
 function buildGoals() {
   const types = {};
   for (const it of game.L.items) if (it.req) (types[it.type] = types[it.type] || []).push(it);
-  $('goals').innerHTML = Object.entries(types).map(([t, l]) => `<span class="goal" data-t="${t}">${GOAL[t][0]} ${GOAL[t][1]} <span>0</span>/${l.length}</span>`).join('') + '<span class="goal" data-t="exit">🚪 Uitgang</span>';
+  $('goals').innerHTML = Object.entries(types).map(([t, l]) => `<span class="goal" data-t="${t}">${goalLabel(t)[0]} ${goalLabel(t)[1]} <span>0</span>/${l.length}</span>`).join('') + '<span class="goal" data-t="exit">🚪 Uitgang</span>';
 }
 function updateHud() {
   const g = game;
@@ -140,13 +213,13 @@ function updateHud() {
     const o = types[t]; if (!o) return;
     el.querySelector('span').textContent = o.done; el.classList.toggle('ok', o.done === o.all);
   });
-  $('keys').innerHTML = [...g.keys].filter((k) => k !== 'SW').map((c) => `<i title="${colorName(c)} sleutel" style="background:${c}"></i>`).join('');
+  $('keys').textContent = g.L.theme.key === 'mushbank' ? `🔐 ${P.codeFound ? KLUISCODE : '????'}` : '';
 }
 function handleEvents() {
   for (const e of game.events.splice(0)) {
     if (SFX[e]) SFX[e]();
-    if (e === 'unlock') setBanner('Deur open!', 1000);
-    if (e === 'key') setBanner('Sleutel gevonden!', 1200);
+    if (e === 'unlock') setBanner('Slot open!', 1000);
+    if (e === 'code') { P.codeFound = true; save(); setBanner(`Kluiscode: ${KLUISCODE}\nOnthouden!`, 2600); }
     if (e === 'win') finish('won');
     if (e === 'caught') finish('caught');
     if (e === 'timeup') finish('timeup');
@@ -164,10 +237,13 @@ function finish(kind) {
     if (!prev || stars > prev.stars || (stars === prev.stars && used < prev.time)) P.done[cur] = { stars: Math.max(stars, prev ? prev.stars : 0), time: Math.round(Math.min(used, prev && stars <= prev.stars ? prev.time : used) * 100) / 100 };
     save();
     submitTime(GAME_ID, 'l' + cur, Math.round(used * 100) / 100);
-    $('ovTitle').textContent = 'Ontsnapt!';
+    $('ovTitle').textContent = levelMeta(cur).escape ? 'Ontsnapt!' : 'Gelukt!';
     $('ovStars').innerHTML = [1, 2, 3].map((i) => `<i class="${i <= stars ? 'on' : ''}">★</i>`).join('');
     $('ovText').textContent = `Je was in ${fmt(used)} klaar, met ${fmt(L.limit - used)} over.`;
-    $('ovNext').hidden = cur >= LEVEL_COUNT; $('ovBoard').hidden = false;
+    const after = AFTER[cur];
+    const nextSame = cur < LEVEL_COUNT && levelMeta(cur + 1).ch === levelMeta(cur).ch;
+    $('ovNext').hidden = false; $('ovBoard').hidden = false;
+    $('ovNext').textContent = after && !P.seen[after] ? 'Verder' : nextSame ? 'Volgende level' : 'Naar de kaart';
     renderMenu();
   } else if (kind === 'caught') {
     $('ovTitle').textContent = 'Gepakt!';
@@ -185,6 +261,7 @@ function readInput() {
     l: k('ArrowLeft') || k('KeyA') || touch.l, r: k('ArrowRight') || k('KeyD') || touch.r,
     u: k('ArrowUp') || k('KeyW') || touch.u, d: k('ArrowDown') || k('KeyS') || touch.d,
     act: actPress,
+    actHeld: k('Space') || k('KeyE') || k('Enter') || touch.act,
   };
 }
 function frame(now) {
@@ -229,9 +306,11 @@ document.querySelectorAll('.pad button').forEach((b) => {
   for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, set(false));
   b.addEventListener('contextmenu', (e) => e.preventDefault());
 });
-$('actBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); actPress = true; $('actBtn').classList.add('on'); });
-for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) $('actBtn').addEventListener(ev, () => $('actBtn').classList.remove('on'));
-$('back').onclick = () => { game = null; renderMenu(); show('menu'); };
+$('actBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); actPress = true; touch.act = 1; $('actBtn').classList.add('on'); });
+for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) $('actBtn').addEventListener(ev, () => { touch.act = 0; $('actBtn').classList.remove('on'); });
+$('back').onclick = () => { const n = cur; game = null; goMap(n); };
+$('mPlay').onclick = () => { mapChapter = levelMeta(nextOpenLevel()).ch - 1; show('map'); };
+$('mapBack').onclick = () => show('menu');
 $('restart').onclick = () => startLevel(cur);
 $('pauseBtn').onclick = () => togglePause();
 $('resume').onclick = () => togglePause(false);
@@ -239,8 +318,12 @@ $('pRestart').onclick = () => startLevel(cur);
 $('pMenu').onclick = () => $('back').click();
 $('ovRetry').onclick = () => startLevel(cur);
 $('ovMenu').onclick = () => $('back').click();
-$('ovNext').onclick = () => startLevel(cur + 1);
-const boardLevels = Array.from({ length: LEVEL_COUNT }, (_, i) => ({ key: 'l' + (i + 1), label: `${i + 1}. ${THEMES[i].name}` }));
+$('ovNext').onclick = async () => {
+  const after = AFTER[cur];
+  if (after && !P.seen[after]) { P.seen[after] = 1; save(); busy = true; const n = cur; game = null; await runCine('cut', after); busy = false; goMap(Math.min(LEVEL_COUNT, n + 1)); return; }
+  if (cur < LEVEL_COUNT && levelMeta(cur + 1).ch === levelMeta(cur).ch) pickLevel(cur + 1); else { const n = cur; game = null; goMap(Math.min(LEVEL_COUNT, n + 1)); }
+};
+const boardLevels = LEVELS.map((m) => ({ key: 'l' + m.n, label: `${m.n}. ${m.name}` }));
 const openBoard = (start) => openTimeBoard({ game: GAME_ID, title: 'Te-Un the Robber', levels: boardLevels, start });
 $('mBoard').onclick = () => openBoard('l1');
 $('ovBoard').onclick = () => openBoard('l' + cur);
@@ -254,16 +337,17 @@ initTutorial({
     { icon: '🥷', title: 'Sluip en pak de buit', lines: ['Je bent Te-Un, de dief. Loop door het gebouw, pak de <b>papieren</b>, de <b>buit</b> en alles wat in het lijstje bovenin staat, en ga dan naar de <b>uitgang</b> voordat de tijd om is.'] },
     { icon: '⌨️', title: 'Besturing', lines: ['<kbd>←</kbd> <kbd>→</kbd> lopen. <kbd>↑</kbd> en <kbd>↓</kbd> om een ladder te beklimmen of een trap of lift te nemen. <kbd>Spatie</kbd> om iets te pakken, een computer te hacken of een schakelaar om te zetten. Op een telefoon gebruik je de knoppen onderin.', '<kbd>R</kbd> start opnieuw, <kbd>Esc</kbd> pauzeert.'] },
     { icon: '🤖', title: 'Bewakers', lines: ['Robots kijken in een lichtkegel. Sta je daarin, dan vult het balkje boven je hoofd en word je gepakt. Wacht tot ze wegkijken. <b>Camera\'s</b> draaien heen en weer, <b>drones</b> vliegen rond, <b>slapers</b> worden af en toe wakker en <b>lasers</b> gaan aan en uit.', 'Verstoppen? Sta bij een kast, plant of kist en druk op <kbd>↓</kbd>. Dan zien ze je niet.'] },
-    { icon: '🔑', title: 'Sleutels en schakelaars', lines: ['Een gekleurde deur gaat open met de sleutel van dezelfde kleur. Sommige lasers gaan pas uit als je de rode schakelaar hebt gevonden. Een zwakke robot kun je van achteren uitschakelen met <kbd>Spatie</kbd>: hij is dan 7 seconden uitgeschakeld. Een zware robot, een camera of een drone lukt niet.'] },
-    { icon: '⭐', title: 'Sterren', lines: ['Hoe sneller je klaar bent, hoe meer sterren. Elk level is moeilijker dan het vorige: meer opdrachten, een kortere tijd en slimmere bewakers.'] },
+    { icon: '🔒', title: 'Sloten en schakelaars', lines: ['Staat er een deur op slot? Ga ervoor staan en houd <kbd>Spatie</kbd> ingedrukt om het slot open te breken. Dat duurt even en je staat dan stil, dus kijk goed uit. Sommige lasers gaan pas uit als je de rode schakelaar hebt gevonden.', 'Een zwakke robot kun je van achteren slaan met <kbd>Spatie</kbd>: hij is dan 5 seconden uitgeschakeld. Een zware robot, een camera of een drone lukt niet.'] },
+    { icon: '⭐', title: 'Sterren', lines: ['Hoe sneller je klaar bent, hoe meer sterren. Elk level is moeilijker dan het vorige. Je speelt vijf hoofdstukken met elk vijf gebouwen: kies een gebouw op de kaart.'] },
   ],
 });
 initDev([
   { label: 'Alle levels openen', run: () => { P.dev = true; save(); renderMenu(); return 'Alle levels open'; } },
   { label: 'Alle levels als gehaald markeren (3 sterren)', run: () => { for (let i = 1; i <= LEVEL_COUNT; i++) P.done[i] = { stars: 3, time: 30 }; save(); renderMenu(); return 'Alles gehaald'; } },
+  { label: 'Alle filmpjes opnieuw tonen', run: () => { P.seen = {}; save(); return 'Filmpjes worden weer getoond'; } },
   { label: 'Geen bewakers zien me (testen)', run: () => { if (!game) return 'Start eerst een level'; game.L.guards.length = 0; game.L.lasers.length = 0; game.stun.length = 0; return 'Bewakers uit voor dit level'; } },
 ]);
 post('teun:ready');
 window.addEventListener('teun:pause', () => { if (game && game.status === 'play') paused = true; });
 window.addEventListener('teun:resume', () => { if (game && $('pauseBox').hidden) paused = false; });
-window.__tr = { get game() { return game; }, startLevel, P };
+window.__tr = { get game() { return game; }, startLevel, pickLevel, show, P };

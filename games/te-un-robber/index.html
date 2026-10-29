@@ -17,15 +17,21 @@
 <body>
   <main id="menu" class="screen">
     <h1 class="title"><img id="logo" src="/assets/te-un-robber-logo.png" alt="Te-Un the Robber" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback',textContent:'Te-Un the Robber'}))"></h1>
-    <p class="sub">Sluip door 25 gebouwen, pak de buit en ontsnap. Laat je niet zien!</p>
-    <div id="levels" class="levels"></div>
-    <div class="row"><button id="mBoard" class="small">🏆 Leaderboard</button></div>
+    <p class="sub">Vijf hoofdstukken, 25 gebouwen. Sluip naar binnen, pak de buit en laat je niet zien!</p>
+    <div class="row"><button id="mPlay" class="big">Spelen</button><button id="mBoard" class="small">🏆 Leaderboard</button></div>
   </main>
+
+  <section id="map" class="screen mapscr" hidden>
+    <div id="mapStage"><canvas id="mapcv" aria-label="Kaart met de gebouwen van dit hoofdstuk"></canvas><div id="fallback" class="fallback" hidden></div></div>
+    <button id="mapBack" class="mini mapback" aria-label="Terug naar het menu">&#8592; Menu</button>
+  </section>
+
+  <section id="cine" class="screen cinescr" hidden><canvas id="cinecv" width="1280" height="720" aria-label="Filmpje"></canvas></section>
 
   <section id="play" class="screen playscr" hidden>
     <header id="hud">
       <button id="back" class="mini" aria-label="Terug naar het menu">&#8592;</button>
-      <b id="lvName">Level 1</b>
+      <img class="hudlogo" src="/assets/te-un-robber-logo.png" alt="" onerror="this.remove()"><b id="lvName">Level 1</b>
       <span id="goals" class="goals"></span>
       <span class="grow"></span>
       <span id="keys" class="keys"></span>

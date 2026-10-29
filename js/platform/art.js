@@ -235,13 +235,22 @@ function goudVapeAvatar() {
 
 // Te-Un de dief: met zonnebril, een zak met geld en een gestreepte trui (profielfoto voor alle 25 levels van Te-Un the Robber)
 function diefAvatar() {
-  return `<div class="av-face" style="background:linear-gradient(160deg,#2f5a38,#0f2416)">${teunSVG({ crop: 'face' })}
-<svg class="avsvg" style="position:absolute;inset:0" viewBox="24 -10 152 168" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Te-Un de dief">
-<g fill="#0c0d12" stroke="#0b0b0d" stroke-width="5"><ellipse cx="80" cy="126" rx="19" ry="16"/><ellipse cx="120" cy="126" rx="19" ry="16"/></g><path d="M99 124 L101 124" stroke="#0b0b0d" stroke-width="5"/>
-<path d="M68 118 L78 112M108 118 L118 112" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity=".6"/>
-<g transform="translate(150 132) rotate(14)"><path d="M-22 18 Q-30 -6 -10 -20 L10 -20 Q30 -6 22 18Z" fill="#b08a4a" stroke="#5a4018" stroke-width="3"/><path d="M-8 -20 Q0 -30 8 -20" fill="none" stroke="#5a4018" stroke-width="3"/><text x="0" y="12" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="26" fill="#5a4018">$</text></g>
-<g fill="#ffe27a" stroke="#8a5a00" stroke-width="2"><circle cx="48" cy="140" r="7"/><circle cx="60" cy="146" r="7"/></g>
-</svg></div>`;
+  return `<svg class="avsvg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Te-Un met een bivakmuts">
+<defs><linearGradient id="dbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a6a48"/><stop offset="1" stop-color="#0f2416"/></linearGradient>
+<linearGradient id="dbal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a3e48"/><stop offset=".5" stop-color="#1a1c22"/><stop offset="1" stop-color="#08090c"/></linearGradient>
+<linearGradient id="djk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c3038"/><stop offset="1" stop-color="#0e1014"/></linearGradient>
+<pattern id="dknit" width="4" height="4" patternUnits="userSpaceOnUse"><path d="M0 4 L2 0 L4 4" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width=".8"/></pattern></defs>
+<rect width="100" height="100" fill="url(#dbg)"/>
+<g transform="translate(80 78) rotate(12)"><path d="M-14 14 Q-20 -4 -6 -14 L6 -14 Q20 -4 14 14Z" fill="#b8955a" stroke="#4a3410" stroke-width="2"/><path d="M-5 -14 Q0 -21 5 -14" fill="none" stroke="#4a3410" stroke-width="2"/><text x="0" y="9" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="17" fill="#4a3410">$</text></g>
+<path d="M12 100 Q14 72 50 70 Q86 72 88 100Z" fill="url(#djk)" stroke="#05060a" stroke-width="3"/><path d="M50 72v28" stroke="#4a4f58" stroke-width="1.6"/><rect x="30" y="84" width="40" height="3" fill="#05060a" opacity=".7"/>
+<path d="M27 52 L10 40 L27 61Z M73 52 L90 40 L73 61Z" fill="#efb18d" stroke="#05060a" stroke-width="2.4" stroke-linejoin="round"/>
+<ellipse cx="50" cy="48" rx="25" ry="27" fill="url(#dbal)" stroke="#05060a" stroke-width="3"/><ellipse cx="50" cy="48" rx="25" ry="27" fill="url(#dknit)"/>
+<path d="M30 30 Q50 18 70 30" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="3" stroke-linecap="round"/>
+<path d="M28 43 Q50 37 72 43 L72 56 Q50 61 28 56Z" fill="#efb18d" stroke="#05060a" stroke-width="2.4" stroke-linejoin="round"/>
+<ellipse cx="39" cy="49" rx="6.5" ry="5" fill="#fff" stroke="#05060a" stroke-width="1.4"/><ellipse cx="61" cy="49" rx="6.5" ry="5" fill="#fff" stroke="#05060a" stroke-width="1.4"/>
+<circle cx="40.5" cy="49.4" r="2.9" fill="#1a2a3a"/><circle cx="62.5" cy="49.4" r="2.9" fill="#1a2a3a"/><circle cx="41.4" cy="48.2" r="1" fill="#fff"/><circle cx="63.4" cy="48.2" r="1" fill="#fff"/>
+<path d="M31 41 L46 44.5 M69 41 L54 44.5" stroke="#05060a" stroke-width="2.6" stroke-linecap="round"/>
+</svg>`;
 }
 
 // Te-Un Racer: motorhelm met klep en bril

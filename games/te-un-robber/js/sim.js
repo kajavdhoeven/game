@@ -5,7 +5,9 @@ export const Y = [16, 12, 8, 4];      // de vloer van elke verdieping (onderkant
 export const WALK = 4, CLIMB = 3.2;   // loopsnelheid en klimsnelheid in tegels per seconde
 export const HALF = 0.3;              // halve breedte van Te-Un
 const PORTAL_T = 0.5;                 // een trap of lift duurt even
-const ACT = { doc: 0.4, loot: 0.5, switch: 0.3, hack: 1.8, key: 0 }; // hoe lang het kost om iets te doen
+export const PICK_T = 1.6;            // zo lang moet je spatie ingedrukt houden om een slot open te breken
+export const STUN_T = 5;              // een geslagen robot is zo lang uitgeschakeld
+const ACT = { doc: 0.4, loot: 0.5, switch: 0.3, hack: 1.8, code: 0.6, vault: 1.8, key: 0 }; // hoe lang het kost om iets te doen // hoe lang het kost om iets te doen
 
 // ---------------------------------------------------------------- bewakers: positie en blikrichting zijn een vaste functie van de tijd
 export function guardAt(g, t) {
@@ -45,7 +47,7 @@ export class Game {
     this.t = 0;
     this.status = 'play'; // play | won | caught | timeup
     this.events = [];
-    this.p = { x: level.start.x, y: Y[level.start.f], f: level.start.f, face: 1, mode: 'walk', vx: 0, work: 0, workItem: null, portal: null, climbTo: 0, hidden: false, walk: 0 };
+    this.p = { x: level.start.x, y: Y[level.start.f], f: level.start.f, face: 1, mode: 'walk', vx: 0, work: 0, workItem: null, portal: null, climbTo: 0, hidden: false, walk: 0, pick: 0, pickWall: -1 };
     this.items = level.items.map((it) => ({ ...it, done: false }));
     this.keys = new Set();
     this.doorOpen = new Set();      // gebroken sloten (index van de muur)
@@ -62,7 +64,7 @@ export class Game {
   }
   remaining() { return this.items.filter((i) => i.req && !i.done).length; }
   timeLeft() { return Math.max(0, this.L.limit - this.t); }
-  // één stap. inp: { l, r, u, d, act (alleen op het moment van indrukken), actHeld }
+  // één stap. inp: { l, r, u, d, act (alleen op het moment van indrukken), actHeld (ingedrukt gehouden: sloten openbreken) }
   step(dt, inp) {
     if (this.status !== 'play') return;
     this.t += dt;
@@ -81,6 +83,13 @@ export class Game {
     } else if (p.mode === 'act') {
       p.work -= dt;
       if (p.work <= 0) this.finishWork();
+    } else if (p.mode === 'pick') {
+      const w = L.walls[p.pickWall];
+      if (!inp.actHeld || dir || inp.u || inp.d || !w || this.doorOpen.has(p.pickWall)) { p.mode = 'walk'; p.pick = 0; }
+      else {
+        p.pick += dt;
+        if (p.pick >= PICK_T) { this.doorOpen.add(p.pickWall); p.mode = 'walk'; p.pick = 0; this.events.push('unlock'); }
+      }
     } else if (p.mode === 'hide') {
       if (dir || inp.u || inp.act) { p.mode = 'walk'; p.hidden = false; }
     } else {
@@ -95,8 +104,7 @@ export class Game {
         if (w.f !== p.f || !w.lock || this.doorOpen.has(i)) continue;
         const gap = HALF + 0.05;
         if (Math.abs(nx - w.x) < gap + 0.15 || (p.x - w.x) * (nx - w.x) < 0) {
-          if (this.keys.has(w.lock)) { this.doorOpen.add(i); this.events.push('unlock'); }
-          else nx = p.x < w.x ? Math.min(nx, w.x - gap) : Math.max(nx, w.x + gap);
+          nx = p.x < w.x ? Math.min(nx, w.x - gap) : Math.max(nx, w.x + gap);
         }
       }
       p.walk += Math.abs(nx - p.x);
@@ -117,6 +125,16 @@ export class Game {
       }
       // voorwerpen en bewakers: de actietoets
       if (inp.act) this.doAct();
+      // een slot openbreken: sta er vlak voor en houd spatie ingedrukt
+      if (p.mode === 'walk' && inp.actHeld) {
+        for (let i = 0; i < L.walls.length; i++) {
+          const w = L.walls[i];
+          if (w.f !== p.f || !w.lock || this.doorOpen.has(i) || Math.abs(p.x - w.x) > 0.75) continue;
+          if (this.items.some((it) => !it.done && it.f === p.f && Math.abs(it.x - p.x) < 1.0)) break;
+          p.mode = 'pick'; p.pickWall = i; p.pick = 0; p.x = w.x + (p.x < w.x ? -0.5 : 0.5); p.face = p.x < w.x ? 1 : -1; p.vx = 0; this.events.push('pick');
+          break;
+        }
+      }
       // de uitgang
       const ex = L.exit;
       this.exitOpen = this.remaining() === 0;
@@ -135,7 +153,7 @@ export class Game {
       const g = this.L.guards[i];
       if (g.f !== p.f || g.kind === 'camera' || g.kind === 'drone' || g.kind === 'heavy' || this.stun[i] > 0) continue;
       const s = guardAt(g, this.t);
-      if (Math.abs(s.x - p.x) < 1.1 && (p.x - s.x) * s.dir < 0.2 && !(g.kind === 'sleeper' && s.awake && (p.x - s.x) * s.dir > 0)) { this.stun[i] = 7; this.events.push('stun'); return; }
+      if (Math.abs(s.x - p.x) < 1.1 && (p.x - s.x) * s.dir < 0.2 && !(g.kind === 'sleeper' && s.awake && (p.x - s.x) * s.dir > 0)) { this.stun[i] = STUN_T; this.events.push('stun'); return; }
     }
   }
   finishWork() {
@@ -144,12 +162,10 @@ export class Game {
     if (!it || it.done) return;
     it.done = true;
     if (it.type === 'switch') this.switchOn = true;
-    this.events.push(it.type === 'hack' ? 'hacked' : it.type === 'switch' ? 'switch' : 'grab');
+    this.events.push(it.type === 'hack' || it.type === 'vault' ? 'hacked' : it.type === 'switch' ? 'switch' : it.type === 'code' ? 'code' : 'grab');
   }
   detect(dt) {
     const L = this.L, p = this.p;
-    // sleutels gaan vanzelf mee als je erlangs loopt
-    for (const it of this.items) if (!it.done && it.type === 'key' && it.f === p.f && Math.abs(it.x - p.x) < 0.5 && p.mode === 'walk') { it.done = true; this.keys.add(it.color); this.events.push('key'); }
     // lasers
     for (const l of L.lasers) {
       if (l.f !== p.f || Math.abs(l.x - p.x) > 0.35 + HALF * 0.5 || p.hidden || p.mode === 'portal') continue;

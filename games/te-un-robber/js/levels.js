@@ -2,37 +2,41 @@
 // en is bij het maken gecontroleerd door een zoekprogramma: er is altijd een weg waarbij je niet wordt gezien (zie variants.js).
 import { W, Y } from './sim.js';
 import { VARIANTS } from './variants.js';
+import { LEVELS, LEVEL_COUNT as LC } from './story.js';
 
-export const LEVEL_COUNT = 25;
+export const LEVEL_COUNT = LC;
 
-// kleuren: wand, tweede wandkleur, vloer, lijst, accent. props: wat er in de kamers staat. skin: hoe de bewakers eruitzien.
-export const THEMES = [
-  { name: 'Het huis van de buren', sub: 'Een gezellig huis. Even binnenlopen.', wall: '#d9c07a', wall2: '#c4a85f', floor: '#7a5a3a', trim: '#8b6a3e', accent: '#e8d27a', props: ['sofa', 'tv', 'plant', 'cabinet', 'lamp', 'window'], hide: 'closet', skin: 'blue' },
-  { name: 'De garage', sub: 'Olie, banden en gereedschap.', wall: '#8fa3a8', wall2: '#7b8f95', floor: '#4a5a5e', trim: '#2f3d40', accent: '#e0b03a', props: ['tools', 'tires', 'crate', 'barrel', 'shelf'], hide: 'crate', skin: 'blue' },
-  { name: 'De supermarkt', sub: 'Gangpaden vol boodschappen.', wall: '#cfe3d0', wall2: '#b9d3bb', floor: '#6f8f7a', trim: '#3f7a52', accent: '#e84a4a', props: ['shelf', 'cashier', 'fridge', 'crate', 'plant'], hide: 'crate', skin: 'green' },
-  { name: 'De bakkerij', sub: 'Het ruikt er heerlijk. Maar pas op.', wall: '#e6c9a0', wall2: '#d7b585', floor: '#8a6a4a', trim: '#a0683a', accent: '#f4e2b0', props: ['counter', 'shelf', 'fridge', 'crate', 'lamp'], hide: 'closet', skin: 'blue' },
-  { name: 'Het hotel', sub: 'Veel kamers, veel gangen.', wall: '#c98d8d', wall2: '#b87777', floor: '#6a4a3a', trim: '#7a3f3f', accent: '#f2d27a', props: ['bed', 'painting', 'plant', 'lamp', 'cabinet'], hide: 'closet', skin: 'purple' },
-  { name: 'Het kantoor', sub: 'Computers, papieren en camera\'s.', wall: '#b9c4d2', wall2: '#a4b1c2', floor: '#56657a', trim: '#33445c', accent: '#59a8ff', props: ['desk', 'pc', 'shelf', 'plant', 'window', 'clock'], hide: 'plant', skin: 'blue' },
-  { name: 'De bank', sub: 'Hier ligt echt geld. Lasers!', wall: '#9fb59c', wall2: '#8aa388', floor: '#4a5e4a', trim: '#2f4a38', accent: '#e8c64a', props: ['counter', 'safe', 'plant', 'clock', 'painting'], hide: 'plant', skin: 'gold' },
-  { name: 'Het museum', sub: 'Schilderijen en beelden.', wall: '#d8cdbd', wall2: '#c6b9a5', floor: '#7a6a58', trim: '#5a4a3a', accent: '#c9a24a', props: ['painting', 'statue', 'pillar', 'window', 'plant'], hide: 'statue', skin: 'purple' },
-  { name: 'De juwelier', sub: 'Glimmend en streng bewaakt.', wall: '#6a5a8a', wall2: '#594a78', floor: '#2f2a44', trim: '#1f1a33', accent: '#7ae0ff', props: ['counter', 'safe', 'painting', 'lamp', 'plant'], hide: 'closet', skin: 'gold' },
-  { name: 'De school', sub: 'Lokalen, gangen en kluisjes.', wall: '#cfd8a0', wall2: '#bcc68a', floor: '#6a7048', trim: '#4a5230', accent: '#f08a3a', props: ['desk', 'locker', 'clock', 'window', 'plant'], hide: 'locker', skin: 'green' },
-  { name: 'De bibliotheek', sub: 'Stil. Heel stil.', wall: '#b79a78', wall2: '#a38564', floor: '#5a4030', trim: '#3a2a1c', accent: '#d9b86a', props: ['bookcase', 'desk', 'lamp', 'window', 'plant'], hide: 'bookcase', skin: 'purple' },
-  { name: 'Het ziekenhuis', sub: 'Witte gangen en snelle robots.', wall: '#dfe9ee', wall2: '#cbdbe3', floor: '#7a98a6', trim: '#4a7a90', accent: '#e84a5a', props: ['medbed', 'fridge', 'plant', 'cabinet', 'clock'], hide: 'closet', skin: 'white' },
-  { name: 'Het politiebureau', sub: 'Durf jij het aan?', wall: '#8aa0c4', wall2: '#788fb6', floor: '#3f4f6e', trim: '#26304a', accent: '#4a8aff', props: ['desk', 'pc', 'bars', 'cabinet', 'clock'], hide: 'closet', skin: 'police' },
-  { name: 'Het restaurant', sub: 'Tafels, keuken en kok-robots.', wall: '#c6866a', wall2: '#b27458', floor: '#5a3a2a', trim: '#7a3a2a', accent: '#f2c86a', props: ['table', 'counter', 'fridge', 'lamp', 'plant'], hide: 'closet', skin: 'chef' },
-  { name: 'Het casino', sub: 'Glitter, geld en camera\'s.', wall: '#8a3a5a', wall2: '#762f4a', floor: '#2f1a28', trim: '#e8c64a', accent: '#ff5ea8', props: ['slots', 'table', 'lamp', 'painting', 'plant'], hide: 'slots', skin: 'gold' },
-  { name: 'De fabriek', sub: 'Lopende banden en machines.', wall: '#9a9a8a', wall2: '#85857a', floor: '#4a4a44', trim: '#2a2a26', accent: '#ffb03a', props: ['conveyor', 'barrel', 'crate', 'pipes', 'tools'], hide: 'barrel', skin: 'orange' },
-  { name: 'Het pakhuis', sub: 'Stapels dozen en weinig licht.', wall: '#9a8a74', wall2: '#857661', floor: '#4a4034', trim: '#2f281f', accent: '#d9a44a', props: ['crate', 'barrel', 'shelf', 'tires', 'lamp'], hide: 'crate', skin: 'orange' },
-  { name: 'Het laboratorium', sub: 'Geheime proeven. Lasers en drones.', wall: '#a8d0c4', wall2: '#93bfb2', floor: '#3f6a60', trim: '#255a4e', accent: '#7affc8', props: ['lab', 'pc', 'fridge', 'pipes', 'plant'], hide: 'closet', skin: 'white' },
-  { name: 'De tv-studio', sub: 'Lampen, decors en kabels.', wall: '#7a6aa8', wall2: '#685a96', floor: '#2f2a4a', trim: '#1c1830', accent: '#ff7ac8', props: ['camera', 'lamp', 'sofa', 'pc', 'plant'], hide: 'sofa', skin: 'purple' },
-  { name: 'Het vliegveld', sub: 'Bagage, scanners en strenge bewakers.', wall: '#a8c4e0', wall2: '#93b1d0', floor: '#4a6080', trim: '#2a4060', accent: '#ffd23a', props: ['luggage', 'desk', 'window', 'clock', 'plant'], hide: 'luggage', skin: 'police' },
-  { name: 'Het treinstation', sub: 'Veel mensen, veel robots.', wall: '#c8b898', wall2: '#b5a584', floor: '#5a5040', trim: '#3a3226', accent: '#4a8aff', props: ['clock', 'luggage', 'window', 'pillar', 'lamp'], hide: 'luggage', skin: 'blue' },
-  { name: 'De gevangenis', sub: 'Hier kom je eigenlijk niet in.', wall: '#8a8a8a', wall2: '#757575', floor: '#3a3a3a', trim: '#1f1f1f', accent: '#ff8a3a', props: ['bars', 'bed', 'lamp', 'pipes', 'cabinet'], hide: 'closet', skin: 'police' },
-  { name: 'Het kasteel', sub: 'Pantserrobots en een schatkamer.', wall: '#9a9488', wall2: '#85807a', floor: '#4a443a', trim: '#2f2b24', accent: '#e8c64a', props: ['pillar', 'painting', 'lamp', 'bookcase', 'statue'], hide: 'statue', skin: 'knight' },
-  { name: 'Het ruimtestation', sub: 'Zwaartekracht? Wel. Veiligheid? Ook.', wall: '#4a5a7a', wall2: '#3c4a68', floor: '#222a3c', trim: '#101624', accent: '#5ae0ff', props: ['pc', 'pipes', 'lab', 'lamp', 'window'], hide: 'closet', skin: 'alien' },
-  { name: 'Het geheime hoofdkwartier', sub: 'De laatste klus: alles tegelijk.', wall: '#5a5a6a', wall2: '#4a4a5a', floor: '#1f1f2a', trim: '#0f0f16', accent: '#ff4a4a', props: ['pc', 'safe', 'lamp', 'pipes', 'painting'], hide: 'closet', skin: 'boss' },
-];
+// Interieur per soort gebouw. wall, wall2, floor, trim, accent: kleuren. props: wat er in de kamers staat. hide: waar je je kunt verstoppen. skin: de bewakers.
+// style: hoe muren en vloer eruitzien (zie draw.js), damage 0..1 = hoeveel schade (kale plekken, barsten, vlekken). floors: aantal verdiepingen.
+// items: wat je moet pakken (volgorde). labels: eigen naam voor een soort buit in het lijstje.
+const TH = {
+  mushroom1: { wall: '#e2c9a0', wall2: '#cfae80', floor: '#7a5434', trim: '#a8432e', accent: '#e8503a', props: ['stool', 'mushtable', 'lantern', 'plant', 'bedmush', 'window'], hide: 'closet', skin: 'blue', style: { wall: 'mush', floor: 'planks', damage: 0.2 }, floors: 2, items: ['loot'] },
+  mushroom2: { wall: '#cdd2ea', wall2: '#b4bbdc', floor: '#5a4a6a', trim: '#3a5ab0', accent: '#6a9aff', props: ['bedmush', 'bookcase', 'lantern', 'stool', 'window', 'plant'], hide: 'closet', skin: 'blue', style: { wall: 'mush', floor: 'planks', damage: 0.25 }, floors: 2, items: ['loot', 'doc'] },
+  mushroom3: { wall: '#d8c07a', wall2: '#c2a65e', floor: '#6a4a2a', trim: '#8a5a1a', accent: '#e8b03a', props: ['mushtable', 'lantern', 'stove', 'stool', 'window', 'bookcase'], hide: 'closet', skin: 'green', style: { wall: 'mush', floor: 'planks', damage: 0.5 }, floors: 3, items: ['loot', 'doc', 'loot'] },
+  townhall: { wall: '#e0d2b0', wall2: '#cdbd96', floor: '#6a4a3a', trim: '#6a3a2a', accent: '#e8c64a', props: ['painting', 'bookcase', 'desk', 'clock', 'lamp', 'plant', 'banner'], hide: 'closet', skin: 'purple', style: { wall: 'panel', floor: 'wood', damage: 0.15 }, floors: 3, items: ['code', 'loot', 'doc'], labels: { code: ['🔐', 'Kluiscode'] } },
+  mushbank: { wall: '#a8c0a4', wall2: '#93ad90', floor: '#3f5646', trim: '#2f4a38', accent: '#e8c64a', props: ['counter', 'vaultdoor', 'deposit', 'plant', 'clock', 'painting'], hide: 'plant', skin: 'gold', style: { wall: 'stone', floor: 'tile', damage: 0.1 }, floors: 3, items: ['vault', 'loot', 'doc'], labels: { vault: ['🔓', 'Kluis openen'] } },
+  rowhouse: { wall: '#d8c8a8', wall2: '#c8b690', floor: '#7a5a3a', trim: '#8b6a3e', accent: '#e8d27a', props: ['sofa', 'tv', 'plant', 'cabinet', 'lamp', 'window'], hide: 'closet', skin: 'blue', style: { wall: 'paper', floor: 'wood', damage: 0.2 }, floors: 3, items: ['loot', 'doc', 'loot'] },
+  canalhouse: { wall: '#9a6a4a', wall2: '#85583c', floor: '#4a3626', trim: '#2f2018', accent: '#e8c27a', props: ['painting', 'bookcase', 'cabinet', 'lamp', 'clock', 'stove', 'window'], hide: 'closet', skin: 'purple', style: { wall: 'panel', floor: 'planks', damage: 0.3 }, floors: 3, items: ['doc', 'loot', 'loot'] },
+  supermarket: { wall: '#e4ece4', wall2: '#cfdacf', floor: '#8a9a94', trim: '#2f7a4a', accent: '#e84a4a', props: ['shelfgoods', 'cashier', 'fridge', 'cart', 'crate', 'plant'], hide: 'crate', skin: 'green', style: { wall: 'tile', floor: 'tile', damage: 0.1 }, floors: 3, items: ['loot', 'doc', 'loot'], labels: { loot: ['🛒', 'Kassa-geld'] } },
+  casino: { wall: '#7a2a4a', wall2: '#6a2240', floor: '#2f1a28', trim: '#e8c64a', accent: '#ff5ea8', props: ['roulette', 'slots', 'pokertable', 'lamp', 'painting', 'plant'], hide: 'slots', skin: 'gold', style: { wall: 'paper', floor: 'carpet', damage: 0.05 }, floors: 3, items: ['loot', 'hack', 'loot'] },
+  chinese: { wall: '#b8452f', wall2: '#a23a28', floor: '#4a2a1a', trim: '#e8c64a', accent: '#ffd23a', props: ['roundtable', 'lanternred', 'fishtank', 'wok', 'counter', 'painting'], hide: 'closet', skin: 'chef', style: { wall: 'plaster', floor: 'wood', damage: 0.25 }, floors: 3, items: ['loot', 'doc', 'loot'], labels: { doc: ['🍜', 'Bami'] } },
+  hutong: { wall: '#a8a090', wall2: '#948c7c', floor: '#5a5448', trim: '#7a2a22', accent: '#e8b03a', props: ['lanternred', 'screen', 'cabinet', 'bed', 'teapot', 'window'], hide: 'closet', skin: 'blue', style: { wall: 'brick', floor: 'stone', damage: 0.45 }, floors: 3, items: ['loot', 'doc', 'loot'] },
+  apartment: { wall: '#cfc8b8', wall2: '#bcb4a2', floor: '#6a5a4a', trim: '#4a4238', accent: '#e8a43a', props: ['sofa', 'tv', 'fridge', 'plant', 'cabinet', 'window'], hide: 'closet', skin: 'blue', style: { wall: 'plaster', floor: 'wood', damage: 0.5 }, floors: 4, items: ['doc', 'loot', 'loot'] },
+  teashop: { wall: '#b8894a', wall2: '#a27638', floor: '#5a3e24', trim: '#3f2a16', accent: '#e8503a', props: ['teashelf', 'teapot', 'counter', 'lanternred', 'plant', 'crate'], hide: 'crate', skin: 'green', style: { wall: 'wood', floor: 'planks', damage: 0.3 }, floors: 3, items: ['loot', 'doc', 'loot'] },
+  electronics: { wall: '#2a3040', wall2: '#222838', floor: '#15181f', trim: '#4ac8ff', accent: '#4ac8ff', props: ['tvwall', 'laptopbench', 'server', 'pc', 'lamp', 'shelf'], hide: 'server', skin: 'white', style: { wall: 'panel', floor: 'tile', damage: 0.05 }, floors: 3, items: ['hack', 'loot', 'doc'] },
+  buddley: { wall: '#9a9a8a', wall2: '#85857a', floor: '#4a4a44', trim: '#ffb03a', accent: '#ffb03a', props: ['buddleybox', 'pallet', 'shelf', 'crate', 'barrel', 'lamp'], hide: 'buddleybox', skin: 'orange', style: { wall: 'concrete', floor: 'concrete', damage: 0.5 }, floors: 4, items: ['loot', 'doc', 'loot', 'hack'], labels: { loot: ['📦', 'Dozen'], doc: ['📄', 'Facturen'] } },
+  hq: { wall: '#b9c4d2', wall2: '#a4b1c2', floor: '#56657a', trim: '#33445c', accent: '#59a8ff', props: ['bossdesk', 'pc', 'shelf', 'plant', 'window', 'clock'], hide: 'plant', skin: 'boss', style: { wall: 'plaster', floor: 'carpet', damage: 0.1 }, floors: 4, items: ['loot'], labels: { loot: ['💰', 'Je zak'] } },
+  suburb: { wall: '#d6d0c0', wall2: '#c4bca8', floor: '#6a5a48', trim: '#4a4238', accent: '#e8a43a', props: ['sofa', 'tv', 'plant', 'cabinet', 'lamp', 'window', 'fridge'], hide: 'closet', skin: 'blue', style: { wall: 'paper', floor: 'wood', damage: 0.2 }, floors: 3, items: ['loot', 'doc', 'loot'] },
+  police: { wall: '#8aa0c4', wall2: '#788fb6', floor: '#3f4f6e', trim: '#26304a', accent: '#4a8aff', props: ['desk', 'pc', 'bars', 'cabinet', 'clock', 'board'], hide: 'closet', skin: 'police', style: { wall: 'concrete', floor: 'tile', damage: 0.3 }, floors: 3, items: ['loot'], labels: { loot: ['🎒', 'Je spullen'] } },
+  atelier: { wall: '#a08a78', wall2: '#8e7a6a', floor: '#4a3a30', trim: '#6a2f4a', accent: '#d65aa8', props: ['mannequin', 'sewing', 'fabricroll', 'shelf', 'lamp', 'window'], hide: 'mannequin', skin: 'purple', style: { wall: 'plaster', floor: 'planks', damage: 0.85 }, floors: 3, items: ['loot'], labels: { loot: ['💰', 'Je zak'] } },
+  bankchina: { wall: '#c8a878', wall2: '#b49464', floor: '#4a2a22', trim: '#a8322a', accent: '#ffd23a', props: ['counter', 'vaultdoor', 'deposit', 'pillar', 'painting', 'lanternred'], hide: 'plant', skin: 'gold', style: { wall: 'stone', floor: 'tile', damage: 0.1 }, floors: 4, items: ['vault', 'loot', 'loot', 'doc', 'hack'], labels: { vault: ['🔓', 'Kluis openen'] } },
+  wreck: { wall: '#8a9a98', wall2: '#778785', floor: '#3a4440', trim: '#c4452e', accent: '#ffb03a', props: ['seats', 'luggage', 'pipes', 'lamp', 'crate'], hide: 'luggage', skin: 'orange', style: { wall: 'metal', floor: 'concrete', damage: 0.9 }, floors: 3, items: ['loot', 'loot', 'doc'], labels: { loot: ['💰', 'Geldzakken'] } },
+  resort: { wall: '#e8d8b0', wall2: '#d8c698', floor: '#a8896a', trim: '#2f8a8a', accent: '#ff7a5a', props: ['bed', 'palmplant', 'lamp', 'window', 'table', 'plant'], hide: 'palmplant', skin: 'white', style: { wall: 'plaster', floor: 'tile', damage: 0.2 }, floors: 4, items: ['loot', 'doc', 'loot', 'hack'] },
+  ship: { wall: '#6a4a2a', wall2: '#58391e', floor: '#3a2814', trim: '#241608', accent: '#e8c64a', props: ['barrel', 'chest', 'cannon', 'lantern', 'crate', 'helm'], hide: 'barrel', skin: 'knight', style: { wall: 'wood', floor: 'planks', damage: 0.5 }, floors: 3, items: ['loot', 'doc', 'loot', 'loot'], labels: { loot: ['🪙', 'Schatten'] } },
+  airport: { wall: '#a8c4e0', wall2: '#93b1d0', floor: '#4a6080', trim: '#2a4060', accent: '#ffd23a', props: ['luggage', 'desk', 'board', 'window', 'clock', 'plant'], hide: 'luggage', skin: 'police', style: { wall: 'plaster', floor: 'tile', damage: 0.1 }, floors: 4, items: ['doc', 'loot', 'hack', 'loot'], labels: { doc: ['🎫', 'Tickets'] } },
+  castle: { wall: '#9a9488', wall2: '#85807a', floor: '#4a443a', trim: '#2f2b24', accent: '#e8c64a', props: ['pillar', 'banner', 'armor', 'torchwall', 'statue', 'painting'], hide: 'armor', skin: 'knight', style: { wall: 'stone', floor: 'stone', damage: 0.6 }, floors: 4, items: ['loot', 'doc', 'hack', 'loot', 'vault'], labels: { vault: ['🔓', 'Schatkamer'] } },
+};
+export const THEMES = LEVELS.map((m) => ({ ...TH[m.theme], key: m.theme, name: m.name, sub: m.sub }));
 
 const rng = (seed) => {
   let a = seed >>> 0;
@@ -43,15 +47,13 @@ const rng = (seed) => {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 };
-const COLORS = ['#e84a4a', '#3b8cff', '#41d97a'];
-const LABEL = { '#e84a4a': 'rode', '#3b8cff': 'blauwe', '#41d97a': 'groene' };
-export const colorName = (c) => LABEL[c] || '';
 
 export function makeLevel(n, variant = 0) {
   const R = rng(n * 9973 + variant * 131 + 7);
   const T = THEMES[n - 1];
   const d = (n - 1) / 24;
-  const floors = n <= 2 ? 2 : n <= 8 ? 3 : n <= 14 ? (R() < 0.5 ? 3 : 4) : 4;
+  const meta = LEVELS[n - 1], escape = !!meta.escape;
+  const floors = T.floors || (n <= 2 ? 2 : n <= 8 ? 3 : 4);
   const rnd = (a, b) => a + R() * (b - a);
   const pick = (arr) => arr[(R() * arr.length) | 0];
 
@@ -80,9 +82,10 @@ export function makeLevel(n, variant = 0) {
   const take = (f, x, gap = 1.4) => occ[f].push([x, gap]);
 
   // ---- vaste punten: begin en uitgang
-  const start = { f: 0, x: 3 };
-  const exit = { f: floors - 1, x: 28 };
-  take(0, 3, 2.5); take(exit.f, exit.x, 2.5);
+  // een ontsnaplevel begint bovenin en eindigt beneden
+  const start = escape ? { f: floors - 1, x: 3 } : { f: 0, x: 3 };
+  const exit = escape ? { f: 0, x: 28 } : { f: floors - 1, x: 28 };
+  take(start.f, 3, 2.5); take(exit.f, exit.x, 2.5);
 
   // ---- ladders, trappen en liften tussen de verdiepingen
   const ladders = [], stairs = [];
@@ -98,8 +101,11 @@ export function makeLevel(n, variant = 0) {
         if (x === null) continue;
         ladders.push({ f, x }); take(f, x, 2.2); take(f + 1, x, 2.2);
       } else {
-        const xl = spot(f, zone[0], zone[1], 2.2), xu = spot(f + 1, zone[0], zone[1], 2.2);
-        if (xl === null || xu === null) continue;
+        // de deuren van een trap of lift zitten recht boven elkaar
+        let xl = null;
+        for (let tr = 0; tr < 60 && xl === null; tr++) { const cx = Math.round(rnd(zone[0], zone[1])); if (free(f, cx, 2.2) && free(f + 1, cx, 2.2)) xl = cx; }
+        if (xl === null) continue;
+        const xu = xl;
         const id = sid++;
         stairs.push({ id, f, x: xl, dir: 'up', to: { f: f + 1, x: xu }, kind });
         stairs.push({ id, f: f + 1, x: xu, dir: 'down', to: { f, x: xl }, kind });
@@ -115,13 +121,13 @@ export function makeLevel(n, variant = 0) {
 
   // ---- buit en opdrachten
   const items = [];
-  const reqCount = 1 + Math.floor(d * 5.5) + (n >= 20 ? 0 : 0);
-  const types = ['doc', 'loot', 'doc'].concat(n >= 6 ? ['hack'] : []);
+  const types = T.items || ['doc', 'loot', 'doc'];
+  const reqCount = types.length;
   for (let i = 0; i < reqCount; i++) {
     const f = floors > 1 && i > 0 ? (R() < 0.7 ? 1 + ((R() * (floors - 1)) | 0) : 0) : (floors > 2 ? 1 : floors - 1);
     const x = spot(f, 3, 29, 1.8);
     if (x === null) continue;
-    items.push({ id: items.length, type: i === 0 && n === 1 ? 'loot' : types[i % types.length], f, x, req: true });
+    items.push({ id: items.length, type: types[i % types.length], f, x, req: true });
     take(f, x, 1.8);
   }
   if (!items.length) items.push({ id: 0, type: 'loot', f: 1, x: 20, req: true });
@@ -141,17 +147,17 @@ export function makeLevel(n, variant = 0) {
     }
     const ls = lasers.find((l) => l.needSwitch);
     if (ls) { // de schakelaar staat ergens eerder op de weg, bij het begin van het gebouw
-      const sx = spot(0, 5, 14, 1.8);
-      if (sx === null) ls.needSwitch = false; else { items.push({ id: items.length, type: 'switch', f: 0, x: sx, req: true }); take(0, sx, 1.8); }
+      const sx = spot(start.f, 5, 14, 1.8);
+      if (sx === null) ls.needSwitch = false; else { items.push({ id: items.length, type: 'switch', f: start.f, x: sx, req: true }); take(start.f, sx, 1.8); }
     }
   }
 
-  // ---- sloten en sleutels: een deur gaat pas open met de sleutel van dezelfde kleur
+  // ---- sloten: een slot breek je open door spatie ingedrukt te houden bij de deur (kost tijd, en je staat dan stil in het zicht)
   const nodes = (lockedSet) => {
     // welke kamers zijn te bereiken vanaf het begin?
     const id = (f, i) => f * 10 + i;
-    const seen = new Set([id(0, roomOf(0, start.x))]);
-    const q = [[0, roomOf(0, start.x)]];
+    const seen = new Set([id(start.f, roomOf(start.f, start.x))]);
+    const q = [[start.f, roomOf(start.f, start.x)]];
     while (q.length) {
       const [f, i] = q.pop();
       const link = (g, j) => { const k = id(g, j); if (!seen.has(k)) { seen.add(k); q.push([g, j]); } };
@@ -166,37 +172,31 @@ export function makeLevel(n, variant = 0) {
     }
     return { has: (f, x) => seen.has(id(f, roomOf(f, x))), seen };
   };
-  const locks = n >= 5 ? (n >= 14 ? 2 : 1) : 0;
+  const locks = n >= 3 ? (n >= 18 ? 3 : n >= 9 ? 2 : 1) : 0;
   const lockedSet = new Set();
   for (let c = 0; c < locks; c++) {
-    let done = false;
-    for (let t = 0; t < 30 && !done; t++) {
+    for (let t = 0; t < 30; t++) {
       const w = pick(walls.filter((x) => !x.lock));
-      const trial = new Set([...lockedSet, w]);
-      const reach = nodes(trial);
+      if (!w) break;
+      const reach = nodes(new Set([...lockedSet, w]));
+      // het slot moet iets afsluiten wat je nodig hebt (een opdracht of de uitgang)
       const far = items.filter((i) => i.req && !reach.has(i.f, i.x)).length + (reach.has(exit.f, exit.x) ? 0 : 1);
       if (!far) continue;
-      const allLocked = nodes(new Set([...lockedSet, ...walls.filter((x) => x.lock), w]));
-      const kf = (R() * floors) | 0;
-      const kx = spot(kf, 3, 29, 1.8);
-      if (kx === null || !allLocked.has(kf, kx)) continue;
-      w.lock = COLORS[c];
+      w.lock = true;
       lockedSet.add(w);
-      items.push({ id: items.length, type: 'key', color: COLORS[c], f: kf, x: kx, req: false });
-      take(kf, kx, 1.8);
-      done = true;
+      break;
     }
   }
 
   // ---- bewakers
   const guards = [];
-  const startRoom = { f: 0, x0: 1, x1: 10 };
+  const startRoom = { f: start.f, x0: 1, x1: 10 };
   const addGuard = (g) => guards.push({ id: guards.length, skin: T.skin, phase: rnd(0, 8), ...g });
   const roomFor = (avoidStart = true) => {
     for (let t = 0; t < 40; t++) {
       const f = (R() * floors) | 0;
       const r = pick(rooms[f]);
-      if (avoidStart && f === 0 && r.x0 <= startRoom.x1 && r.x1 >= 1 && r.x0 < 8) continue;
+      if (avoidStart && f === start.f && r.x0 <= startRoom.x1 && r.x1 >= 1 && r.x0 < 8) continue;
       return { f, r, i: rooms[f].indexOf(r) };
     }
     return { f: floors - 1, r: rooms[floors - 1][1], i: 1 };
@@ -258,7 +258,7 @@ export function makeLevel(n, variant = 0) {
   }
 
   const V = VARIANTS[n];
-  const level = { n, theme: T, floors, start, exit, rooms, walls, ladders, stairs, items, lasers, guards, hides, decor, limit: V ? Math.ceil(V.base * (2.7 - 1.3 * d) + 10) : 180, base: V ? V.base : 0 };
+  const level = { n, escape, theme: T, floors, start, exit, rooms, walls, ladders, stairs, items, lasers, guards, hides, decor, limit: V ? Math.ceil(V.base * (2.7 - 1.3 * d) + 10) : 180, base: V ? V.base : 0 };
   return level;
 }
 

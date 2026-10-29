@@ -56,3 +56,12 @@ button.big:active, button.small:active { transform: translateY(3px); box-shadow:
 #toast.on { opacity: 1; transform: translateX(-50%); }
 @media (max-width: 700px) { #hud { padding-left: 124px; font-size: 14px; gap: 6px; flex-wrap: wrap; } .levels { gap: 7px; } .lvl { min-height: 66px; } .lvl b { font-size: 22px; } .lvl small { display: none; } .screen { padding-top: 54px; } }
 @media (max-height: 560px) { .screen:not(.playscr) { padding-top: 54px; } .sub { display: none; } .title img { max-height: 18vh; } }
+
+.mapscr, .cinescr { padding: 0; gap: 0; justify-content: center; background: #060b08; }
+#mapStage { position: absolute; inset: 0; display: grid; place-items: center; }
+#mapcv, #cinecv { display: block; background: #000; touch-action: manipulation; }
+.fallback { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 14px; overflow: auto; max-height: 100%; }
+.fallback h2 { margin: 0; }
+.mapback { position: absolute; left: 124px; top: 8px; z-index: 5; background: #000a; }
+.hudlogo { height: 28px; width: auto; display: block; }
+@media (max-width: 700px) { .mapback { left: 124px; top: 6px; } }
