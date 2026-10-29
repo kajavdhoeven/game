@@ -82,7 +82,7 @@ export const DEFAULT_GAMES = [
   {
     id: 'te-un-robber', title: 'Te-Un the Robber', category: 'actie', tags: [],
     tagline: 'Sluip door 25 gebouwen, pak de buit en ontsnap!',
-    description: 'Sluip als dief door 25 gebouwen: een huis, een bank, een museum, een politiebureau en nog veel meer. Ontwijk bewakingsrobots, camera's, drones en lasers, pak de buit, hack computers, gebruik ladders, trappen en liften en ontsnap voordat de tijd om is. Elk level is moeilijker, met meer opdrachten, een kortere tijd en slimmere bewakers.',
+    description: 'Sluip als dief door 25 gebouwen: een huis, een bank, een museum, een politiebureau en nog veel meer. Ontwijk bewakingsrobots, camera\'s, drones en lasers, pak de buit, hack computers, gebruik ladders, trappen en liften en ontsnap voordat de tijd om is. Elk level is moeilijker, met meer opdrachten, een kortere tijd en slimmere bewakers.',
     controls: [
       ['←  →  of  A D', 'Lopen'],
       ['↑  ↓', 'Ladder, trap of lift nemen'],
