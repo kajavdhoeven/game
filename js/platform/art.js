@@ -65,6 +65,7 @@ export function avatarSVG(kind = 'teun') {
   if (kind === 'schaver') return schaverAvatar();
   if (kind === 'lambo') return lamboAvatar();
   if (kind === 'diamant') return diamantAvatar();
+  if (kind === 'zonnebril') return zonnebrilAvatar();
   if (kind === 'tovenaar') return tovenaarAvatar();
   if (kind === 'tikker') return tikkerAvatar();
   if (kind === 'ultragoud') return ultraGoudAvatar();
@@ -200,6 +201,18 @@ function ultraGoudAvatar() {
 </svg></div>`;
 }
 
+// Te-Un met een zonnebril (voor iedereen die is ingelogd)
+function zonnebrilAvatar() {
+  return `<div class="av-face" style="background:linear-gradient(160deg,#fff6b8,#ffb43c)">${teunSVG({ crop: 'face' })}
+<svg class="avsvg" style="position:absolute;inset:0" viewBox="24 -10 152 168" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Te-Un met zonnebril">
+<g stroke="#ffe27a" stroke-width="4" stroke-linecap="round" opacity=".9"><path d="M30 2 L44 14M26 26 L42 30M52 -6 L56 10M160 6 L146 16"/></g>
+<circle cx="32" cy="10" r="12" fill="#fff3a0" opacity=".85"/>
+<g fill="#0c0d12" stroke="#0b0b0d" stroke-width="5"><ellipse cx="80" cy="126" rx="19" ry="16"/><ellipse cx="120" cy="126" rx="19" ry="16"/></g>
+<path d="M99 124 L101 124" stroke="#0b0b0d" stroke-width="5"/>
+<path d="M68 118 L78 112M108 118 L118 112" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity=".6"/>
+</svg></div>`;
+}
+
 // Te-Un Racer: motorhelm met klep en bril
 function racerAvatar() {
   return `<svg class="avsvg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Te-Un Racer">
@@ -219,6 +232,7 @@ function racerAvatar() {
 const SURFERS_ALL = ['wheelchair', 'cow', 'train', 'skin_conductor', 'skin_photo', 'board_cow'];
 export const AVATARS = [
   { id: 'teun', name: 'Te-Un', desc: 'De kabouter zelf' },
+  { id: 'zonnebril', name: 'Te-Un met zonnebril', desc: 'Te-Un met een coole zonnebril. Voor iedereen die is ingelogd.' },
   { id: 'train', name: 'NS-trein', desc: 'Een gele trein', unlock: { game: 'te-un-surfers', how: 'Koop alles in de winkel van Te-Un Surfers', check: (d) => SURFERS_ALL.every((k) => d.owned && d.owned[k]) } },
   { id: 'teun50k', name: 'Te-Un 50K', desc: 'Te-Un met gouden medaille', unlock: { game: 'te-un-surfers', how: 'Haal 50.000 punten in Te-Un Surfers', check: (d) => (d.best || 0) >= 50000 } },
   { id: 'puzzle', name: 'Puzzel-Te-Un', desc: 'Te-Un met puzzelstukje', unlock: { game: 'te-un-puzzel', how: 'Maak alle 4 de levels van Te-Un Puzzel af binnen de tijd (30 sec, 1 min, 2,5 min en 10 min)', check: (d) => [1, 2, 3, 4].every((n) => d.fast && d.fast[n]) } },

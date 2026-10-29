@@ -85,7 +85,8 @@ export class Leaderboard {
         if (playing && prev && prev.playing) await this.addPlaytime(Math.min(45, (now - prev.t) / 1000), auth ? cleanName(b.name) : 'Gasten', prev.playing);
         this.online.set(cid, {
           t: now, auth, playing, since: prev && prev.auth === auth ? prev.since : now,
-          name: auth ? cleanName(b.name) : '', avatar: auth ? String(b.avatar || '').replace(/[^\w-]/g, '').slice(0, 20) : '',
+          uid: auth && /^[\w-]{8,64}$/.test(String(b.uid || '')) ? String(b.uid) : (prev && prev.uid) || '',
+          name: auth ? (b.name ? cleanName(b.name) : (prev && prev.name) || '') : '', avatar: auth ? String(b.avatar || '').replace(/[^\w-]/g, '').slice(0, 20) : '',
           path: String(b.path || '/').replace(/[^\w\-/]/g, '').slice(0, 60),
         });
       }
@@ -104,7 +105,7 @@ export class Leaderboard {
       const users = [];
       for (const [k, v] of this.online) {
         if (now - v.t > 75000) { this.online.delete(k); continue; }
-        if (v.auth) users.push({ name: v.name || 'Naamloos', avatar: v.avatar || 'teun', path: v.path || '/', since: v.since || v.t, seen: v.t });
+        if (v.auth) users.push({ uid: v.uid || '', name: v.name || '', avatar: v.avatar || 'teun', path: v.path || '/', since: v.since || v.t, seen: v.t });
       }
       users.sort((a, b) => a.since - b.since);
       const guests = [...this.online.values()].filter((v) => !v.auth).length;

@@ -140,7 +140,7 @@ export async function renderGame(app, id) {
     if (!d && app.state.user) d = await api.getProgress(g.id).catch(() => null);
     box.hidden = false;
     box.innerHTML = `<h3>Profielfoto's vrijspelen</h3>${list.map((a) => {
-      const open = avatarUnlocked(a, d);
+      const open = !!(app.state.profile && (app.state.profile.is_owner || app.state.profile.is_admin)) || avatarUnlocked(a, d);
       return `<div class="reward ${open ? 'open' : ''}"><div class="avatar sm">${avatarSVG(a.id)}</div><div><b>${esc(a.name)}${open ? ' · vrijgespeeld' : ''}</b><small>${esc(a.unlock.how)}</small></div></div>`;
     }).join('')}`;
   };

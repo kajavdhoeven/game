@@ -157,6 +157,10 @@ export async function renderAdmin(app) {
         if (!r.ok) throw new Error('Geen verbinding met de server.');
         const o = await r.json();
         if (!Array.isArray(o.users)) throw new Error('De server (Worker) is nog niet bijgewerkt. Zodra de nieuwste versie live staat, werkt deze pagina.');
+        // de gebruikersnamen en profielfoto's komen uit de gebruikerslijst, zodat ze altijd kloppen
+        if (!onlineTab.users || Date.now() - onlineTab.at > 60000) { onlineTab.users = await api.adminUsers().catch(() => onlineTab.users || []); onlineTab.at = Date.now(); }
+        const byId = new Map((onlineTab.users || []).map((u) => [u.id, u]));
+        o.users.forEach((u) => { const p = byId.get(u.uid); if (p) { u.name = p.username; u.avatar = p.avatar; } if (!u.name) u.name = 'Onbekend'; });
         box.innerHTML = `<div class="ad-kpis">
             <div class="ad-kpi k5"><i>🟢</i><small>Nu op de site</small><b>${fmt(o.total)}</b><span>in totaal</span></div>
             <div class="ad-kpi k1"><i>👤</i><small>Ingelogd</small><b>${fmt(o.users.length)}</b><span>met een account</span></div>

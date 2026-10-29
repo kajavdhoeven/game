@@ -29,7 +29,7 @@ export async function renderProfile(app) {
     AVATARS.forEach((a) => { if (a.unlock) (a.unlock.games || [a.unlock.game]).forEach((i) => ids.add(i)); });
     for (const gid of ids) progress[gid] = await api.getProgress(gid).catch(() => null);
     AVATARS.forEach((a) => {
-      const open = avatarUnlocked(a, a.unlock && (a.unlock.games ? progress : progress[a.unlock.game]));
+      const open = !!(profile && (profile.is_owner || profile.is_admin)) || avatarUnlocked(a, a.unlock && (a.unlock.games ? progress : progress[a.unlock.game])); // beheerders hebben alle profielfoto's
       const b = el(`<button class="av-opt ${profile && profile.avatar === a.id ? 'on' : ''} ${open ? '' : 'locked'}" data-id="${a.id}"><div class="avatar lg">${avatarSVG(a.id)}</div><b>${esc(a.name)}${open ? '' : ' 🔒'}</b><small>${!a.unlock ? esc(a.desc) : open ? 'Verdiend met: ' + esc(a.unlock.how) : 'Zo krijg je hem: ' + esc(a.unlock.how)}</small></button>`);
       b.addEventListener('click', async () => {
         if (!open) return toast('Nog vergrendeld. ' + a.unlock.how + '.');

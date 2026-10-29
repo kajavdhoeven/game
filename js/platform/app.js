@@ -351,7 +351,7 @@ async function boot() {
   $('#boot').classList.add('done');
   setTimeout(() => $('#boot').remove(), 600);
   maybeFirstTour();
-  startPresence(() => ({ auth: !!state.user, name: state.user && state.profile ? state.profile.username : '', avatar: state.user && state.profile ? state.profile.avatar : '' }));
+  startPresence(() => ({ auth: !!state.user, uid: state.user ? state.user.id : '', name: state.user && state.profile ? state.profile.username : '', avatar: state.user && state.profile ? state.profile.avatar : '' }));
 }
 
 boot();
