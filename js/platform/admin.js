@@ -144,6 +144,7 @@ export async function renderAdmin(app) {
       if (parts[0] === 'g') { const g = (app.state.games || []).find((x) => x.id === parts[1]); return g ? `Speelt of bekijkt ${g.title}` : 'Bekijkt een game'; }
       return ({ games: 'Alle games', favorites: 'Favorieten', profile: 'Eigen profiel', search: 'Zoeken', admin: 'Beheer' })[parts[0]] || 'Op de site';
     };
+    const dur = (s) => { s = Math.max(0, Math.floor(s)); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
     const since = (t) => { const m = Math.max(0, Math.round((Date.now() - t) / 60000)); return m < 1 ? 'net online' : m < 60 ? `${m} min online` : `${Math.floor(m / 60)} uur ${m % 60} min online`; };
     main.innerHTML = `${head('Nu online', 'Wie er op dit moment op de site is. Deze pagina ververst zichzelf elke 10 seconden.', '<button class="ad-btn" id="onRefresh">Vernieuwen</button>')}${demo}
       <div id="onlinePage"><div class="ad-load">Laden...</div></div>`;
@@ -161,13 +162,17 @@ export async function renderAdmin(app) {
         if (!onlineTab.users || Date.now() - onlineTab.at > 60000) { onlineTab.users = await api.adminUsers().catch(() => onlineTab.users || []); onlineTab.at = Date.now(); }
         const byId = new Map((onlineTab.users || []).map((u) => [u.id, u]));
         o.users.forEach((u) => { const p = byId.get(u.uid); if (p) { u.name = p.username; u.avatar = p.avatar; } if (!u.name) u.name = 'Onbekend'; });
+        const gname = (id) => { const g = (app.state.games || []).find((x) => x.id === id); return g ? g.title : id; };
+        onlineTab.fetchedAt = Date.now();
         box.innerHTML = `<div class="ad-kpis">
             <div class="ad-kpi k5"><i>🟢</i><small>Nu op de site</small><b>${fmt(o.total)}</b><span>in totaal</span></div>
             <div class="ad-kpi k1"><i>👤</i><small>Ingelogd</small><b>${fmt(o.users.length)}</b><span>met een account</span></div>
             <div class="ad-kpi k2"><i>👻</i><small>Gasten</small><b>${fmt(o.guests)}</b><span>niet ingelogd</span></div>
+            <div class="ad-kpi k3"><i>▶️</i><small>Spelen nu</small><b>${fmt(o.playingNow || 0)}</b><span>met een lopende timer</span></div>
           </div>
           <section class="ad-card"><h3>Ingelogde gebruikers</h3>
-            ${o.users.length ? `<ul class="ad-list on-list">${o.users.map((u) => `<li><span class="ad-av">${avatarSVG(u.avatar)}</span><b>${esc(u.name)}</b><small>${esc(where(u.path))}</small><small class="on-since">${since(u.since)}</small></li>`).join('')}</ul>` : '<p class="ad-muted">Er is nu niemand ingelogd.</p>'}
+            ${o.users.length ? `<ul class="ad-list on-list">${o.users.map((u) => `<li><span class="ad-av">${avatarSVG(u.avatar)}</span><b>${esc(u.name)}</b><small>${u.playing ? `<span class="on-play" data-sess="${u.sess}">&#9654; ${esc(gname(u.playing))} <em>${dur(u.sess)}</em></span>` : esc(where(u.path))}</small><small class="on-since">${since(u.since)}</small></li>`).join('')}</ul>` : '<p class="ad-muted">Er is nu niemand ingelogd.</p>'}
+            ${o.guestsPlaying ? `<p class="ad-muted" style="margin-top:10px">En ${fmt(o.guestsPlaying)} ${o.guestsPlaying === 1 ? 'gast speelt' : 'gasten spelen'} nu.</p>` : ''}
           </section>`;
       } catch (e) {
         box.innerHTML = `<div class="ad-note">${esc(configured ? e.message : 'Alleen op de echte site te zien: hier in demo-modus is er geen server die bijhoudt wie er online is.')}</div>`;
@@ -175,8 +180,14 @@ export async function renderAdmin(app) {
     };
     main.querySelector('#onRefresh').onclick = paint;
     await paint();
-    clearInterval(onlineTab.timer);
+    clearInterval(onlineTab.timer); clearInterval(onlineTab.tick);
     onlineTab.timer = setInterval(paint, 10000);
+    // de timers lopen elke seconde door, ook tussen twee verversingen in
+    onlineTab.tick = setInterval(() => {
+      if (!main.querySelector('#onlinePage')) { clearInterval(onlineTab.tick); return; }
+      const add = (Date.now() - (onlineTab.fetchedAt || Date.now())) / 1000;
+      main.querySelectorAll('.on-play').forEach((n) => { const e = n.querySelector('em'); if (e) e.textContent = dur(+n.dataset.sess + add); });
+    }, 1000);
   }
 
   // speeltijd per dag, voor iedereen of voor één speler, een hele maand lang

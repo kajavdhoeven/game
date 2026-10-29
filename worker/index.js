@@ -25,38 +25,60 @@ export class Leaderboard {
     this.online = new Map(); // wie er nu op de site is: bezoeker-id -> { t, auth }
   }
 
-  // controleert met het Supabase-token of de aanvrager beheerder is met het recht "gebruikers bekijken" (en onthoudt dat even)
-  async mayViewUsers(request) {
+  // wie is dit? Vraagt het Supabase-token na (en onthoudt het antwoord even). Geeft { id, headers } of null.
+  async userFromToken(request) {
     const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
     const env = this.env;
-    if (!token || token.length > 4000 || !env || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return false;
-    this.okTokens = this.okTokens || new Map();
-    const c = this.okTokens.get(token);
+    if (!token || token.length > 4000 || !env || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return null;
+    this.tokens = this.tokens || new Map();
+    const c = this.tokens.get(token);
+    if (c && Date.now() - c.t < 60000) return c.u;
+    let u = null;
+    try {
+      const h = { apikey: env.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` };
+      const r = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, { headers: h });
+      if (r.ok) { const { id } = await r.json(); if (id) u = { id: String(id), headers: h }; }
+    } catch (e) { u = null; }
+    if (this.tokens.size > 100) this.tokens.clear();
+    this.tokens.set(token, { u, t: Date.now() });
+    return u;
+  }
+
+  // is de aanvrager beheerder met het recht "gebruikers bekijken"?
+  async mayViewUsers(request) {
+    const u = await this.userFromToken(request);
+    if (!u) return false;
+    this.okAdmin = this.okAdmin || new Map();
+    const c = this.okAdmin.get(u.id);
     if (c && Date.now() - c.t < 60000) return c.ok;
     let ok = false;
     try {
-      const h = { apikey: env.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` };
-      const u = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, { headers: h });
-      if (u.ok) {
-        const { id } = await u.json();
-        const p = await fetch(`${env.SUPABASE_URL}/rest/v1/profiles?select=is_admin,is_owner,permissions&id=eq.${encodeURIComponent(id)}`, { headers: h });
-        const r = p.ok ? (await p.json())[0] : null;
-        ok = !!r && (r.is_owner === true || (r.is_admin === true && !!r.permissions && r.permissions.view_users === true));
-      }
+      const p = await fetch(`${this.env.SUPABASE_URL}/rest/v1/profiles?select=is_admin,is_owner,permissions&id=eq.${encodeURIComponent(u.id)}`, { headers: u.headers });
+      const r = p.ok ? (await p.json())[0] : null;
+      ok = !!r && (r.is_owner === true || (r.is_admin === true && !!r.permissions && r.permissions.view_users === true));
     } catch (e) { ok = false; }
-    if (this.okTokens.size > 50) this.okTokens.clear();
-    this.okTokens.set(token, { ok, t: Date.now() });
+    if (this.okAdmin.size > 100) this.okAdmin.clear();
+    this.okAdmin.set(u.id, { ok, t: Date.now() });
     return ok;
   }
 
   // telt speeltijd op per dag (Nederlandse tijd), per speler en per game
-  async addPlaytime(sec, who, game) {
+  async addPlaytime(sec, who, game, uid) {
     if (!(sec > 0)) return;
     const day = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Amsterdam' }).format(new Date());
     const key = `pt:${day}`;
     const d = (await this.state.storage.get(key)) || { t: 0, u: {}, g: {} };
     d.t += sec; d.u[who] = (d.u[who] || 0) + sec; d.g[game] = (d.g[game] || 0) + sec;
     await this.state.storage.put(key, d);
+    // en per account (voor het profiel van de speler zelf): totaal, per game en de laatste 62 dagen
+    if (uid) {
+      const k2 = `pu:${uid}`;
+      const p = (await this.state.storage.get(k2)) || { t: 0, g: {}, d: {} };
+      p.t += sec; p.g[game] = (p.g[game] || 0) + sec; p.d[day] = (p.d[day] || 0) + sec;
+      const days = Object.keys(p.d).sort();
+      while (days.length > 62) delete p.d[days.shift()];
+      await this.state.storage.put(k2, p);
+    }
     if (Math.random() < 0.01) { // af en toe oude dagen (ouder dan 400 dagen) opruimen
       const old = await this.state.storage.list({ prefix: 'pt:', end: `pt:${new Date(Date.now() - 400 * 864e5).toISOString().slice(0, 10)}` });
       for (const k of old.keys()) await this.state.storage.delete(k);
@@ -86,10 +108,10 @@ export class Leaderboard {
         if (pl && /^[\w-]{2,40}$/.test(String(pl.game || ''))) {
           const since = (now - ((prev && prev.playT) || now - 30000)) / 1000;
           const sec = Math.min(30, Math.floor(+pl.sec || 0), since + 3);
-          if (sec > 0) await this.addPlaytime(sec, auth ? cleanName(b.name || (prev && prev.name)) : 'Gasten', String(pl.game));
+          if (sec > 0) await this.addPlaytime(sec, auth ? cleanName(b.name || (prev && prev.name)) : 'Gasten', String(pl.game), auth && /^[\w-]{8,64}$/.test(String(b.uid || '')) ? String(b.uid) : '');
         }
         this.online.set(cid, {
-          t: now, playT: pl && pl.game ? now : prev && prev.playT, auth, playing, since: prev && prev.auth === auth ? prev.since : now,
+          t: now, playT: pl && pl.game ? now : prev && prev.playT, sess: playing ? Math.min(86400, Math.max(0, Math.floor(+b.sess || 0))) : 0, auth, playing, since: prev && prev.auth === auth ? prev.since : now,
           uid: auth && /^[\w-]{8,64}$/.test(String(b.uid || '')) ? String(b.uid) : (prev && prev.uid) || '',
           name: auth ? (b.name ? cleanName(b.name) : (prev && prev.name) || '') : '', avatar: auth ? String(b.avatar || '').replace(/[^\w-]/g, '').slice(0, 20) : '',
           path: String(b.path || '/').replace(/[^\w\-/]/g, '').slice(0, 60),
@@ -110,11 +132,21 @@ export class Leaderboard {
       const users = [];
       for (const [k, v] of this.online) {
         if (now - v.t > 75000) { this.online.delete(k); continue; }
-        if (v.auth) users.push({ uid: v.uid || '', name: v.name || '', avatar: v.avatar || 'teun', path: v.path || '/', since: v.since || v.t, seen: v.t });
+        if (v.auth) users.push({ uid: v.uid || '', name: v.name || '', avatar: v.avatar || 'teun', path: v.path || '/', since: v.since || v.t, seen: v.t, playing: v.playing || '', sess: v.playing ? v.sess || 0 : 0 });
       }
       users.sort((a, b) => a.since - b.since);
-      const guests = [...this.online.values()].filter((v) => !v.auth).length;
-      return json({ users, guests, total: users.length + guests, at: now });
+      const gl = [...this.online.values()].filter((v) => !v.auth);
+      const playingNow = [...this.online.values()].filter((v) => v.playing).length;
+      return json({ users, guests: gl.length, guestsPlaying: gl.filter((v) => v.playing).length, playingNow, total: users.length + gl.length, at: now });
+    }
+    // je eigen speeltijd (voor in je profiel): alleen jouw eigen gegevens, na controle van je token
+    if (url.pathname === '/api/playtime/me' && request.method === 'GET') {
+      const u = await this.userFromToken(request);
+      if (!u) return json({ error: 'niet ingelogd' }, 401);
+      const p = (await this.state.storage.get(`pu:${u.id}`)) || { t: 0, g: {}, d: {} };
+      const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Amsterdam' }).format(new Date());
+      const month = Object.entries(p.d || {}).filter(([k]) => k.startsWith(today.slice(0, 7))).reduce((a, [, v]) => a + v, 0);
+      return json({ total: Math.round(p.t || 0), today: Math.round((p.d || {})[today] || 0), month: Math.round(month), games: Object.fromEntries(Object.entries(p.g || {}).map(([k, v]) => [k, Math.round(v)])) });
     }
     // speeltijd per dag van een hele maand (alleen voor beheerders, want er staan namen in)
     if (url.pathname === '/api/playtime' && request.method === 'GET') {

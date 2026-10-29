@@ -20,6 +20,29 @@ export async function renderProfile(app) {
     f.appendChild(g);
   }
 
+  // hoeveel je hebt gespeeld
+  if (user) {
+    const dur = (s) => { const m = Math.round(s / 60); return m < 1 && s > 0 ? 'minder dan 1 min' : m < 60 ? `${m} min` : `${Math.floor(m / 60)} u ${String(m % 60).padStart(2, '0')} min`; };
+    const card = el('<section class="card"><h3>Mijn speeltijd</h3><div class="pt-body"><p class="muted">Laden...</p></div></section>');
+    f.appendChild(card);
+    (async () => {
+      const body = card.querySelector('.pt-body');
+      try {
+        const token = await api.getAccessToken();
+        const r = await fetch('/api/playtime/me', { cache: 'no-store', headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        const o = r.ok ? await r.json() : null;
+        if (!o || typeof o.total !== 'number') throw new Error('geen data');
+        const games = Object.entries(o.games || {}).sort((a, b) => b[1] - a[1]);
+        const gname = (id) => { const g = app.state.games.find((x) => x.id === id); return g ? g.title : id; };
+        const mx = Math.max(1, ...games.map((x) => x[1]));
+        body.innerHTML = `<div class="prog-grid"><div><b>${dur(o.total)}</b><small>In totaal gespeeld</small></div><div><b>${dur(o.today)}</b><small>Vandaag</small></div><div><b>${dur(o.month)}</b><small>Deze maand</small></div></div>
+          ${games.length ? `<div class="pt-games">${games.map(([id, s]) => `<div class="pt-row"><span>${esc(gname(id))}</span><div><i style="width:${(s / mx) * 100}%"></i></div><b>${dur(s)}</b></div>`).join('')}</div>` : '<p class="muted">Je speeltijd wordt bijgehouden vanaf nu. Start een game en kom straks terug!</p>'}`;
+      } catch (e) {
+        body.innerHTML = '<p class="muted">Je speeltijd verschijnt hier zodra je een game hebt gespeeld op de echte site.</p>';
+      }
+    })();
+  }
+
   // profielpictogram
   if (user) {
     const sec = el('<section class="card"><h3>Profielpictogram</h3><p class="muted">Kies wie jij bent in het platform. De grijze profielfoto\'s speel je vrij met opdrachten in de games.</p><div class="avatar-grid"></div></section>');

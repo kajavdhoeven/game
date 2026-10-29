@@ -13,10 +13,10 @@ const playingNow = () => {
   return m && document.querySelector('#player.playing') ? m[1] : '';
 };
 const send = (extra = {}) => {
-  try { fetch('/api/ping', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cid, ...info(), path: location.pathname, playing: playingNow(), ...extra }), keepalive: true }).catch(() => {}); } catch (e) { /* offline */ }
+  try { fetch('/api/ping', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cid, ...info(), path: location.pathname, playing: playingNow(), sess: sessSec, ...extra }), keepalive: true }).catch(() => {}); } catch (e) { /* offline */ }
 };
 // speeltijd: de browser telt zelf de seconden dat er een game draait en de pagina in beeld is, en geeft die door (zo gaat er niets verloren tussen twee meldingen)
-let acc = 0, accGame = '';
+let acc = 0, accGame = '', sessSec = 0, idle = 0; // sessSec: hoe lang hij in één keer speelt
 const flush = (extra = {}) => {
   if (acc > 0 && accGame) { send({ play: { game: accGame, sec: acc }, ...extra }); acc = 0; return true; }
   return false;
@@ -28,8 +28,8 @@ export function startPresence(infoFn) {
   setInterval(() => {
     if (document.hidden) return;
     const g = playingNow();
-    if (g) { if (accGame && g !== accGame) flush(); accGame = g; acc++; if (acc >= 20) flush(); }
-    else if (acc > 0) flush();
+    if (g) { if (accGame && g !== accGame) { flush(); sessSec = 0; } accGame = g; acc++; sessSec++; idle = 0; if (sessSec === 1) send(); if (acc >= 20) flush(); }
+    else { if (acc > 0) flush(); if (++idle > 5) sessSec = 0; }
   }, 1000);
   setInterval(() => { if (!document.hidden && !flush()) send(); }, 30000);
   document.addEventListener('visibilitychange', () => { if (document.hidden) { if (!flush({ bye: true })) send({ bye: true }); } else send(); });

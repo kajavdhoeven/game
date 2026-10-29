@@ -411,3 +411,8 @@ h2.soon-logo-wrap:not(:has(img)) { font-size: clamp(34px, 7vw, 58px); line-heigh
 .soon-when { margin: 2px 0 10px; color: #ffe27a; font-weight: 700; }
 .player-poster .cd { margin-top: 10px; }
 .player-poster .soon-tag { margin-bottom: 4px; }
+.pt-games { display: grid; gap: 8px; margin-top: 14px; }
+.pt-row { display: grid; grid-template-columns: minmax(90px, 160px) 1fr auto; gap: 10px; align-items: center; font-size: 14px; }
+.pt-row div { height: 8px; border-radius: 99px; background: rgba(255,255,255,.1); overflow: hidden; }
+.pt-row i { display: block; height: 100%; background: linear-gradient(90deg, #4f8bff, #9b6bff); border-radius: 99px; }
+.pt-row b { color: var(--muted, #9fb0d0); font-weight: 600; font-size: 13px; white-space: nowrap; }

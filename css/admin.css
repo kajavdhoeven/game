@@ -254,3 +254,5 @@ body.admin-mode { background: linear-gradient(180deg, #eef4ff 0%, #f8f5ff 45%, #
   .ad-denied h1 { font-size: 22px; }
 }
 @media (max-width: 380px) { .ad-kpis { grid-template-columns: minmax(0, 1fr); } }
+.on-play { color: #7c3aed; font-weight: 600; }
+.on-play em { font-style: normal; font-variant-numeric: tabular-nums; background: #ede9fe; padding: 1px 8px; border-radius: 99px; margin-left: 4px; }
