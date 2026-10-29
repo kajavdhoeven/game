@@ -17,7 +17,15 @@ const txt = (g, s, x, y, size, col, align = 'center', w = 600, style = '') => { 
 // ---- cache voor dure statische lagen (wordt na afloop van elke cutscene geleegd)
 let CACHE = {};
 const mkc = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
-function L(key, w, h, fn) { let c = CACHE[key]; if (!c) { c = mkc(w, h); fn(c.getContext('2d'), w, h); CACHE[key] = c; } return c; }
+// brede lagen worden bijgesneden tot het deel waar echt iets staat (scheelt veel pixels per beeld)
+const TRIM = { vil: { f: [340, 220], m: [120, 450], n: [500, 220] }, apt: { f: [360, 200], m: [240, 310], n: [510, 210] }, nl: { f: [380, 180], m: [190, 380], n: [480, 240] }, cn: { f: [170, 390], m: [60, 500], n: [500, 220] }, is: { f: [380, 200], m: [330, 260], n: [500, 220] } };
+function L(key, w, h, fn) {
+  let c = CACHE[key]; if (!c) {
+    const tr = w === 1800 && /^[a-z]+_/.test(key) && TRIM[key.split('_')[0]] ? TRIM[key.split('_')[0]][key[key.length - 1]] : null;
+    c = mkc(w, tr ? tr[1] : h); const g = c.getContext('2d'); if (tr) { g.translate(0, -tr[0]); c._y = tr[0]; } fn(g, w, h); CACHE[key] = c;
+  } return c;
+}
+const blitL = (g, c, x, y = 0) => g.drawImage(c, x, y + (c._y || 0));
 const SW = 1800, SLACK = (SW - W) / 2;            // brede lagen voor parallax
 const px = (f, cam) => -SLACK - clamp(cam, -SLACK / Math.max(f, 0.3), SLACK / Math.max(f, 0.3)) * f;
 
@@ -115,30 +123,30 @@ function villageBg(g, t, cam = 0, mood = 'dusk', o = {}) {
   const P = VIL[mood], K = 'vil_' + mood;
   g.drawImage(skyLayer(K + 's', P.sky, mood === 'dusk' ? { stars: 90, starsY: 220, sun: [880, 440, 420, 52], sunCol: 'rgba(255,170,100,.85)' } : mood === 'night' ? { stars: 220, starsY: 420, moon: [1010, 130, 46] } : { sun: [1020, 120, 420, 56], sunCol: 'rgba(255,240,180,.9)' }), 0, 0);
   clouds(g, t, { y: 60, n: 5, a: mood === 'night' ? 0.12 : mood === 'dusk' ? 0.35 : 0.9, sp: 9, col: mood === 'dusk' ? '#ffb6a0' : '#fff', seed: 4, shade: 'rgba(120,100,150,.25)' });
-  g.drawImage(L(K + 'f', SW, H, (c) => {
+  blitL(g, L(K + 'f', SW, H, (c) => {
     ridge(c, SW, 400, 28, 1, P.far); ridge(c, SW, 440, 22, 4, P.far2);
     const r = rng(9); for (let i = 0; i < 9; i++) { const x = 60 + i * 210 + r() * 60; shroom(c, x, 470 + r() * 8, 0.32 + r() * 0.08, P.ck[i % 5], { on: P.on }); }
     ridge(c, SW, 480, 10, 7, P.far2);
   }), o.loop ? -(((cam * 0.15) % SW) + SW) % SW : px(0.15, cam), 0);
-  if (o.loop) g.drawImage(CACHE[K + 'f'], -(((cam * 0.15) % SW) + SW) % SW + SW, 0);
+  if (o.loop) blitL(g, CACHE[K + 'f'], -(((cam * 0.15) % SW) + SW) % SW + SW, 0);
   const mid = L(K + 'm', SW, H, (c) => {
     const r = rng(21);
     for (let i = 0; i < 30; i++) { const x = i * 62 + r() * 40; (i % 3 ? pine : tree)(c, x, 524 + r() * 12, 130 + r() * 80, P.tr[0], P.tr[1]); }
     CACHE[K + 'ch'] = [];
     [[190, 1.0, 0], [520, 1.3, 1], [905, 0.95, 2], [1230, 1.2, 3], [1590, 1.05, 4]].forEach(([x, s, ci]) => { CACHE[K + 'ch'].push(shroom(c, x, 535, s, P.ck[ci], { on: P.on })); });
   });
-  const mx = o.loop ? -(((cam * 0.45) % SW) + SW) % SW : px(0.45, cam); g.drawImage(mid, mx, 0); if (o.loop) g.drawImage(mid, mx + SW, 0);
+  const mx = o.loop ? -(((cam * 0.45) % SW) + SW) % SW : px(0.45, cam); blitL(g, mid, mx, 0); if (o.loop) blitL(g, mid, mx + SW, 0);
   if (!o.loop) for (const [i, ch] of (CACHE[K + 'ch'] || []).entries()) smokeAt(g, ch.x + mx, ch.y, t, i, mood === 'morning' ? '240,240,250' : '180,170,190', 110);
-  g.drawImage(L(K + 'n', SW, H, (c) => {
+  blitL(g, L(K + 'n', SW, H, (c) => {
     c.fillStyle = grad(c, 0, 515, 0, H, [[0, P.g1], [1, P.g2]]); c.fillRect(0, 515, SW, H - 515);
     c.fillStyle = grad(c, 0, 540, 0, 640, [[0, 'rgba(214,180,120,.85)'], [1, 'rgba(150,110,70,.85)']]); c.beginPath(); c.moveTo(0, 552); for (let x = 0; x <= SW; x += 30) c.lineTo(x, 552 + Math.sin(x * 0.01) * 7); for (let x = SW; x >= 0; x -= 30) c.lineTo(x, 606 + Math.sin(x * 0.008 + 2) * 9); c.closePath(); c.fill();
     const r = rng(33); for (let i = 0; i < 160; i++) { const x = r() * SW, y = 520 + r() * 190; c.fillStyle = ['#ffd84a', '#ff7a9a', '#fff', '#b48aff'][i % 4]; if (y > 548 && y < 612) continue; c.beginPath(); c.arc(x, y, 2 + (y - 520) * 0.012, 0, TAU); c.fill(); }
     c.strokeStyle = 'rgba(60,35,18,.9)'; c.lineWidth = 6; for (let x = 20; x < SW; x += 70) { c.beginPath(); c.moveTo(x, 536); c.lineTo(x, 506); c.stroke(); } c.lineWidth = 4; c.beginPath(); c.moveTo(0, 517); c.lineTo(SW, 517); c.moveTo(0, 528); c.lineTo(SW, 528); c.stroke();
   }), o.loop ? -(((cam) % SW) + SW) % SW : px(1, cam), 0);
-  if (o.loop) g.drawImage(CACHE[K + 'n'], -(((cam) % SW) + SW) % SW + SW, 0);
+  if (o.loop) blitL(g, CACHE[K + 'n'], -(((cam) % SW) + SW) % SW + SW, 0);
   if (mood !== 'morning') fireflies(g, t, 26, 5, 0, W, 330, 560);
   else { g.strokeStyle = '#2a2f3a'; g.lineWidth = 2; for (let i = 0; i < 4; i++) { const x = ((t * 60 + i * 340) % (W + 200)) - 100, y = 120 + i * 40 + Math.sin(t * 2 + i) * 12, f = Math.sin(t * 12 + i) * 6; g.beginPath(); g.moveTo(x - 10, y + f); g.quadraticCurveTo(x - 5, y - 6, x, y); g.quadraticCurveTo(x + 5, y - 6, x + 10, y + f); g.stroke(); } }
-  if (mood === 'dusk') { g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = grad(g, W, 0, W - 500, H, [[0, 'rgba(255,170,90,.12)'], [1, 'rgba(255,170,90,0)']]); g.fillRect(0, 0, W, H); g.restore(); }
+  if (mood === 'dusk') { g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = grad(g, W, 0, W - 500, H, [[0, 'rgba(255,170,90,.12)'], [1, 'rgba(255,170,90,0)']]); g.fillRect(W - 640, 0, 640, H); g.restore(); }
 }
 // de Paddenstoelenbank (gebouw op eigen canvas, 700x560, voeten op y=520)
 function bankSprite() {
@@ -162,9 +170,9 @@ function bankSprite() {
 function airportBg(g, t, cam = 0, mood = 'night') {
   const night = mood === 'night', K = 'apt_' + mood;
   g.drawImage(skyLayer(K + 's', night ? [[0, '#05081a'], [0.6, '#16224a'], [1, '#3a3a6a']] : [[0, '#5eb4f0'], [0.7, '#c4e6ff'], [1, '#ffe8b8']], night ? { stars: 200, starsY: 400, moon: [200, 120, 38] } : { sun: [300, 140, 400, 50] }), 0, 0);
-  g.drawImage(L(K + 'f', SW, H, (c) => { ridge(c, SW, 420, 30, 2, night ? '#1c2a52' : '#8ab8d8'); ridge(c, SW, 470, 22, 6, night ? '#142040' : '#7ab07a'); const r = rng(8); for (let i = 0; i < 40; i++) pine(c, r() * SW, 500 + r() * 8, 70 + r() * 50, night ? '#15223a' : '#4a9a4a', night ? '#0e182c' : '#2f7a3a'); }), px(0.15, cam), 0);
+  blitL(g, L(K + 'f', SW, H, (c) => { ridge(c, SW, 420, 30, 2, night ? '#1c2a52' : '#8ab8d8'); ridge(c, SW, 470, 22, 6, night ? '#142040' : '#7ab07a'); const r = rng(8); for (let i = 0; i < 40; i++) pine(c, r() * SW, 500 + r() * 8, 70 + r() * 50, night ? '#15223a' : '#4a9a4a', night ? '#0e182c' : '#2f7a3a'); }), px(0.15, cam), 0);
   const ox = px(0.5, cam);
-  g.drawImage(L(K + 'm', SW, H, (c) => {
+  blitL(g, L(K + 'm', SW, H, (c) => {
     // klein terminalgebouw met paddenstoeldak
     const cx = 640; c.fillStyle = grad(c, 0, 400, 0, 540, [[0, '#e8dcc0'], [1, '#b4a078']]); rr(c, cx - 190, 420, 380, 110, 6); c.fill();
     c.fillStyle = grad(c, 0, 340, 0, 430, [[0, '#d8362a'], [1, '#8a1c18']]); c.beginPath(); c.moveTo(cx - 230, 428); c.bezierCurveTo(cx - 230, 340, cx - 90, 330, cx, 330); c.bezierCurveTo(cx + 90, 330, cx + 230, 340, cx + 230, 428); c.quadraticCurveTo(cx, 446, cx - 230, 428); c.fill();
@@ -178,7 +186,7 @@ function airportBg(g, t, cam = 0, mood = 'night') {
     c.fillStyle = grad(c, 0, 440, 0, 530, [[0, '#9aa8b8'], [1, '#6a7888']]); c.beginPath(); c.moveTo(250, 530); c.lineTo(250, 470); c.quadraticCurveTo(340, 410, 430, 470); c.lineTo(430, 530); c.fill(); c.fillStyle = '#4a5666'; rr(c, 290, 478, 100, 52, [30, 30, 0, 0]); c.fill();
   }), ox, 0);
   const bx = 1026 + ox, by = 250; if (night) { g.save(); g.translate(bx + 2, by); const a = t * 2; const gr = g.createLinearGradient(0, 0, Math.cos(a) * 300, 0); g.fillStyle = 'rgba(255,250,200,.12)'; g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.cos(a) * 320, -30); g.lineTo(Math.cos(a) * 320, 30); g.fill(); g.restore(); glow(g, bx + 2, by, 26, '#ffdc78', 0.5 + 0.5 * Math.sin(t * 2)); }
-  g.drawImage(L(K + 'n', SW, H, (c) => {
+  blitL(g, L(K + 'n', SW, H, (c) => {
     c.fillStyle = grad(c, 0, 500, 0, H, [[0, night ? '#2e3a4c' : '#8a929c'], [1, night ? '#1a222e' : '#5a626c']]); c.fillRect(0, 520, SW, 140);
     c.fillStyle = grad(c, 0, 640, 0, H, [[0, night ? '#244a36' : '#78b04a'], [1, night ? '#102a1c' : '#3a7a32']]); c.fillRect(0, 650, SW, 70);
     c.fillStyle = 'rgba(255,255,255,.7)'; for (let x = 0; x < SW; x += 120) c.fillRect(x, 596, 64, 8);
@@ -191,7 +199,7 @@ function nlBg(g, t, cam = 0, mood = 'day') {
   const K = 'nl_' + mood, dusk = mood === 'dusk';
   g.drawImage(skyLayer(K + 's', dusk ? [[0, '#3a4a8a'], [0.5, '#e08a7a'], [1, '#ffd090']] : [[0, '#4aa8f0'], [0.6, '#b8e2ff'], [1, '#f4f8ff']], dusk ? { sun: [300, 420, 400, 44], sunCol: 'rgba(255,160,100,.9)' } : { sun: [1050, 110, 420, 50], sunCol: 'rgba(255,245,200,.9)' }), 0, 0);
   clouds(g, t, { y: 50, n: 7, a: dusk ? 0.55 : 0.95, sp: 16, col: dusk ? '#ffd0b8' : '#fff', seed: 12 });
-  g.drawImage(L(K + 'f', SW, H, (c) => {
+  blitL(g, L(K + 'f', SW, H, (c) => {
     c.fillStyle = dusk ? '#5a5a8a' : '#8cc87a'; c.fillRect(0, 440, SW, 300); ridge(c, SW, 446, 4, 3, dusk ? '#4a5a7a' : '#7cb86a');
     const r = rng(5); for (let i = 0; i < 26; i++) { const x = r() * SW; tree(c, x, 448, 30 + r() * 20, dusk ? '#3a4a6a' : '#4a9a4a', dusk ? '#2a3a5a' : '#2f7a3a'); }
     c.fillStyle = dusk ? '#6a5a7a' : '#c8a47a'; c.fillRect(400, 420, 18, 30); c.beginPath(); c.moveTo(396, 420); c.lineTo(409, 396); c.lineTo(422, 420); c.fill(); for (const x of [900, 960, 1010]) { c.fillStyle = dusk ? '#7a5a6a' : '#d8704a'; c.fillRect(x, 428, 40, 22); c.fillStyle = dusk ? '#3a3a5a' : '#8a3a2a'; c.beginPath(); c.moveTo(x - 4, 428); c.lineTo(x + 20, 410); c.lineTo(x + 44, 428); c.fill(); }
@@ -208,9 +216,9 @@ function nlBg(g, t, cam = 0, mood = 'day') {
       c.fillStyle = '#e8e2d0'; c.beginPath(); c.moveTo(x - 4, 500 - h); c.lineTo(x + w * 0.2, 500 - h - 22); c.lineTo(x + w * 0.35, 500 - h - 22); c.lineTo(x + w * 0.5, 500 - h - 40); c.lineTo(x + w * 0.65, 500 - h - 22); c.lineTo(x + w * 0.8, 500 - h - 22); c.lineTo(x + w + 4, 500 - h); c.fill();
       for (let j = 0; j < 3; j++) for (let k = 0; k < 2; k++) { c.fillStyle = dusk ? '#ffd27a' : '#cfe6f4'; c.fillRect(x + 16 + k * 44, 500 - h + 16 + j * 38, 24, 28); c.fillStyle = '#e8e2d0'; c.fillRect(x + 13 + k * 44, 500 - h + 14 + j * 38, 30, 3); } c.fillStyle = '#3a2a1e'; c.fillRect(x + 40, 466, 20, 34); }
   });
-  const mx = px(0.4, cam); g.drawImage(mid, mx, 0);
+  const mx = px(0.4, cam); blitL(g, mid, mx, 0);
   g.save(); g.translate(1100 + mx, 330); g.rotate(t * 0.9); for (let i = 0; i < 4; i++) { g.rotate(Math.PI / 2); g.fillStyle = '#4a3a2a'; g.fillRect(0, -3, 150, 6); g.fillStyle = dusk ? '#c8b8a0' : '#f4efe0'; g.fillRect(14, -26, 130, 24); g.strokeStyle = '#4a3a2a'; g.lineWidth = 2; for (let k = 0; k < 6; k++) { g.beginPath(); g.moveTo(14 + k * 22, -26); g.lineTo(14 + k * 22, -2); g.stroke(); } } g.restore(); g.fillStyle = '#3a2a1e'; g.beginPath(); g.arc(1100 + mx, 330, 9, 0, TAU); g.fill();
-  g.drawImage(L(K + 'n', SW, H, (c) => {
+  blitL(g, L(K + 'n', SW, H, (c) => {
     // tulpenvelden in banen
     const tc = ['#e8302a', '#f5d020', '#ff6aa8', '#a040d0', '#fff', '#ff9a20'];
     for (let i = 0; i < 6; i++) { const y0 = 490 + i * 8 + i * i * 1.4; c.fillStyle = grad(c, 0, y0, 0, y0 + 12 + i * 3, [[0, '#6ab43a'], [1, '#4a8a2a']]); c.fillRect(0, y0, SW, 12 + i * 3); const r = rng(40 + i); for (let k = 0; k < 120; k++) { c.fillStyle = tc[(i + Math.floor(k / 20)) % 6]; const x = k * (SW / 120) + r() * 6; c.fillRect(x, y0 + 2, 3 + i * 0.5, 4 + i * 0.7); } }
@@ -256,13 +264,13 @@ function cjk(g, s, x, y, size, col) { g.font = `700 ${size}px ${CJK}`; g.textAli
 function chinaBg(g, t, cam = 0, mood = 'dusk') {
   const K = 'cn_' + mood, night = mood === 'night';
   g.drawImage(skyLayer(K + 's', night ? [[0, '#0a0618'], [0.55, '#34164a'], [1, '#8a2a4a']] : [[0, '#2a1648'], [0.45, '#b0407a'], [0.78, '#ff8a5a'], [1, '#ffd08a']], night ? { stars: 120, starsY: 260, moon: [980, 120, 40] } : { sun: [330, 420, 400, 50], sunCol: 'rgba(255,150,90,.9)', stars: 40, starsY: 160 }), 0, 0);
-  g.drawImage(L(K + 'f', SW, H, (c) => {
+  blitL(g, L(K + 'f', SW, H, (c) => {
     const r = rng(14); c.fillStyle = night ? '#241040' : '#7a3a6a';
     for (let i = 0; i < 9; i++) { const x = 80 + i * 200 + r() * 60, h = 150 + r() * 150, w = 70 + r() * 40; c.beginPath(); c.moveTo(x - w * 2, 520); c.quadraticCurveTo(x - w * 0.5, 520 - h * 0.2, x - w * 0.3, 520 - h * 0.8); c.quadraticCurveTo(x, 520 - h * 1.1, x + w * 0.3, 520 - h * 0.8); c.quadraticCurveTo(x + w * 0.6, 520 - h * 0.2, x + w * 2, 520); c.fill(); }
     c.fillStyle = grad(c, 0, 330, 0, 520, [[0, 'rgba(255,200,200,0)'], [1, night ? 'rgba(120,60,120,.55)' : 'rgba(255,190,170,.6)']]); c.fillRect(0, 330, SW, 200);
   }), px(0.12, cam), 0);
   const mx = px(0.45, cam);
-  g.drawImage(L(K + 'm', SW, H, (c) => {
+  blitL(g, L(K + 'm', SW, H, (c) => {
     c.fillStyle = night ? '#1a0c2a' : '#4a2a4a'; c.fillRect(0, 500, SW, 60);
     pagoda(c, 380, 510, 1.5, 5, '#a8281e', night ? '#1a2030' : '#2e3a4a'); pagoda(c, 1330, 510, 1.3, 4, '#a8281e', night ? '#1a2030' : '#2e3a4a');
     const r = rng(77); const cols = ['#a8281e', '#8a1c1c', '#b83a22', '#7a2a22'];
@@ -274,7 +282,7 @@ function chinaBg(g, t, cam = 0, mood = 'dusk') {
   }), mx, 0);
   // gloeiende neonborden
   for (const [x, y, c1, s] of [[520, 330, '#ff3a8a', '福'], [820, 300, '#3affd0', '茶'], [1190, 340, '#ffd23a', '酒']]) { const k = 0.8 + 0.2 * Math.sin(t * 7 + x); glow(g, x + mx, y, 90, c1, 0.5 * k); cjk(g, s, x + mx, y + 16, 48, c1); }
-  g.drawImage(L(K + 'n', SW, H, (c) => {
+  blitL(g, L(K + 'n', SW, H, (c) => {
     c.fillStyle = grad(c, 0, 515, 0, H, [[0, night ? '#2a1a34' : '#5a3446'], [1, night ? '#120a1c' : '#2a1a2a']]); c.fillRect(0, 515, SW, H - 515);
     c.fillStyle = 'rgba(255,60,40,.14)'; for (let i = 0; i < 9; i++) { c.beginPath(); c.ellipse(80 + i * 200, 600 + (i % 2) * 40, 80, 12, 0, 0, TAU); c.fill(); }
     c.fillStyle = '#6a4a4a'; c.fillRect(0, 512, SW, 8); c.fillStyle = 'rgba(255,255,255,.12)'; for (let x = 0; x < SW; x += 100) c.fillRect(x, 640, 50, 5);
@@ -294,9 +302,9 @@ function buddleyLogo(g, cx, cy, sz) {
 }
 function warehouseBg(g, t, cam = 0) {
   g.drawImage(skyLayer('wh_s', [[0, '#04060f'], [0.6, '#0e1a34'], [1, '#2a3a58']], { stars: 150, starsY: 350, moon: [180, 110, 34] }), 0, 0);
-  g.drawImage(L('wh_f', SW, H, (c) => { ridge(c, SW, 430, 16, 3, '#101a30'); const r = rng(6); for (let i = 0; i < 14; i++) { const x = i * 130 + r() * 40, h = 60 + r() * 90; c.fillStyle = '#0c1426'; c.fillRect(x, 500 - h, 60 + r() * 50, h); for (let k = 0; k < 4; k++) { c.fillStyle = r() > 0.5 ? '#ffd27a' : '#1a2438'; c.fillRect(x + 8 + (k % 2) * 22, 500 - h + 10 + Math.floor(k / 2) * 20, 12, 10); } } for (const x of [300, 1500]) { c.fillStyle = '#0c1426'; c.fillRect(x, 300, 14, 220); c.fillRect(x - 70, 300, 200, 10); c.fillRect(x + 100, 300, 5, 90); } }), px(0.15, cam), 0);
+  blitL(g, L('wh_f', SW, H, (c) => { ridge(c, SW, 430, 16, 3, '#101a30'); const r = rng(6); for (let i = 0; i < 14; i++) { const x = i * 130 + r() * 40, h = 60 + r() * 90; c.fillStyle = '#0c1426'; c.fillRect(x, 500 - h, 60 + r() * 50, h); for (let k = 0; k < 4; k++) { c.fillStyle = r() > 0.5 ? '#ffd27a' : '#1a2438'; c.fillRect(x + 8 + (k % 2) * 22, 500 - h + 10 + Math.floor(k / 2) * 20, 12, 10); } } for (const x of [300, 1500]) { c.fillStyle = '#0c1426'; c.fillRect(x, 300, 14, 220); c.fillRect(x - 70, 300, 200, 10); c.fillRect(x + 100, 300, 5, 90); } }), px(0.15, cam), 0);
   const mx = px(0.5, cam);
-  g.drawImage(L('wh_m', SW, H, (c) => {
+  blitL(g, L('wh_m', SW, H, (c) => {
     const x0 = 330, x1 = 1470; c.fillStyle = grad(c, 0, 200, 0, 520, [[0, '#4a5a72'], [1, '#2a3446']]); c.fillRect(x0, 220, x1 - x0, 300);
     c.fillStyle = grad(c, 0, 170, 0, 230, [[0, '#6a7a92'], [1, '#3a465a']]); c.beginPath(); c.moveTo(x0 - 30, 224); c.lineTo(x0 + 80, 170); c.lineTo(x1 - 80, 170); c.lineTo(x1 + 30, 224); c.fill();
     c.strokeStyle = 'rgba(0,0,0,.3)'; c.lineWidth = 3; for (let x = x0; x < x1; x += 28) { c.beginPath(); c.moveTo(x, 226); c.lineTo(x, 520); c.stroke(); }
@@ -305,7 +313,7 @@ function warehouseBg(g, t, cam = 0) {
     c.fillStyle = '#222a38'; c.fillRect(x0 + 340, 230, 480, 120); buddleyLogo(c, x0 + 580, 290, 38);
   }), mx, 0);
   const sx = 580 + 330 + mx; g.save(); g.globalCompositeOperation = 'lighter'; glow(g, sx, 290, 400, 'rgba(60,200,220,.18)'); g.restore();
-  g.drawImage(L('wh_n', SW, H, (c) => {
+  blitL(g, L('wh_n', SW, H, (c) => {
     c.fillStyle = grad(c, 0, 515, 0, H, [[0, '#3a4252'], [1, '#1a202c']]); c.fillRect(0, 515, SW, H - 515);
     c.fillStyle = 'rgba(255,210,60,.65)'; for (let x = 0; x < SW; x += 160) { c.beginPath(); c.moveTo(x, 640); c.lineTo(x + 50, 640); c.lineTo(x + 30, 660); c.lineTo(x - 20, 660); c.fill(); }
     c.fillStyle = 'rgba(255,255,255,.05)'; for (let y = 560; y < 720; y += 40) c.fillRect(0, y, SW, 2);
@@ -338,7 +346,7 @@ function van(g, x, y, s, t, o = {}) {
 }
 // ---------------------------------------------------------------- Magazijn binnen
 function warehouseIn(g, t, cam = 0, o = {}) {
-  g.drawImage(L('whi_b', W, H, (c) => {
+  blitL(g, L('whi_b', W, H, (c) => {
     c.fillStyle = grad(c, 0, 0, 0, H, [[0, '#0a0e18'], [0.6, '#1a2232'], [1, '#262e3c']]); c.fillRect(0, 0, W, H);
     c.fillStyle = '#10151f'; for (let x = 0; x < W; x += 160) { c.fillRect(x, 0, 14, 420); } c.fillRect(0, 60, W, 12); c.fillRect(0, 150, W, 8);
     const r = rng(4); const cols = ['#c8a060', '#b88c4c', '#d0a868', '#a87c3c'];
@@ -362,8 +370,8 @@ function skylineLayer(g, w, base, seed, col, o = {}) {
 }
 function cityNight(g, t, cam = 0, o = {}) {
   g.drawImage(skyLayer('city_s', [[0, '#04060f'], [0.5, '#141a3a'], [1, '#4a3a6a']], { stars: 160, starsY: 300, moon: [1060, 100, 34] }), 0, 0);
-  g.drawImage(L('city_f', SW, H, (c) => { skylineLayer(c, SW, 560, 3, '#1a2040', { hmin: 140, hmax: 360, lit: 0.3 }); }), px(0.12, cam), 0);
-  g.drawImage(L('city_m', SW, H, (c) => { skylineLayer(c, SW, 620, 9, '#10152e', { hmin: 120, hmax: 300, wmin: 70, wmax: 130, lit: 0.55 });
+  blitL(g, L('city_f', SW, H, (c) => { skylineLayer(c, SW, 560, 3, '#1a2040', { hmin: 140, hmax: 360, lit: 0.3 }); }), px(0.12, cam), 0);
+  blitL(g, L('city_m', SW, H, (c) => { skylineLayer(c, SW, 620, 9, '#10152e', { hmin: 120, hmax: 300, wmin: 70, wmax: 130, lit: 0.55 });
     const x = 880; c.fillStyle = grad(c, x, 80, x + 160, 600, [[0, '#5a7ab0'], [0.5, '#2a3a68'], [1, '#141a38']]); c.fillRect(x, 60, 150, 560); c.fillStyle = 'rgba(255,255,255,.09)'; for (let i = 0; i < 6; i++) c.fillRect(x + 10 + i * 24, 60, 8, 560); c.fillStyle = 'rgba(160,220,255,.5)'; for (let y = 90; y < 600; y += 22) { c.fillRect(x, y, 150, 2); }
     c.fillStyle = '#1a2040'; c.fillRect(x + 66, 20, 18, 40); c.fillStyle = '#b02a2a'; rr(c, x - 20, 20 + 40, 190, 38, 6); c.fill();
   }), px(0.4, cam), 0);
@@ -373,13 +381,13 @@ function cityNight(g, t, cam = 0, o = {}) {
 function wallWindow(g, x, y, w, h, t, o = {}) { // glazen wand met uitzicht op de nachtelijke stad
   g.save(); rr(g, x, y, w, h, 6); g.clip();
   g.fillStyle = grad(g, 0, y, 0, y + h, [[0, '#060a1c'], [1, '#3a2a5a']]); g.fillRect(x, y, w, h); stars(g, 50, 5, W, y + h * 0.5, 1.4);
-  g.save(); g.translate(x - 220 - (o.cam || 0) * 0.15, y + h - 620); g.drawImage(L('city_ow', SW, 620, (c) => { skylineLayer(c, SW, 620, 31, '#1e2650', { hmin: 140, hmax: 420, lit: 0.45 }); skylineLayer(c, SW, 620, 5, '#10152e', { hmin: 60, hmax: 260, wmin: 80, wmax: 140, lit: 0.6 }); }), 0, 0); g.restore();
+  g.save(); g.translate(x - 220 - (o.cam || 0) * 0.15, y + h - 620); blitL(g, L('city_ow', SW, 620, (c) => { skylineLayer(c, SW, 620, 31, '#1e2650', { hmin: 140, hmax: 420, lit: 0.45 }); skylineLayer(c, SW, 620, 5, '#10152e', { hmin: 60, hmax: 260, wmin: 80, wmax: 140, lit: 0.6 }); }), 0, 0); g.restore();
   for (let i = 0; i < 9; i++) { const xx = ((t * (30 + i * 9) * (i % 2 ? 1 : -1) + i * 173) % (w + 100) + w + 100) % (w + 100) + x - 50; glow(g, xx, y + h - 20 - (i % 3) * 8, 14, i % 2 ? '#ffe6a0' : '#ff3a3a', 0.8); }
   g.fillStyle = grad(g, x, y, x + w, y + h, [[0, 'rgba(255,255,255,.14)'], [0.3, 'rgba(255,255,255,0)'], [1, 'rgba(255,255,255,.07)']]); g.fillRect(x, y, w, h); g.restore();
   g.strokeStyle = '#0a0c12'; g.lineWidth = 10; rr(g, x, y, w, h, 6); g.stroke(); g.lineWidth = 6; for (let i = 1; i < 5; i++) { g.beginPath(); g.moveTo(x + (w / 5) * i, y); g.lineTo(x + (w / 5) * i, y + h); g.stroke(); } g.beginPath(); g.moveTo(x, y + h * 0.62); g.lineTo(x + w, y + h * 0.62); g.stroke();
 }
 function officeBg(g, t, cam = 0) {
-  g.drawImage(L('off_b', W, H, (c) => {
+  blitL(g, L('off_b', W, H, (c) => {
     c.fillStyle = grad(c, 0, 0, 0, H, [[0, '#1a0e12'], [1, '#2e1a1c']]); c.fillRect(0, 0, W, H);
     c.fillStyle = grad(c, 0, 470, 0, H, [[0, '#2a2030'], [0.4, '#141018'], [1, '#08060a']]); c.fillRect(0, 470, W, H - 470);
     c.fillStyle = 'rgba(255,255,255,.05)'; for (let x = 0; x < W; x += 80) c.fillRect(x, 470, 2, H);
@@ -419,9 +427,9 @@ function suburbHouse(g, x, y, s, wall, roof, lit = 1) {
 function townBg(g, t, cam = 0, kind = 'suburb', o = {}) {
   const K = 'tw_' + kind;
   g.drawImage(skyLayer('tw_s', [[0, '#04060f'], [0.55, '#10183a'], [1, '#34306a']], { stars: 180, starsY: 360, moon: [220, 110, 36] }), 0, 0);
-  g.drawImage(L('tw_f', SW, H, (c) => { skylineLayer(c, SW, 520, 17, '#161c3a', { hmin: 80, hmax: 220, lit: 0.3 }); const r = rng(2); for (let i = 0; i < 22; i++) tree(c, r() * SW, 530, 90 + r() * 50, '#14243a', '#0c1626'); }), px(0.15, cam), 0);
+  blitL(g, L('tw_f', SW, H, (c) => { skylineLayer(c, SW, 520, 17, '#161c3a', { hmin: 80, hmax: 220, lit: 0.3 }); const r = rng(2); for (let i = 0; i < 22; i++) tree(c, r() * SW, 530, 90 + r() * 50, '#14243a', '#0c1626'); }), px(0.15, cam), 0);
   const mx = px(0.5, cam);
-  g.drawImage(L(K + 'm', SW, H, (c) => {
+  blitL(g, L(K + 'm', SW, H, (c) => {
     if (kind === 'suburb') { [[120, '#b8a888', '#6a3a3a'], [520, '#88a0b8', '#3a4a6a'], [930, '#c8b090', '#5a3a2a'], [1380, '#a0b890', '#4a4a3a']].forEach(([x, w, r], i) => suburbHouse(c, x, 525, 1.1, w, r, i !== 2));
       c.fillStyle = '#0c2a1c'; for (let x = 0; x < SW; x += 46) { c.beginPath(); c.arc(x + 20, 530, 22, Math.PI, 0); c.fill(); } }
     if (kind === 'police') { const x = 520; c.fillStyle = grad(c, 0, 250, 0, 530, [[0, '#8a96a6'], [1, '#4a5666']]); c.fillRect(x, 250, 760, 280); c.fillStyle = '#243c9a'; c.fillRect(x, 250, 760, 26); c.fillStyle = '#1c2a48'; c.fillRect(x - 20, 240, 800, 14);
@@ -436,7 +444,7 @@ function townBg(g, t, cam = 0, kind = 'suburb', o = {}) {
     if (kind === 'plain') { skylineLayer(c, SW, 528, 41, '#12183a', { hmin: 140, hmax: 280, wmin: 90, wmax: 150, lit: 0.5 }); }
   }), mx, 0);
   if (kind === 'atelier') { const fl = (Math.sin(t * 37) > 0.3 || Math.sin(t * 5.3) > 0.8) ? 0.25 : 1; g.save(); g.globalAlpha = fl; glow(g, 560 + 250 + mx, 295, 150, 'rgba(255,60,200,.55)'); txt(g, 'ATELIER', 560 + 250 + mx, 306, 40, '#ff7ad8', 'center', 700); g.restore(); txt(g, 'ATE ER', 560 + 250 + mx, 306, 40, 'rgba(255,255,255,0)', 'center', 700); }
-  g.drawImage(L('tw_n', SW, H, (c) => {
+  blitL(g, L('tw_n', SW, H, (c) => {
     c.fillStyle = grad(c, 0, 515, 0, H, [[0, '#4a4a5a'], [0.3, '#2a2a36'], [1, '#14141c']]); c.fillRect(0, 515, SW, H - 515);
     c.fillStyle = '#6a6a78'; c.fillRect(0, 512, SW, 10); c.fillStyle = '#3a3a48'; c.fillRect(0, 576, SW, 6);
     c.fillStyle = 'rgba(255,255,255,.5)'; for (let x = 0; x < SW; x += 150) c.fillRect(x, 650, 80, 8);
@@ -445,7 +453,7 @@ function townBg(g, t, cam = 0, kind = 'suburb', o = {}) {
   const nx = px(1, cam); if (o.lamps !== false) for (const x of [380, 1050, 1620]) lamp(g, x + nx, 528, 190, t);
 }
 function cellBg(g, t, cam = 0) {
-  g.drawImage(L('cell_b', W, H, (c) => {
+  blitL(g, L('cell_b', W, H, (c) => {
     c.fillStyle = grad(c, 0, 0, 0, H, [[0, '#2a2e36'], [1, '#161a20']]); c.fillRect(0, 0, W, H);
     c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 2; for (let y = 0; y < 470; y += 26) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); for (let x = (y / 26 % 2) * 30; x < W; x += 60) { c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 26); c.stroke(); } }
     c.fillStyle = grad(c, 0, 470, 0, H, [[0, '#3a3e46'], [1, '#14161a']]); c.fillRect(0, 470, W, H - 470);
@@ -468,7 +476,7 @@ function mannequin(g, x, y, s, col = '#d8cfa8', lean = 0) {
 }
 function sewMachine(g, x, y, s, t) { g.save(); g.translate(x, y); g.scale(s, s); g.fillStyle = '#2a1e14'; g.fillRect(-50, 0, 100, 8); g.fillRect(-40, 8, 6, 50); g.fillRect(34, 8, 6, 50); g.fillStyle = '#3a4a3a'; rr(g, -40, -48, 80, 48, 8); g.fill(); g.fillStyle = '#c8c0a0'; rr(g, -40, -60, 56, 14, 4); g.fill(); g.fillRect(-36, -46, 10, 46); g.strokeStyle = '#999'; g.lineWidth = 2; const nd = Math.abs(Math.sin(t * 9)) * 12; g.beginPath(); g.moveTo(-34, -44 + nd); g.lineTo(-34, -20 + nd); g.stroke(); g.fillStyle = '#d03a2a'; g.beginPath(); g.arc(30, -36, 5, 0, TAU); g.fill(); g.restore(); }
 function atelierIn(g, t, cam = 0) {
-  g.drawImage(L('at_b', W, H, (c) => {
+  blitL(g, L('at_b', W, H, (c) => {
     c.fillStyle = grad(c, 0, 0, 0, 470, [[0, '#3a4a32'], [1, '#5a5a38']]); c.fillRect(0, 0, W, 470);
     const r = rng(12); c.strokeStyle = 'rgba(30,40,20,.35)'; c.lineWidth = 12; for (let x = 20; x < W; x += 46) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, 470); c.stroke(); }
     c.fillStyle = 'rgba(20,16,10,.35)'; for (let i = 0; i < 40; i++) { c.beginPath(); c.ellipse(r() * W, r() * 460, 10 + r() * 40, 8 + r() * 24, r(), 0, TAU); c.fill(); }
@@ -487,9 +495,9 @@ function atelierIn(g, t, cam = 0) {
 // ---------------------------------------------------------------- Bank van China
 function bankBg(g, t, cam = 0) {
   g.drawImage(skyLayer('bk_s', [[0, '#04060f'], [0.55, '#1a1646'], [1, '#6a3a6a']], { stars: 200, starsY: 360, moon: [330, 130, 46] }), 0, 0);
-  g.drawImage(L('bk_f', SW, H, (c) => { skylineLayer(c, SW, 560, 52, '#1c1c46', { hmin: 140, hmax: 320, lit: 0.35 }); }), px(0.12, cam), 0);
+  blitL(g, L('bk_f', SW, H, (c) => { skylineLayer(c, SW, 560, 52, '#1c1c46', { hmin: 140, hmax: 320, lit: 0.35 }); }), px(0.12, cam), 0);
   const mx = px(0.45, cam);
-  g.drawImage(L('bk_m', SW, H, (c) => {
+  blitL(g, L('bk_m', SW, H, (c) => {
     const cx = 900; c.fillStyle = grad(c, 0, 220, 0, 540, [[0, '#d8cfa8'], [1, '#8a8060']]); c.fillRect(cx - 360, 300, 720, 240);
     c.fillStyle = grad(c, 0, 250, 0, 310, [[0, '#e8e0bc'], [1, '#a89c70']]); c.beginPath(); c.moveTo(cx - 400, 304); c.lineTo(cx, 220); c.lineTo(cx + 400, 304); c.fill();
     c.fillStyle = '#b01818'; c.fillRect(cx - 400, 296, 800, 14); c.fillStyle = '#e8b840'; c.fillRect(cx - 400, 310, 800, 4);
@@ -500,7 +508,7 @@ function bankBg(g, t, cam = 0) {
     c.fillStyle = '#0d0f14'; rr(c, cx - 150, 190, 300, 36, 6); c.fill(); txt(c, 'BANK OF CHINA', cx, 217, 26, '#ffe27a', 'center', 700);
   }), mx, 0);
   for (const [x, ph] of [[900 - 300, 0], [900 + 300, 2]]) { const a = Math.sin(t * 0.8 + ph) * 0.5 - Math.PI / 2; beam(g, x + mx, 300, a, 600, 20, 140, 'rgba(255,255,255,A)', 0.14); }
-  g.drawImage(L('bk_n', SW, H, (c) => { c.fillStyle = grad(c, 0, 535, 0, H, [[0, '#5a5470'], [1, '#1a1826']]); c.fillRect(0, 535, SW, H - 535); c.fillStyle = 'rgba(255,255,255,.07)'; for (let x = 0; x < SW; x += 120) c.fillRect(x, 535, 3, H); for (const x of [260, 1500]) { c.fillStyle = '#b01818'; c.fillRect(x, 330, 8, 205); c.fillStyle = '#e83030'; c.beginPath(); c.moveTo(x + 8, 330); c.lineTo(x + 70, 350); c.lineTo(x + 8, 380); c.fill(); } }), px(1, cam), 0);
+  blitL(g, L('bk_n', SW, H, (c) => { c.fillStyle = grad(c, 0, 535, 0, H, [[0, '#5a5470'], [1, '#1a1826']]); c.fillRect(0, 535, SW, H - 535); c.fillStyle = 'rgba(255,255,255,.07)'; for (let x = 0; x < SW; x += 120) c.fillRect(x, 535, 3, H); for (const x of [260, 1500]) { c.fillStyle = '#b01818'; c.fillRect(x, 330, 8, 205); c.fillStyle = '#e83030'; c.beginPath(); c.moveTo(x + 8, 330); c.lineTo(x + 70, 350); c.lineTo(x + 8, 380); c.fill(); } }), px(1, cam), 0);
 }
 // ---------------------------------------------------------------- vliegtuig-cabine en hemel
 function flightSky(g, t, mood = 'day', sp = 1) {
@@ -534,11 +542,11 @@ function islandBg(g, t, cam = 0, mood = 'dusk') {
   const K = 'is_' + mood, day = mood === 'day';
   g.drawImage(skyLayer(K + 's', day ? [[0, '#3a98e8'], [0.7, '#a8dcff'], [1, '#fff4d0']] : [[0, '#2a2468'], [0.35, '#c04a7a'], [0.7, '#ff8a58'], [1, '#ffd890']], day ? { sun: [980, 130, 400, 50] } : { sun: [760, 410, 440, 56], sunCol: 'rgba(255,160,90,.9)', stars: 50, starsY: 140 }), 0, 0);
   clouds(g, t, { y: 50, n: 5, a: day ? 0.9 : 0.55, sp: 8, col: day ? '#fff' : '#ffb89a', seed: 21 });
-  g.drawImage(L(K + 'f', SW, H, (c) => { c.fillStyle = grad(c, 0, 420, 0, 520, [[0, day ? '#2a8ac8' : '#c8607a'], [1, day ? '#1a6aa8' : '#7a3a6a']]); c.fillRect(0, 424, SW, 120); ridge(c, SW, 410, 14, 5, day ? '#4a8a6a' : '#5a3a6a'); c.fillStyle = day ? '#2a8ac8' : '#a85a7a'; c.fillRect(0, 424, SW, 10); }), px(0.1, cam), 0);
+  blitL(g, L(K + 'f', SW, H, (c) => { c.fillStyle = grad(c, 0, 420, 0, 520, [[0, day ? '#2a8ac8' : '#c8607a'], [1, day ? '#1a6aa8' : '#7a3a6a']]); c.fillRect(0, 424, SW, 120); ridge(c, SW, 410, 14, 5, day ? '#4a8a6a' : '#5a3a6a'); c.fillStyle = day ? '#2a8ac8' : '#a85a7a'; c.fillRect(0, 424, SW, 10); }), px(0.1, cam), 0);
   g.save(); g.globalCompositeOperation = 'lighter'; const r = rng(3); for (let i = 0; i < 40; i++) { const x = r() * W, y = 436 + r() * 70, a = 0.3 + 0.7 * Math.abs(Math.sin(t * 2 + i)); g.fillStyle = `rgba(255,220,170,${a * 0.5})`; g.fillRect(x, y, 14 + r() * 22, 2); } g.restore();
-  const mx = px(0.4, cam); g.drawImage(L(K + 'm', SW, H, (c) => { const r2 = rng(8); for (let i = 0; i < 26; i++) { const x = i * 70 + r2() * 30; tree(c, x, 520, 100 + r2() * 60, day ? '#2f9a4a' : '#2a4a4a', day ? '#1a6a34' : '#16303a'); } c.fillStyle = grad(c, 0, 480, 0, 560, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,.35)']]); c.fillRect(0, 480, SW, 80); }), mx, 0);
+  const mx = px(0.4, cam); blitL(g, L(K + 'm', SW, H, (c) => { const r2 = rng(8); for (let i = 0; i < 26; i++) { const x = i * 70 + r2() * 30; tree(c, x, 520, 100 + r2() * 60, day ? '#2f9a4a' : '#2a4a4a', day ? '#1a6a34' : '#16303a'); } c.fillStyle = grad(c, 0, 480, 0, 560, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,.35)']]); c.fillRect(0, 480, SW, 80); }), mx, 0);
   for (const [x, h, l, ph] of [[150, 260, 0.12, 0], [420, 200, -0.1, 1], [1180, 280, -0.14, 2], [1520, 220, 0.1, 3]]) palm(g, x + mx * 1.2, 520, h, l, t, ph, !day);
-  g.drawImage(L(K + 'n', SW, H, (c) => { c.fillStyle = grad(c, 0, 505, 0, H, [[0, day ? '#f0dca0' : '#e8b888'], [0.5, day ? '#e0c080' : '#c08a64'], [1, day ? '#c8a060' : '#8a5a44']]); c.beginPath(); c.moveTo(0, 520); for (let x = 0; x <= SW; x += 40) c.lineTo(x, 508 + Math.sin(x * 0.012) * 6); c.lineTo(SW, H); c.lineTo(0, H); c.fill(); const r3 = rng(9); c.fillStyle = 'rgba(80,50,20,.18)'; for (let i = 0; i < 140; i++) { c.beginPath(); c.ellipse(r3() * SW, 540 + r3() * 180, 2 + r3() * 5, 1 + r3() * 2, 0, 0, TAU); c.fill(); } }), px(1, cam), 0);
+  blitL(g, L(K + 'n', SW, H, (c) => { c.fillStyle = grad(c, 0, 505, 0, H, [[0, day ? '#f0dca0' : '#e8b888'], [0.5, day ? '#e0c080' : '#c08a64'], [1, day ? '#c8a060' : '#8a5a44']]); c.beginPath(); c.moveTo(0, 520); for (let x = 0; x <= SW; x += 40) c.lineTo(x, 508 + Math.sin(x * 0.012) * 6); c.lineTo(SW, H); c.lineTo(0, H); c.fill(); const r3 = rng(9); c.fillStyle = 'rgba(80,50,20,.18)'; for (let i = 0; i < 140; i++) { c.beginPath(); c.ellipse(r3() * SW, 540 + r3() * 180, 2 + r3() * 5, 1 + r3() * 2, 0, 0, TAU); c.fill(); } }), px(1, cam), 0);
   const nx = px(1, cam); g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.moveTo(0, 500); for (let x = 0; x <= W + 40; x += 20) g.lineTo(x, 498 + Math.sin(x * 0.03 + t * 1.6) * 3 + Math.sin(t * 0.9) * 4 - 6); for (let x = W + 40; x >= 0; x -= 20) g.lineTo(x, 512 + Math.sin(x * 0.02 - t * 1.2) * 3 + Math.sin(t * 0.9) * 4); g.fill(); void nx;
 }
 function wreckPiece(g, x, y, s, t, o = {}) { // brokken vliegtuigromp
