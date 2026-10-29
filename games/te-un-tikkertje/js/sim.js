@@ -64,7 +64,7 @@ export class Game {
     const spawns = this.spawns.slice().sort(() => this.R() - 0.5);
     al.forEach((c, i) => {
       const [x, y] = spawns[i];
-      Object.assign(c, { x: x + 0.5, y, vx: 0, vy: 0, grounded: true, it: false, immuneT: 0, coolT: 0, taggerTime: 0, goal: null, goalT: 0, noBackT: 0, plat: this.plats.find((p) => p.y === y && x >= p.x0 && x <= p.x1 + 1) });
+      Object.assign(c, { x: x + 0.5, y, vx: 0, vy: 0, grounded: true, it: false, immuneT: 0, coolT: 0, taggerTime: 0, goal: null, goalT: 0, noBackT: 0, stage: 0, portal: null, invisT: 0, plat: this.plats.find((p) => p.y === y && x >= p.x0 && x <= p.x1 + 1) });
     });
     const k = this.mode === 'hardcore' && this.round === 1 ? 2 : 1;
     const order = al.slice().sort(() => this.R() - 0.5);
@@ -74,8 +74,8 @@ export class Game {
     this.events.push({ t: 'round', n: this.round });
   }
   speedOf(c) {
-    if (c.type === 'speed' && !c.it) return SPEED * 2;
-    return c.player ? SPEED : c.it ? SPEED * 0.88 : SPEED * 0.98;
+    const base = c.player ? SPEED : c.it ? SPEED * 0.88 : SPEED * 0.98;
+    return c.type === 'speed' ? base * (c.it ? 1.1 : 1.25) : base; // tyfus snelle Te-Un: 1,25x, als tikker 1,1x
   }
   // één stap. pins: { dir, jump, ability } voor één speler, of een lijst van die dingen (speler 1, speler 2)
   step(dt, pins = {}) {

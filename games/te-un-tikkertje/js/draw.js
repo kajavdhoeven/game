@@ -178,7 +178,7 @@ export function drawArrow(g, px, py, t) {
 export function drawScene(g, game, backdrop, t) {
   g.drawImage(backdrop, 0, 0);
   for (const c of game.chars) {
-    if (c.player && c.portal) { // het portaal is alleen voor jou zichtbaar
+    if (c.portal) { // ook de portalen van de NPC's zijn te zien
       g.save(); g.translate(c.portal.x * TS, c.portal.y * TS - 26);
       g.fillStyle = 'rgba(160,90,255,.35)'; g.beginPath(); g.ellipse(0, 0, 18, 28, 0, 0, 7); g.fill();
       g.strokeStyle = '#c79bff'; g.lineWidth = 4; g.beginPath(); g.ellipse(0, 0, 14 + Math.sin(t * 6) * 2, 24, 0, 0, 7); g.stroke();

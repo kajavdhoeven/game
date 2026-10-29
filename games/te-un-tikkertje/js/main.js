@@ -11,9 +11,9 @@ const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(
 // de personages in de winkel
 const SHOP = [
   { id: 'teun', name: 'Te-Un', price: 0, desc: 'Gewoon Te-Un. Niets bijzonders, maar altijd van jou.' },
-  { id: 'speed', name: 'Tyfus snelle Te-Un', price: 25, desc: 'Rent 2x zo snel, behalve als hij de tikker is.' },
-  { id: 'shadow', name: 'Schaduw Te-Un', price: 75, desc: '1x per potje op spatie: 5 seconden een schim. De NPC\'s zien je niet en kunnen je niet tikken.' },
-  { id: 'wizard', name: 'Tovenaar Te-Un', price: 100, desc: '1x per potje: spatie zet een portaal neer, nog een keer spatie en je teleporteert er weer naartoe.' },
+  { id: 'speed', name: 'Tyfus snelle Te-Un', price: 25, desc: 'Rent 1,25x zo snel. Is hij de tikker, dan rent hij 1,1x zo snel.' },
+  { id: 'shadow', name: 'Schaduw Te-Un', price: 75, desc: '1x per ronde op spatie: 5 seconden een schim. De NPC\'s zien je niet en kunnen je niet tikken.' },
+  { id: 'wizard', name: 'Tovenaar Te-Un', price: 100, desc: '1x per ronde: spatie zet een portaal neer, nog een keer spatie en je teleporteert er weer naartoe.' },
 ];
 const ABIL = { wizard: ['Portaal plaatsen', 'Teleporteren'], shadow: ['Schim worden'] };
 
@@ -282,7 +282,7 @@ initTutorial({
   steps: [
     { icon: '🏃', title: 'Tikkertje', lines: ['Je speelt tikkertje met 3 andere kabouters (hun shirt heeft een andere kleur). De <b>tikker</b> herken je aan het <b>witte pijltje</b> boven zijn hoofd. Als jij de tikker bent, tik je iemand door tegen hem aan te lopen. Je kunt wel gewoon door elkaar heen lopen.'] },
     { icon: '⏱️', title: 'Een minuut per ronde', lines: ['Na <b>1 minuut</b> gaat de tikker eruit. Een NPC die eruit gaat? Dan gaat het spel door met de rest. Ga jij eruit, dan is het afgelopen. Zorg dus dat je de tikker niet bent als de tijd om is!'] },
-    { icon: '⌨️', title: 'Besturing', lines: ['<kbd>←</kbd> <kbd>→</kbd> of <kbd>A</kbd> <kbd>D</kbd> lopen, <kbd>↑</kbd> of <kbd>W</kbd> springen. Je springt van onderaf <b>door</b> een platform heen, maar je valt er niet doorheen als je erop staat. Op een telefoon gebruik je de knoppen onderin.', 'Heb je een speciaal personage? Dan gebruik je zijn kracht met <kbd>Spatie</kbd>.'] },
+    { icon: '⌨️', title: 'Besturing', lines: ['<kbd>←</kbd> <kbd>→</kbd> of <kbd>A</kbd> <kbd>D</kbd> lopen, <kbd>↑</kbd> of <kbd>W</kbd> springen. Je springt van onderaf <b>door</b> een platform heen, maar je valt er niet doorheen als je erop staat. Op een telefoon gebruik je de knoppen onderin.', 'Heb je een speciaal personage? Dan gebruik je zijn kracht met <kbd>Spatie</kbd>, 1 keer per ronde.'] },
     { icon: '🦘', title: 'Trampoline', lines: ['Aan een kant van de map staat een <b>trampoline</b>. Spring erop en je wordt hoog de lucht in gelanceerd, zodat je meteen bij de bovenste platforms bent. De NPC-kabouters kunnen ook een speciaal personage zijn en gebruiken hun krachten echt!'] },
     { icon: '👥', title: '2 spelers', lines: ['Op een computer kun je met twee spelers op één toetsenbord spelen: speler 1 (blauw) met <kbd>A</kbd> <kbd>D</kbd> <kbd>W</kbd>, speler 2 (rood) met de <kbd>pijltjes</kbd>. Dan kun je geen ander personage kiezen. Het spel gaat door tot jullie allebei af zijn. Op een telefoon is er geen 2 spelers.'] },
     { icon: '⚔️', title: 'Normaal en hardcore', lines: ['Bij <b>Normaal</b> is er steeds 1 tikker. Bij <b>Hardcore</b> zijn er in ronde 1 twee tikkers, dus gaan er twee kabouters tegelijk uit.'] },
