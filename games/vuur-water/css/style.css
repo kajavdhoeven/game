@@ -44,3 +44,8 @@ body.one .swap { display: block; }
 .card p { margin: 6px 0 16px; font-size: 19px; font-weight: 600; }
 .row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 @media (max-width: 700px) { .bar { padding-left: 124px; font-size: 15px; gap: 6px; flex-wrap: wrap; } }
+
+/* klein speelvenster (nog niet op volledig scherm): menu's passen en blijven weg van de Dev-knop */
+.screen { justify-content: safe center; }
+.title img { max-height: 16vh; width: auto; max-width: 100%; margin: 0 auto; }
+@media (max-height: 560px), (max-width: 700px) { #menu { padding-top: 54px; } }

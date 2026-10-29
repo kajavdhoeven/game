@@ -87,3 +87,8 @@ button:disabled { filter: grayscale(.8); opacity: .6; cursor: not-allowed; }
 .ink.right { padding-right: 52px; }
 
 .top { padding-left: 124px; }
+
+/* klein speelvenster (nog niet op volledig scherm): menu's passen en blijven weg van de Dev-knop */
+.screen { justify-content: safe center; }
+@media (max-height: 560px), (max-width: 700px) { .screen { padding-top: 54px; gap: 10px; } .title-logo { max-height: 24vh; } }
+@media (max-height: 560px) { .screen .sub { display: none; } }

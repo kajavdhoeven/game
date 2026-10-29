@@ -241,3 +241,8 @@ h2 { margin: 0 0 6px; font-size: 40px; color: var(--yellow); text-shadow: 0 3px 
 @keyframes titleIn { from { opacity: 0; transform: translateY(10px) scale(.96); } }
 @media (max-height: 560px) and (min-aspect-ratio: 1/1) { .title-logo { width: 200px; } }
 @media (max-aspect-ratio: 1/1) { .title-logo { width: min(250px, 70%); } }
+
+/* klein speelvenster (nog niet op volledig scherm): menu's passen en blijven weg van de Dev-knop */
+@media (max-height: 560px) { #menu .how, #menu .tagline { display: none; } #menu .menu-panel { padding-top: 12px; } }
+@media (max-width: 700px) and (min-aspect-ratio: 1/1) { #menu .how { display: none; } }
+#menu { padding-top: 54px; }

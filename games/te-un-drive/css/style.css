@@ -67,3 +67,9 @@ button:disabled { filter: grayscale(.8); opacity: .65; cursor: not-allowed; }
 button.small.play { background: linear-gradient(#ffe27a, #ffb81c); }
 
 .top { padding-left: 124px; }
+
+/* klein speelvenster (nog niet op volledig scherm): menu's passen en blijven weg van de Dev-knop */
+.screen { justify-content: safe center; }
+.title-logo { max-height: 34vh; width: auto; max-width: min(600px, 88vw); }
+@media (max-height: 560px), (max-width: 700px) { .screen { padding-top: 54px; gap: 10px; } .title-logo { max-height: 24vh; } }
+@media (max-height: 560px) { .screen .sub { display: none; } }

@@ -71,3 +71,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: radial-gradi
 .sl-tile.empty { opacity: 0; pointer-events: none; transition: left .14s ease-out, top .14s ease-out, opacity .6s; }
 .sl-tile.empty.show { opacity: 1; }
 #sPeekImg { position: absolute; right: 10px; top: 10px; max-width: 40%; max-height: 40%; border-radius: 10px; border: 3px solid #fff; box-shadow: 0 8px 24px rgba(0,0,0,.5); pointer-events: none; z-index: 20; }
+
+/* klein speelvenster (nog niet op volledig scherm): menu's passen en blijven weg van de Dev-knop */
+#menu { justify-content: safe center; }
+@media (max-height: 560px), (max-width: 700px) { #menu { padding-top: 54px; gap: 8px; } .title-logo { max-height: 16vh; } }
+@media (max-height: 560px) { #menu .sub { display: none; } }
