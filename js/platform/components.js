@@ -23,8 +23,12 @@ export function gameCard(g) {
   </a>`);
 }
 
+// een banner bovenaan de uitgelichte game (per game in te stellen)
+const FEATURE_BANNER = { 'te-un-robber': 'Ons meest geavanceerde spel tot nu toe!' };
 export function featured(g) {
-  return el(`<section class="featured">
+  const banner = FEATURE_BANNER[g.id];
+  return el(`<section class="featured${banner ? ' has-banner' : ''}">
+    ${banner ? `<div class="feat-banner"><span>\u2605</span> ${esc(banner)} <span>\u2605</span></div>` : ''}
     <div class="feat-img" style="background-image:url('${esc(g.hero || g.thumb)}')"></div>
     <div class="feat-body">
       <span class="eyebrow">Uitgelicht</span>
