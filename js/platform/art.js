@@ -66,6 +66,7 @@ export function avatarSVG(kind = 'teun') {
   if (kind === 'lambo') return lamboAvatar();
   if (kind === 'diamant') return diamantAvatar();
   if (kind === 'zonnebril') return zonnebrilAvatar();
+  if (kind === 'goudvape') return goudVapeAvatar();
   if (kind === 'tovenaar') return tovenaarAvatar();
   if (kind === 'tikker') return tikkerAvatar();
   if (kind === 'ultragoud') return ultraGoudAvatar();
@@ -213,6 +214,24 @@ function zonnebrilAvatar() {
 </svg></div>`;
 }
 
+// Te-Un met een gouden vape in zijn mond (profielfoto voor wie de gouden vape in Te-Un X3M heeft gekocht)
+function goudVapeAvatar() {
+  return `<div class="av-face" style="background:radial-gradient(circle at 70% 25%,#fff3b0,#ffc83a 45%,#9a5a00)">${teunSVG({ crop: 'face' })}
+<svg class="avsvg" style="position:absolute;inset:0" viewBox="24 -10 152 168" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Te-Un met gouden vape">
+<defs><linearGradient id="gvp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6c0"/><stop offset=".45" stop-color="#f2c230"/><stop offset="1" stop-color="#9a6200"/></linearGradient>
+<radialGradient id="gvc" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fffbe0" stop-opacity=".95"/><stop offset="1" stop-color="#ffd54a" stop-opacity="0"/></radialGradient></defs>
+<g opacity=".95"><circle cx="150" cy="104" r="14" fill="url(#gvc)"/><circle cx="162" cy="86" r="18" fill="url(#gvc)"/><circle cx="150" cy="64" r="22" fill="url(#gvc)"/><circle cx="170" cy="38" r="16" fill="url(#gvc)"/></g>
+<g transform="rotate(-14 108 150)">
+<rect x="104" y="141" width="52" height="15" rx="6" fill="url(#gvp)" stroke="#5a3a00" stroke-width="3"/>
+<rect x="104" y="141" width="52" height="5" rx="2.5" fill="#fff" opacity=".55"/>
+<rect x="128" y="141" width="3" height="15" fill="#5a3a00" opacity=".6"/><rect x="138" y="141" width="3" height="15" fill="#5a3a00" opacity=".6"/>
+<rect x="96" y="145" width="12" height="7" rx="3" fill="#2b1c00" stroke="#5a3a00" stroke-width="2"/>
+<circle cx="152" cy="148.5" r="2.6" fill="#ff7a1a"/>
+</g>
+<g fill="#fff"><path d="M44 30l1.4 3.8 3.8 1.4-3.8 1.4L44 40.4l-1.4-3.8-3.8-1.4 3.8-1.4z"/><path d="M168 118l1.1 3 3 1.1-3 1.1-1.1 3-1.1-3-3-1.1 3-1.1z"/></g>
+</svg></div>`;
+}
+
 // Te-Un Racer: motorhelm met klep en bril
 function racerAvatar() {
   return `<svg class="avsvg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Te-Un Racer">
@@ -238,6 +257,7 @@ export const AVATARS = [
   { id: 'puzzle', name: 'Puzzel-Te-Un', desc: 'Te-Un met puzzelstukje', unlock: { game: 'te-un-puzzel', how: 'Maak alle 4 de levels van Te-Un Puzzel af binnen de tijd (30 sec, 1 min, 2,5 min en 10 min)', check: (d) => [1, 2, 3, 4].every((n) => d.fast && d.fast[n]) } },
   { id: 'slider', name: 'Schuif-Te-Un', desc: 'Te-Un als schuifpuzzel, met een paar verkeerd geschoven vakjes', unlock: { game: 'te-un-puzzel', how: 'Maak alle 4 de levels van de schuifpuzzel in Te-Un Puzzel af', check: (d) => [1, 2, 3, 4].every((n) => d.slide && d.slide[n]) } },
   { id: 'racer', name: 'Te-Un Racer', desc: 'Te-Un met motorhelm', unlock: { game: 'te-un-x3m', how: 'Haal 3 sterren op alle 25 levels van Te-Un X3M', check: (d) => Array.from({ length: 25 }, (_, i) => i + 1).every((n) => (d.stars && d.stars[n]) >= 3) } },
+  { id: 'goudvape', name: 'Te-Un met gouden vape', desc: 'Te-Un met een gouden vape in zijn mond', unlock: { game: 'te-un-x3m', how: 'Koop de gouden vape in de garage van Te-Un X3M', check: (d) => !!d.dev || !!(d.owned && d.owned.vape) } },
   { id: 'ultragoud', name: 'Ultra Goud Plus Pro Te-Un', desc: 'Een gouden standbeeld van Te-Un', unlock: { game: 'all', games: ['te-un-puzzel', 'te-un-x3m', 'te-un-drive', 'vuur-water'], how: 'Voltooi alle levels van alle games: Te-Un Puzzel (ook de schuifpuzzel), X3M, Drive en VuurTe-Un & WaterTe-Un', check: (all) => {
     const r = (n) => Array.from({ length: n }, (_, i) => i + 1);
     const p = all['te-un-puzzel'], x = all['te-un-x3m'], d = all['te-un-drive'], v = all['vuur-water'];

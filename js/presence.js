@@ -15,12 +15,23 @@ const playingNow = () => {
 const send = (extra = {}) => {
   try { fetch('/api/ping', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cid, ...info(), path: location.pathname, playing: playingNow(), ...extra }), keepalive: true }).catch(() => {}); } catch (e) { /* offline */ }
 };
-export const pingNow = () => { if (!document.hidden) send(); };
+// speeltijd: de browser telt zelf de seconden dat er een game draait en de pagina in beeld is, en geeft die door (zo gaat er niets verloren tussen twee meldingen)
+let acc = 0, accGame = '';
+const flush = (extra = {}) => {
+  if (acc > 0 && accGame) { send({ play: { game: accGame, sec: acc }, ...extra }); acc = 0; return true; }
+  return false;
+};
+export const pingNow = () => { if (!document.hidden && !flush()) send(); };
 export function startPresence(infoFn) {
   info = infoFn;
-  const tick = () => { if (!document.hidden) send(); };
   send();
-  setInterval(tick, 30000);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) send({ bye: true }); else send(); });
-  window.addEventListener('pagehide', () => send({ bye: true }));
+  setInterval(() => {
+    if (document.hidden) return;
+    const g = playingNow();
+    if (g) { if (accGame && g !== accGame) flush(); accGame = g; acc++; if (acc >= 20) flush(); }
+    else if (acc > 0) flush();
+  }, 1000);
+  setInterval(() => { if (!document.hidden && !flush()) send(); }, 30000);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { if (!flush({ bye: true })) send({ bye: true }); } else send(); });
+  window.addEventListener('pagehide', () => { if (!flush({ bye: true })) send({ bye: true }); });
 }

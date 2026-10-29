@@ -81,10 +81,15 @@ export class Leaderboard {
         const auth = !!b.auth;
         const now = Date.now();
         const playing = /^[\w-]{2,40}$/.test(String(b.playing || '')) ? String(b.playing) : '';
-        // speeltijd: telt alleen als hij bij de vorige en deze melding een game aan het spelen was (maximaal 45 seconden per melding)
-        if (playing && prev && prev.playing) await this.addPlaytime(Math.min(45, (now - prev.t) / 1000), auth ? cleanName(b.name) : 'Gasten', prev.playing);
+        // speeltijd: de browser telt zelf de seconden en geeft ze door. Om geknoei te beperken kan er per melding niet meer bij dan er echt tijd voorbij is.
+        const pl = b.play && typeof b.play === 'object' ? b.play : null;
+        if (pl && /^[\w-]{2,40}$/.test(String(pl.game || ''))) {
+          const since = (now - ((prev && prev.playT) || now - 30000)) / 1000;
+          const sec = Math.min(30, Math.floor(+pl.sec || 0), since + 3);
+          if (sec > 0) await this.addPlaytime(sec, auth ? cleanName(b.name || (prev && prev.name)) : 'Gasten', String(pl.game));
+        }
         this.online.set(cid, {
-          t: now, auth, playing, since: prev && prev.auth === auth ? prev.since : now,
+          t: now, playT: pl && pl.game ? now : prev && prev.playT, auth, playing, since: prev && prev.auth === auth ? prev.since : now,
           uid: auth && /^[\w-]{8,64}$/.test(String(b.uid || '')) ? String(b.uid) : (prev && prev.uid) || '',
           name: auth ? (b.name ? cleanName(b.name) : (prev && prev.name) || '') : '', avatar: auth ? String(b.avatar || '').replace(/[^\w-]/g, '').slice(0, 20) : '',
           path: String(b.path || '/').replace(/[^\w\-/]/g, '').slice(0, 60),

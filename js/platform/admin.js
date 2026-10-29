@@ -189,7 +189,8 @@ export async function renderAdmin(app) {
     let data = null;
     const key = () => `${ym[0]}-${String(ym[1]).padStart(2, '0')}`;
     const chart = (vals, color) => {
-      const n = vals.length, Wd = 760, Ht = 220, pad = 34, bw = (Wd - pad) / n;
+      const mob = window.innerWidth < 640;
+      const n = vals.length, Wd = mob ? 360 : 760, Ht = mob ? 190 : 220, pad = mob ? 30 : 34, bw = (Wd - pad) / n;
       const max = Math.max(60, ...vals.map((v) => v.sec));
       const top = Math.max(1, Math.ceil(max / 3600)); // hele uren op de as
       const scale = Math.max(max, top * 3600);
@@ -197,7 +198,7 @@ export async function renderAdmin(app) {
       const ticks = Array.from({ length: Math.min(top, 5) + 1 }, (_, i) => Math.round((top / Math.min(top, 5)) * i));
       return `<svg class="ad-line" viewBox="0 0 ${Wd} ${Ht}" role="img" aria-label="Speeltijd per dag">
         ${[...new Set(ticks)].map((h) => `<line x1="${pad}" x2="${Wd}" y1="${y(h * 3600)}" y2="${y(h * 3600)}" stroke="#e8ecf3"/><text x="${pad - 6}" y="${y(h * 3600) + 4}" text-anchor="end" class="lt">${h} u</text>`).join('')}
-        ${vals.map((v, i) => { const h = Math.max(0, Ht - 24 - y(v.sec)); const x = pad + i * bw + bw * 0.14; return `<g><rect x="${x.toFixed(1)}" y="${y(v.sec).toFixed(1)}" width="${(bw * 0.72).toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${color}" opacity="${v.sec ? 1 : 0}"><title>${v.label}: ${dur(v.sec)}</title></rect><rect x="${(pad + i * bw).toFixed(1)}" y="0" width="${bw.toFixed(1)}" height="${Ht - 24}" fill="transparent"><title>${v.label}: ${dur(v.sec)}</title></rect><text x="${(pad + i * bw + bw / 2).toFixed(1)}" y="${Ht - 6}" text-anchor="middle" class="lt">${i % 2 === 0 || n < 20 ? v.n : ''}</text></g>`; }).join('')}
+        ${vals.map((v, i) => { const h = Math.max(0, Ht - 24 - y(v.sec)); const x = pad + i * bw + bw * 0.14; return `<g><rect x="${x.toFixed(1)}" y="${y(v.sec).toFixed(1)}" width="${(bw * 0.72).toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${color}" opacity="${v.sec ? 1 : 0}"><title>${v.label}: ${dur(v.sec)}</title></rect><rect x="${(pad + i * bw).toFixed(1)}" y="0" width="${bw.toFixed(1)}" height="${Ht - 24}" fill="transparent"><title>${v.label}: ${dur(v.sec)}</title></rect><text x="${(pad + i * bw + bw / 2).toFixed(1)}" y="${Ht - 6}" text-anchor="middle" class="lt">${mob ? ((i + 1) % 5 === 0 || i === 0 ? v.n : '') : (i % 2 === 0 || n < 20 ? v.n : '')}</text></g>`; }).join('')}
       </svg>`;
     };
     const paint = () => {

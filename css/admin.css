@@ -207,3 +207,50 @@ body.admin-mode { background: linear-gradient(180deg, #eef4ff 0%, #f8f5ff 45%, #
 .tm-bar { width: 100%; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; font: inherit; display: grid; grid-template-columns: 110px 1fr auto; align-items: center; gap: 10px; border-radius: 8px; }
 .tm-bar:hover, .tm-bar.on { background: #eef2ff; }
 .tm-bar b { font-size: 13px; color: var(--m); font-weight: 600; white-space: nowrap; }
+
+/* ===================== Mobiel ===================== */
+.ad { grid-template-columns: 240px minmax(0, 1fr); }
+.ad-main { min-width: 0; }
+@media (max-width: 860px) {
+  .ad { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; align-content: start; }
+  body.admin-mode { overflow-x: hidden; }
+  /* bovenbalk: klein logo, pil "Beheer" en een terugknop; daaronder de tabbladen in een rij die je kunt vegen */
+  .ad-side { position: sticky; top: 0; z-index: 30; height: auto; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 6px 10px; padding: 8px 12px 6px; box-shadow: 0 6px 18px rgba(15, 40, 120, .25); }
+  .ad-brand { flex-direction: row; gap: 8px; padding: 0; }
+  .ad-brand img { width: 74px; filter: drop-shadow(0 3px 5px rgba(0, 0, 40, .35)); }
+  .ad-brand small { font-size: 10px; padding: 2px 9px; }
+  .ad-back { grid-column: 3; grid-row: 1; margin: 0; padding: 7px 12px; font-size: 12.5px; background: rgba(255, 255, 255, .16); color: #fff; border-radius: 999px; white-space: nowrap; }
+  .ad-side nav { grid-column: 1 / -1; grid-row: 2; display: flex; flex-direction: row; flex-wrap: nowrap; gap: 6px; overflow-x: auto; margin: 0 -12px; padding: 2px 12px 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .ad-side nav::-webkit-scrollbar { display: none; }
+  .ad-side nav a { flex: none; padding: 8px 14px; font-size: 14px; gap: 7px; white-space: nowrap; }
+  .ad-side nav a:hover { transform: none; }
+  .ad-side nav a i { width: auto; font-size: 16px; }
+  .ad-main { padding: 14px 12px 40px; }
+  .ad-head { margin-bottom: 14px; gap: 10px; }
+  .ad-head h1 { font-size: 21px; }
+  .ad-head p { font-size: 13px; }
+  .ad-hero { padding: 16px; margin-bottom: 14px; }
+  .ad-hero h2 { font-size: 19px; } .ad-hero p { font-size: 13px; }
+  .ad-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .ad-kpi { padding: 13px 14px; border-radius: 14px; min-height: 0; }
+  .ad-kpi b { font-size: 24px; line-height: 1.15; overflow-wrap: anywhere; }
+  .ad-kpi small { font-size: 12px; } .ad-kpi span { font-size: 12px; }
+  .ad-kpi i { font-size: 28px; right: 10px; top: 8px; }
+  .ad-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 12px; }
+  .ad-card { padding: 14px; border-radius: 14px; }
+  .ad-card.wide { grid-column: auto; }
+  .ad-strip-row { gap: 10px; }
+  .ad-gcard { min-width: 150px; }
+  .ad-table th, .ad-table td { padding: 10px 12px; font-size: 13px; }
+  .ad-card.flush { padding: 0; }
+  .ad-btn { padding: 9px 14px; }
+  .ad-foot { flex-wrap: wrap; }
+  .modal.ad-modal { padding: 18px 16px; max-height: 92vh; overflow-y: auto; border-radius: 14px; }
+  .ad-two { grid-template-columns: minmax(0, 1fr) !important; }
+  .tm-nav b { min-width: 0; font-size: 15px; flex: 1; }
+  .tm-nav { width: 100%; justify-content: space-between; }
+  .tm-top { align-items: flex-start; }
+  .tm-bar { grid-template-columns: 84px 1fr auto; gap: 8px; }
+  .ad-denied h1 { font-size: 22px; }
+}
+@media (max-width: 380px) { .ad-kpis { grid-template-columns: minmax(0, 1fr); } }
