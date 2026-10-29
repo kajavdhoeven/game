@@ -29,15 +29,18 @@ const TH = {
   suburb: { wall: '#d6d0c0', wall2: '#c4bca8', floor: '#6a5a48', trim: '#4a4238', accent: '#e8a43a', props: ['sofa', 'tv', 'plant', 'cabinet', 'lamp', 'window', 'fridge'], hide: 'closet', skin: 'blue', style: { wall: 'paper', floor: 'wood', damage: 0.2 }, floors: 3, items: ['loot', 'doc', 'loot'] },
   police: { wall: '#8aa0c4', wall2: '#788fb6', floor: '#3f4f6e', trim: '#26304a', accent: '#4a8aff', props: ['desk', 'pc', 'bars', 'cabinet', 'clock', 'board'], hide: 'closet', skin: 'police', style: { wall: 'concrete', floor: 'tile', damage: 0.3 }, floors: 3, items: ['loot'], labels: { loot: ['🎒', 'Je spullen'] } },
   atelier: { wall: '#a08a78', wall2: '#8e7a6a', floor: '#4a3a30', trim: '#6a2f4a', accent: '#d65aa8', props: ['mannequin', 'sewing', 'fabricroll', 'shelf', 'lamp', 'window'], hide: 'mannequin', skin: 'purple', style: { wall: 'plaster', floor: 'planks', damage: 0.85 }, floors: 3, items: ['loot'], labels: { loot: ['💰', 'Je zak'] } },
-  bankchina: { wall: '#c8a878', wall2: '#b49464', floor: '#4a2a22', trim: '#a8322a', accent: '#ffd23a', props: ['counter', 'vaultdoor', 'deposit', 'pillar', 'painting', 'lanternred'], hide: 'plant', skin: 'gold', style: { wall: 'stone', floor: 'tile', damage: 0.1 }, floors: 4, items: ['vault', 'loot', 'loot', 'doc', 'hack'], labels: { vault: ['🔓', 'Kluis openen'] } },
+  bankchina: { wall: '#c8a878', wall2: '#b49464', floor: '#4a2a22', trim: '#a8322a', accent: '#ffd23a', props: ['counter', 'vaultdoor', 'deposit', 'pillar', 'painting', 'lanternred'], hide: 'plant', skin: 'gold', style: { wall: 'stone', floor: 'tile', damage: 0.1 }, floors: 4, items: ['code', 'vault', 'loot', 'loot', 'doc'], labels: { code: ['🔐', 'Kluiscode'], vault: ['🔓', 'Kluis openen'] } },
   wreck: { wall: '#8a9a98', wall2: '#778785', floor: '#3a4440', trim: '#c4452e', accent: '#ffb03a', props: ['seats', 'luggage', 'pipes', 'lamp', 'crate'], hide: 'luggage', skin: 'orange', style: { wall: 'metal', floor: 'concrete', damage: 0.9 }, floors: 3, items: ['loot', 'loot', 'doc'], labels: { loot: ['💰', 'Geldzakken'] } },
   resort: { wall: '#e8d8b0', wall2: '#d8c698', floor: '#a8896a', trim: '#2f8a8a', accent: '#ff7a5a', props: ['bed', 'palmplant', 'lamp', 'window', 'table', 'plant'], hide: 'palmplant', skin: 'white', style: { wall: 'plaster', floor: 'tile', damage: 0.2 }, floors: 4, items: ['loot', 'doc', 'loot', 'hack'] },
   ship: { wall: '#6a4a2a', wall2: '#58391e', floor: '#3a2814', trim: '#241608', accent: '#e8c64a', props: ['barrel', 'chest', 'cannon', 'lantern', 'crate', 'helm'], hide: 'barrel', skin: 'knight', style: { wall: 'wood', floor: 'planks', damage: 0.5 }, floors: 3, items: ['loot', 'doc', 'loot', 'loot'], labels: { loot: ['🪙', 'Schatten'] } },
   airport: { wall: '#a8c4e0', wall2: '#93b1d0', floor: '#4a6080', trim: '#2a4060', accent: '#ffd23a', props: ['luggage', 'desk', 'board', 'window', 'clock', 'plant'], hide: 'luggage', skin: 'police', style: { wall: 'plaster', floor: 'tile', damage: 0.1 }, floors: 4, items: ['doc', 'loot', 'hack', 'loot'], labels: { doc: ['🎫', 'Tickets'] } },
-  castle: { wall: '#9a9488', wall2: '#85807a', floor: '#4a443a', trim: '#2f2b24', accent: '#e8c64a', props: ['pillar', 'banner', 'armor', 'torchwall', 'statue', 'painting'], hide: 'armor', skin: 'knight', style: { wall: 'stone', floor: 'stone', damage: 0.6 }, floors: 4, items: ['loot', 'doc', 'hack', 'loot', 'vault'], labels: { vault: ['🔓', 'Schatkamer'] } },
+  castle: { wall: '#9a9488', wall2: '#85807a', floor: '#4a443a', trim: '#2f2b24', accent: '#e8c64a', props: ['pillar', 'banner', 'armor', 'torchwall', 'statue', 'painting'], hide: 'armor', skin: 'knight', style: { wall: 'stone', floor: 'stone', damage: 0.6 }, floors: 4, items: ['code', 'loot', 'doc', 'hack', 'loot', 'vault'], labels: { code: ['🔐', 'Kluiscode'], vault: ['🔓', 'Schatkamer'] } },
 };
 export const THEMES = LEVELS.map((m) => ({ ...TH[m.theme], key: m.theme, name: m.name, sub: m.sub }));
 
+// levels met een extra beveiligde deur: daar ligt ergens in het level een briefje met de code voor het nummerpad
+const KEYPAD_LEVELS = new Set([9, 13, 17, 22, 24]);
+const codeOf = (n) => (n === 4 || n === 5 ? '4729' : String(1000 + ((n * 2711 + 389) % 9000)));
 const rng = (seed) => {
   let a = seed >>> 0;
   return () => {
@@ -192,6 +195,22 @@ export function makeLevel(n, variant = 0) {
     }
   }
 
+  // ---- nummerpad: een van de sloten gaat alleen open met een code die ergens in dit level ligt
+  if (KEYPAD_LEVELS.has(n)) {
+    const w = walls.find((x) => x.lock);
+    if (w) {
+      w.lock = 'code';
+      const closed = nodes(new Set(walls.filter((x) => x.lock)));
+      let ok = false;
+      for (let t = 0; t < 80 && !ok; t++) {
+        const f = (R() * floors) | 0, x = spot(f, 3, 29, 1.8);
+        if (x === null || !closed.has(f, x)) continue;
+        items.push({ id: items.length, type: 'code', f, x, req: true }); take(f, x, 1.8); ok = true;
+      }
+      if (!ok) w.lock = true;
+    }
+  }
+
   // ---- bewakers
   const guards = [];
   const startRoom = { f: start.f, x0: 1, x1: 10 };
@@ -281,7 +300,8 @@ export function makeLevel(n, variant = 0) {
   }
 
   const V = VARIANTS[n];
-  const level = { n, escape, theme: T, floors, start, exit, rooms, walls, ladders, stairs, items, lasers, guards, hides, decor, limit: V ? Math.ceil(V.base * (2.7 - 1.3 * d) + 10) : 180, base: V ? V.base : 0 };
+  const hasKeypad = items.some((i) => i.type === 'vault' || i.type === 'code') || walls.some((w) => w.lock === 'code');
+  const level = { n, escape, code: hasKeypad ? codeOf(n) : null, codeFrom: n === 5 ? 4 : 0, theme: T, floors, start, exit, rooms, walls, ladders, stairs, items, lasers, guards, hides, decor, limit: V ? Math.ceil(V.base * (2.7 - 1.3 * d) + 10) : 180, base: V ? V.base : 0 };
   return level;
 }
 

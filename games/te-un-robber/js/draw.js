@@ -146,7 +146,14 @@ export function buildStatic(L) {
   const floorKey = (f) => L.n * 31 + f * 7;
   for (let f = 0; f < L.floors; f++) {
     const y0 = (Y[f] - 4) * TS + 4, y1 = Y[f] * TS;
-    L.rooms[f].forEach((r, ri) => {
+    // kamers die door een wand zonder slot zijn verbonden, vormen samen één ruimte: daar staat geen muur of deur tussen
+    const spaces = [];
+    L.rooms[f].forEach((r) => {
+      const last = spaces[spaces.length - 1];
+      const wall = last && L.walls.find((w) => w.f === f && Math.abs(w.x - last.x1) < 0.01 && Math.abs(w.x - r.x0) < 0.01);
+      if (last && !(wall && wall.lock)) { last.x1 = r.x1; last.rooms.push(r); } else spaces.push({ x0: r.x0, x1: r.x1, rooms: [r] });
+    });
+    spaces.forEach((r, ri) => {
       const x0 = r.x0 * TS + 2, x1 = r.x1 * TS - 2, w = x1 - x0, h = y1 - y0;
       const seed = floorKey(f) + ri * 13;
       g.save(); g.beginPath(); g.rect(x0, y0, w, h); g.clip();
@@ -161,11 +168,13 @@ export function buildStatic(L) {
       g.fillStyle = eg(x0, 0, x0 + 46, 0, 0.4); g.fillRect(x0, y0, 46, h); g.fillStyle = eg(x1, 0, x1 - 46, 0, 0.4); g.fillRect(x1 - 46, y0, 46, h);
       g.fillStyle = eg(0, y0, 0, y0 + 50, 0.42); g.fillRect(x0, y0, w, 50);
       g.fillStyle = eg(0, y1, 0, y1 - 26, 0.4); g.fillRect(x0, y1 - 26, w, 26);
-      // plafondlamp met lichtkegel
-      const lx = (x0 + x1) / 2;
-      g.fillStyle = '#6a6a62'; g.fillRect(lx - 2, y0 + 8, 4, 8);
-      g.fillStyle = '#f4f0dc'; g.beginPath(); g.ellipse(lx, y0 + 20, 16, 7, 0, 0, 7); g.fill(); g.fillStyle = '#fffbe8'; g.beginPath(); g.ellipse(lx, y0 + 22, 11, 4, 0, 0, 7); g.fill();
-      const gl = g.createRadialGradient(lx, y0 + 22, 4, lx, y0 + 22, 175); gl.addColorStop(0, 'rgba(255,244,200,.42)'); gl.addColorStop(0.5, 'rgba(255,236,170,.12)'); gl.addColorStop(1, 'rgba(255,236,170,0)'); g.globalCompositeOperation = 'lighter'; g.fillStyle = gl; g.fillRect(x0, y0, w, h); g.globalCompositeOperation = 'source-over';
+      // plafondlampen met lichtkegel (één per oorspronkelijke kamer)
+      for (const rm of r.rooms) {
+        const lx = ((rm.x0 + rm.x1) / 2) * TS;
+        g.fillStyle = '#6a6a62'; g.fillRect(lx - 2, y0 + 8, 4, 8);
+        g.fillStyle = '#f4f0dc'; g.beginPath(); g.ellipse(lx, y0 + 20, 16, 7, 0, 0, 7); g.fill(); g.fillStyle = '#fffbe8'; g.beginPath(); g.ellipse(lx, y0 + 22, 11, 4, 0, 0, 7); g.fill();
+        const gl = g.createRadialGradient(lx, y0 + 22, 4, lx, y0 + 22, 175); gl.addColorStop(0, 'rgba(255,244,200,.42)'); gl.addColorStop(0.5, 'rgba(255,236,170,.12)'); gl.addColorStop(1, 'rgba(255,236,170,0)'); g.globalCompositeOperation = 'lighter'; g.fillStyle = gl; g.fillRect(x0, y0, w, h); g.globalCompositeOperation = 'source-over';
+      }
       g.restore();
     });
     // vloer (de doorsnede van de vloerplaat) en plafond van de verdieping eronder
@@ -174,7 +183,7 @@ export function buildStatic(L) {
     g.fillStyle = OUT; g.fillRect(bx0, y1 + 9, bx1 - bx0, 3);
     // muren met deuren
     for (const w of L.walls) {
-      if (w.f !== f) continue;
+      if (w.f !== f || !w.lock) continue;
       const x = w.x * TS;
       // de muur: dikke scheidingswand met doorsnede
       const mg = g.createLinearGradient(x - 6, 0, x + 6, 0); mg.addColorStop(0, '#171a20'); mg.addColorStop(0.5, '#3a3f4a'); mg.addColorStop(1, '#171a20');
@@ -396,18 +405,26 @@ export function drawScene(g, game, stat, t) {
     g.fillStyle = 'rgba(0,0,0,.2)'; for (let yy = y1 - dh + 16; yy < y1 - 8; yy += 24) g.fillRect(x - sw / 2 + 2, yy, sw - 4, 2);
     g.fillStyle = '#3a4048'; for (const dy of [6, dh / 2, dh - 6]) { g.beginPath(); g.arc(x - sw / 2 + 4, y1 - dh + dy, 1.8, 0, 7); g.fill(); }
     g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(x + sw / 2, y1 - dh, 4, dh);
-    // hangslot
     const lx = x, ly = y1 - dh / 2 + 4;
-    g.strokeStyle = '#c8ced6'; g.lineWidth = 4; g.beginPath(); g.arc(lx, ly - 8, 7, Math.PI, 0); g.stroke();
-    const lg = g.createLinearGradient(lx - 10, ly - 8, lx + 10, ly + 12); lg.addColorStop(0, '#f0d060'); lg.addColorStop(1, '#a07a18'); g.fillStyle = lg; rr(g, lx - 10, ly - 8, 20, 18, 3); g.fill(); g.strokeStyle = '#4a3a0a'; g.lineWidth = 1.5; g.stroke();
-    g.fillStyle = '#10141c'; g.beginPath(); g.arc(lx, ly, 2.6, 0, 7); g.fill(); g.fillRect(lx - 1, ly, 2, 6);
+    if (w.lock === 'code') {
+      // een nummerpad naast de deur
+      const px = x + 14, py = y1 - dh / 2 - 22;
+      g.fillStyle = '#1a1e26'; rr(g, px - 13, py, 26, 44, 4); g.fill(); g.strokeStyle = '#6a7682'; g.lineWidth = 1.5; g.stroke();
+      g.fillStyle = '#0c1a10'; g.fillRect(px - 10, py + 4, 20, 8); g.fillStyle = '#41d97a'; g.font = '700 7px monospace'; g.textAlign = 'center'; g.fillText('CODE', px, py + 10.5);
+      for (let r2 = 0; r2 < 3; r2++) for (let c2 = 0; c2 < 3; c2++) { g.fillStyle = '#4a525c'; g.fillRect(px - 10 + c2 * 7, py + 16 + r2 * 8, 5, 6); }
+      g.fillStyle = Math.sin(t * 5) > 0 ? '#e84a4a' : '#7a2a2a'; g.beginPath(); g.arc(px, py + 41, 1.8, 0, 7); g.fill();
+    } else {
+      g.strokeStyle = '#c8ced6'; g.lineWidth = 4; g.beginPath(); g.arc(lx, ly - 8, 7, Math.PI, 0); g.stroke();
+      const lg = g.createLinearGradient(lx - 10, ly - 8, lx + 10, ly + 12); lg.addColorStop(0, '#f0d060'); lg.addColorStop(1, '#a07a18'); g.fillStyle = lg; rr(g, lx - 10, ly - 8, 20, 18, 3); g.fill(); g.strokeStyle = '#4a3a0a'; g.lineWidth = 1.5; g.stroke();
+      g.fillStyle = '#10141c'; g.beginPath(); g.arc(lx, ly, 2.6, 0, 7); g.fill(); g.fillRect(lx - 1, ly, 2, 6);
+    }
     // voortgang van het openbreken
-    if (p.mode === 'pick' && p.pickWall === i) {
+    if (w.lock !== 'code' && p.mode === 'pick' && p.pickWall === i) {
       const k = Math.min(1, p.pick / PICK_T);
       g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 6; g.beginPath(); g.arc(lx, ly, 20, 0, 7); g.stroke(); g.strokeStyle = '#ffd23a'; g.lineWidth = 4; g.beginPath(); g.arc(lx, ly, 20, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2); g.stroke();
       g.fillStyle = '#ffe27a'; for (let s2 = 0; s2 < 3; s2++) { const a = t * 20 + s2 * 2.1; g.beginPath(); g.arc(lx + Math.cos(a) * 14, ly + Math.sin(a) * 14, 1.6, 0, 7); g.fill(); }
     } else if (p.f === w.f && Math.abs(p.x - w.x) < 1.2 && p.mode === 'walk') {
-      g.fillStyle = 'rgba(8,10,14,.82)'; rr(g, lx - 62, y1 - dh - 30, 124, 22, 8); g.fill(); g.fillStyle = '#ffe27a'; g.font = '700 12px Fredoka, sans-serif'; g.textAlign = 'center'; g.fillText('Houd spatie ingedrukt', lx, y1 - dh - 15);
+      g.fillStyle = 'rgba(8,10,14,.82)'; rr(g, lx - 62, y1 - dh - 30, 124, 22, 8); g.fill(); g.fillStyle = '#ffe27a'; g.font = '700 12px Fredoka, sans-serif'; g.textAlign = 'center'; g.fillText(w.lock === 'code' ? 'Spatie: nummerpad' : 'Houd spatie ingedrukt', lx, y1 - dh - 15);
     }
   });
   // lasers

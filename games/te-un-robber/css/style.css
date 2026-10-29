@@ -75,3 +75,11 @@ button.big:active, button.small:active { transform: translateY(3px); box-shadow:
 .note b { display: block; font-size: 26px; letter-spacing: 4px; font-variant-numeric: tabular-nums; }
 .note .tape { position: absolute; left: 50%; top: -7px; width: 46px; height: 14px; transform: translateX(-50%) rotate(-3deg); background: rgba(255,255,255,.5); border: 1px solid rgba(0,0,0,.08); }
 @media (max-width: 700px) { .note { right: 4px; top: 4px; padding: 10px 10px 6px; } .note b { font-size: 20px; } }
+
+.padbox { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 6; background: rgba(12,16,22,.92); border: 2px solid #6a7682; border-radius: 14px; padding: 10px 12px 12px; width: 190px; box-shadow: 0 10px 30px rgba(0,0,0,.6); }
+.padDisp { font: 700 28px/1 monospace; letter-spacing: 3px; text-align: center; color: #41d97a; background: #06100a; border: 1px solid #1f3a28; border-radius: 8px; padding: 9px 6px; margin-bottom: 10px; }
+.padDisp.bad { color: #ff5a5a; animation: padshake .35s; }
+@keyframes padshake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.padgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.padgrid button { font: 700 20px var(--font); padding: 8px 0; border-radius: 9px; border: 2px solid #4a525c; background: linear-gradient(#5a636e, #38404a); color: #fff; touch-action: manipulation; cursor: pointer; }
+.padgrid button:active { transform: translateY(2px); background: #2a3038; }

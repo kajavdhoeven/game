@@ -61,7 +61,9 @@ export class Game {
     // elke robot: 'patrol' (vaste route), 'chase' (achtervolgt je met een knuppel), 'return' (loopt terug naar zijn route) of 'stunned'
     this.gs = level.guards.map(() => ({ mode: 'patrol', x: 0, dir: 1, moving: false, swing: 0, cool: 0, search: 0, last: 0 }));
     this.alarmT = 0; this.alarmFloor = -1; this.alarmCool = 0;
-    this.hasCode = true;            // heeft Te-Un de kluiscode al? (de bank van het Kabouterdorp gaat er niet zonder open)
+    this.codeGot = false;           // heeft Te-Un de code van dit level gevonden?
+    this.extCode = false;           // kent hij de code uit een eerder level (level 5 gebruikt de code van level 4)?
+    this.codeUsed = false;
     this.seenBy = -1;
     this.exitOpen = false;
     this.parts = [];
@@ -76,6 +78,7 @@ export class Game {
     if (!st || st.mode === 'patrol' || g.kind === 'camera' || g.kind === 'drone') return guardAt(g, this.t);
     return { x: st.x, dir: st.dir, moving: st.moving, awake: true, chase: st.mode === 'chase', swing: st.swing > 0 ? 1 - st.swing / BATON_T : 0 };
   }
+  hasCode() { return this.codeGot || (!!this.L.codeFrom && this.extCode); }
   isRobot(i) { const k = this.L.guards[i].kind; return k !== 'camera' && k !== 'drone'; }
   startChase(i, loud = true) {
     const g = this.L.guards[i], st = this.gs[i], p = this.p;
@@ -153,6 +156,9 @@ export class Game {
     } else if (p.mode === 'act') {
       p.work -= dt;
       if (p.work <= 0) this.finishWork();
+    } else if (p.mode === 'keypad') {
+      // het nummerpad staat open: Te-Un staat stil. Wie wegloopt, klimt of iets anders doet, sluit het.
+      if (dir || inp.u || inp.d) { p.mode = 'walk'; this.events.push('keypadclose'); }
     } else if (p.mode === 'pick') {
       const w = L.walls[p.pickWall];
       if (!inp.actHeld || dir || inp.u || inp.d || !w || this.doorOpen.has(p.pickWall)) { p.mode = 'walk'; p.pick = 0; }
@@ -201,7 +207,7 @@ export class Game {
       if (p.mode === 'walk' && inp.actHeld) {
         for (let i = 0; i < L.walls.length; i++) {
           const w = L.walls[i];
-          if (w.f !== p.f || !w.lock || this.doorOpen.has(i) || Math.abs(p.x - w.x) > 0.75) continue;
+          if (w.f !== p.f || w.lock !== true || this.doorOpen.has(i) || Math.abs(p.x - w.x) > 0.75) continue;
           if (this.items.some((it) => !it.done && it.f === p.f && Math.abs(it.x - p.x) < 1.0)) break;
           p.mode = 'pick'; p.pickWall = i; p.pick = 0; p.x = w.x + (p.x < w.x ? -0.5 : 0.5); p.face = p.x < w.x ? 1 : -1; p.vx = 0; this.events.push('pick');
           break;
@@ -220,7 +226,18 @@ export class Game {
     // eerst een voorwerp dat dichtbij ligt
     let best = null, bd = 1.0;
     for (const it of this.items) { if (it.done || it.f !== p.f || it.type === 'key') continue; const d = Math.abs(it.x - p.x); if (d < bd) { bd = d; best = it; } }
-    if (best && best.type === 'vault' && this.L.theme.key === 'mushbank' && !this.hasCode) { this.events.push('nocode'); return; }
+    if (best && best.type === 'vault') {
+      // een kluis met een nummerpad: alleen met de code
+      if (!this.hasCode()) { this.events.push('nocode'); return; }
+      p.mode = 'keypad'; p.pad = { item: best }; p.x = best.x; p.vx = 0; this.events.push('keypad'); return;
+    }
+    // een deur met een nummerpad
+    for (let i = 0; i < this.L.walls.length; i++) {
+      const w = this.L.walls[i];
+      if (w.f !== p.f || w.lock !== 'code' || this.doorOpen.has(i) || Math.abs(p.x - w.x) > 0.75) continue;
+      if (!this.hasCode()) { this.events.push('nocode'); return; }
+      p.mode = 'keypad'; p.pad = { wall: i }; p.x = w.x + (p.x < w.x ? -0.5 : 0.5); p.face = p.x < w.x ? 1 : -1; p.vx = 0; this.events.push('keypad'); return;
+    }
     if (best) { p.mode = 'act'; p.workItem = best; p.work = ACT[best.type] || 0.4; p.x = best.x; this.events.push('work'); return; }
     // anders een zwakke robot van achteren uitschakelen
     for (let i = 0; i < this.L.guards.length; i++) {
@@ -231,13 +248,24 @@ export class Game {
       if (Math.abs(s.x - p.x) < 1.1 && (p.x - s.x) * s.dir < 0.2 && !(g.kind === 'sleeper' && s.awake && (p.x - s.x) * s.dir > 0)) { this.stun[i] = STUN_T; p.swing = SWING_T; p.face = s.x >= p.x ? 1 : -1; this.events.push('stun'); return; }
     }
   }
+  // de code ingevuld: klopt hij, dan gaat de deur of kluis open
+  submitCode(str) {
+    const p = this.p;
+    if (p.mode !== 'keypad' || !p.pad) return false;
+    if (String(str) !== String(this.L.code)) { this.events.push('wrongcode'); return false; }
+    if (p.pad.wall !== undefined) { this.doorOpen.add(p.pad.wall); this.events.push('unlock'); }
+    else { p.pad.item.done = true; this.events.push('hacked'); }
+    this.codeUsed = true; p.mode = 'walk'; p.pad = null; this.events.push('codeok');
+    return true;
+  }
   finishWork() {
     const p = this.p, it = p.workItem;
     p.mode = 'walk'; p.workItem = null;
     if (!it || it.done) return;
     it.done = true;
     if (it.type === 'switch') this.switchOn = true;
-    this.events.push(it.type === 'hack' || it.type === 'vault' ? 'hacked' : it.type === 'switch' ? 'switch' : it.type === 'code' ? 'code' : 'grab');
+    if (it.type === 'code') this.codeGot = true;
+    this.events.push(it.type === 'hack' ? 'hacked' : it.type === 'switch' ? 'switch' : it.type === 'code' ? 'code' : 'grab');
   }
   detect(dt) {
     const L = this.L, p = this.p;

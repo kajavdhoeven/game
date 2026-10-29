@@ -17,9 +17,9 @@ const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(
 
 // ---------------------------------------------------------------- opslaan + platform
 const KEY = 'te-un-robber-v1';
-let P = { done: {}, dev: false, updatedAt: 0, seen: {}, codeFound: false, codeUsed: false };
+let P = { done: {}, dev: false, updatedAt: 0, seen: {}, codeL4: false };
 try { P = Object.assign(P, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* geen opslag */ }
-const snapshot = () => ({ done: P.done, dev: P.dev, updatedAt: P.updatedAt, seen: P.seen, codeFound: P.codeFound, codeUsed: P.codeUsed });
+const snapshot = () => ({ done: P.done, dev: P.dev, updatedAt: P.updatedAt, seen: P.seen, codeL4: P.codeL4 });
 const post = (type, extra = {}) => {
   if (window.parent === window) return;
   try { window.parent.postMessage({ type, game: GAME_ID, ...extra }, location.origin); } catch (e) { /* geen ouder */ }
@@ -36,7 +36,7 @@ window.addEventListener('message', (e) => {
   const m = e.data;
   if (!m || m.game !== GAME_ID || m.type !== 'teun:progress' || !m.data) return;
   const d = m.data;
-  if ((d.updatedAt || 0) > (P.updatedAt || 0)) { P.done = Object.assign({}, d.done || {}); P.seen = Object.assign({}, d.seen || {}); P.codeFound = !!d.codeFound; P.codeUsed = !!d.codeUsed; P.updatedAt = d.updatedAt; save(true); renderMenu(); }
+  if ((d.updatedAt || 0) > (P.updatedAt || 0)) { P.done = Object.assign({}, d.done || {}); P.seen = Object.assign({}, d.seen || {}); P.codeL4 = !!d.codeL4; P.updatedAt = d.updatedAt; save(true); renderMenu(); }
   else if ((d.updatedAt || 0) < (P.updatedAt || 0)) post('teun:save', { data: snapshot() });
 });
 const unlocked = (n) => n === 1 || P.dev || !!P.done[n - 1];
@@ -189,8 +189,24 @@ function openCineList() {
 }
 $('cineClose').onclick = () => { $('cineList').hidden = true; };
 
-// het briefje met de kluiscode: blijft in beeld tot de code gebruikt is
-const updateNote = () => { const show = P.codeFound && !P.codeUsed; $('note').hidden = !show; if (show) $('noteCode').textContent = KLUISCODE.split('').join(' '); };
+// het briefje met de code: alleen in een level waar de code ligt of nodig is, en weg zodra hij gebruikt is
+const updateNote = () => { const L = game && game.L; const show = !!(L && L.code && (game.codeGot || (L.codeFrom && game.extCode)) && !game.codeUsed); $('note').hidden = !show; if (show) $('noteCode').textContent = L.code.split('').join(' '); };
+
+// het nummerpad
+let padBuf = '', padOn = false;
+function drawPad() { $('padDisp').textContent = (padBuf + '\u2022\u2022\u2022\u2022'.slice(padBuf.length)).split('').join(' '); }
+function openPad() { padOn = true; padBuf = ''; keys.clear(); drawPad(); $('pad').hidden = false; }
+function closePad() { padOn = false; padBuf = ''; $('pad').hidden = true; }
+function padWrong() { $('padDisp').classList.add('bad'); SFX.nohide && SFX.nohide(); setTimeout(() => { $('padDisp').classList.remove('bad'); padBuf = ''; drawPad(); }, 450); }
+function padKey(k) {
+  if (!padOn || !game) return;
+  if (k === 'C') { padBuf = padBuf.slice(0, -1); drawPad(); return; }
+  if (k === 'X') { game.p.mode = 'walk'; closePad(); return; }
+  if (k === 'OK') { if (padBuf.length === 4) game.submitCode(padBuf); return; }
+  if (padBuf.length >= 4) return;
+  padBuf += k; drawPad(); beep(600 + padBuf.length * 90, 0.06, 'square', 0.05);
+  if (padBuf.length === 4) setTimeout(() => padOn && game && game.submitCode(padBuf), 180);
+}
 
 // ---------------------------------------------------------------- spelen
 const canvas = $('cv'); canvas.width = CW; canvas.height = CH;
@@ -220,9 +236,9 @@ function startLevel(n) {
   show('play');
   buildGoals();
   setBanner(`${meta.name}\n${meta.sub}`, 3200);
-  game.hasCode = P.codeFound || P.dev; updateNote();
+  game.extCode = P.codeL4 || P.dev; closePad(); updateNote();
   if (ghost) { applyGhost(); setTimeout(() => toast('Testmodus: geen bewakers'), 600); }
-  if (L.theme.key === 'mushbank' && !game.hasCode) setTimeout(() => game && cur === n && toast('Je kent de kluiscode nog niet. Die ligt in het gemeentehuis (level 4).'), 3300);
+  if (L.codeFrom && !game.extCode) setTimeout(() => game && cur === n && toast('Je kent de kluiscode nog niet. Die ligt in het gemeentehuis (level 4).'), 3300);
   actx && actx.state === 'suspended' && actx.resume();
 }
 function setBanner(text, ms) {
@@ -261,15 +277,19 @@ function handleEvents() {
     if (e === 'spotted') setBanner('Gezien! Ren weg of verstop je!', 1600);
     if (e === 'alarm') setBanner('ALARM!\nDe robots op deze verdieping komen eraan', 2400);
     if (e === 'nohide') toast('Te dichtbij om je te verstoppen!');
-    if (e === 'code') { P.codeFound = true; P.codeUsed = false; game.hasCode = true; save(); updateNote(); setBanner(`Kluiscode gevonden!\n${KLUISCODE}`, 2600); }
-    if (e === 'hacked' && game.L.theme.key === 'mushbank') { P.codeUsed = true; save(); updateNote(); setBanner('Kluis open met de code!', 1800); }
-    if (e === 'nocode') toast('Je hebt de kluiscode nog niet. Zoek hem in het gemeentehuis (level 4).');
+    if (e === 'code') { if (cur === 4) { P.codeL4 = true; save(); } updateNote(); setBanner(`Code gevonden!\n${game.L.code}`, 2600); }
+    if (e === 'keypad') openPad();
+    if (e === 'keypadclose') closePad();
+    if (e === 'wrongcode') padWrong();
+    if (e === 'codeok') { closePad(); updateNote(); setBanner('Code juist!', 1400); }
+    if (e === 'nocode') toast(game.L.codeFrom ? 'Je hebt de kluiscode nog niet. Zoek hem in het gemeentehuis (level 4).' : 'Je hebt de code nog niet. Zoek het briefje in dit level.');
     if (e === 'win') finish('won');
     if (e === 'caught') finish('caught');
     if (e === 'timeup') finish('timeup');
   }
 }
 function finish(kind) {
+  closePad();
   const L = game.L;
   const ov = $('overlay');
   setBanner(null);
@@ -330,6 +350,12 @@ const GK = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'KeyA', '
 window.addEventListener('keydown', (e) => {
   if ($('play').hidden || e.ctrlKey || e.metaKey) return;
   if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  if (padOn) {
+    e.preventDefault(); e.stopPropagation();
+    const dg = /^(Digit|Numpad)(\d)$/.exec(e.code);
+    if (dg) padKey(dg[2]); else if (e.code === 'Backspace') padKey('C'); else if (e.code === 'Enter' || e.code === 'NumpadEnter') padKey('OK'); else if (e.code === 'Escape') padKey('X');
+    return;
+  }
   if (GK.has(e.code)) { e.preventDefault(); if (document.activeElement && document.activeElement.tagName === 'BUTTON') document.activeElement.blur(); }
   if (e.code === 'Escape' || e.code === 'KeyP') { togglePause(); return; }
   if (e.code === 'KeyR') { startLevel(cur); return; }
@@ -352,6 +378,7 @@ document.querySelectorAll('.pad button').forEach((b) => {
 });
 $('actBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); actPress = true; touch.act = 1; $('actBtn').classList.add('on'); });
 for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) $('actBtn').addEventListener(ev, () => { touch.act = 0; $('actBtn').classList.remove('on'); });
+document.querySelectorAll('#pad [data-k]').forEach((b) => { b.addEventListener('pointerdown', (e) => { e.preventDefault(); padKey(b.dataset.k); }); });
 $('back').onclick = () => { const n = cur; game = null; goMap(n); };
 $('mPlay').onclick = () => { mapChapter = levelMeta(nextOpenLevel()).ch - 1; show('map'); };
 $('mapBack').onclick = () => show('menu');
