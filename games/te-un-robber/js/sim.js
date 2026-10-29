@@ -6,6 +6,9 @@ export const WALK = 4, CLIMB = 3.2;   // loopsnelheid en klimsnelheid in tegels 
 export const HALF = 0.3;              // halve breedte van Te-Un
 const PORTAL_T = 0.5;                 // een trap of lift duurt even
 export const PICK_T = 1.6;            // zo lang moet je spatie ingedrukt houden om een slot open te breken
+export const BATON_T = 0.4;           // een robot die je bijna heeft, zwaait zo lang uit met zijn knuppel
+export const ALARM_T = 6;             // zo lang blijft het alarm aan
+const CHASE = { patrol: 2.8, heavy: 2.1, fast: 3.9, sleeper: 2.6 }; // achtervolgsnelheid (Te-Un loopt 4)
 export const SWING_T = 0.45;          // zo lang duurt een klap met de knuppel
 export const STUN_T = 5;              // een geslagen robot is zo lang uitgeschakeld
 const ACT = { doc: 0.4, loot: 0.5, switch: 0.3, hack: 1.8, code: 0.6, vault: 1.8, key: 0 }; // hoe lang het kost om iets te doen // hoe lang het kost om iets te doen
@@ -55,6 +58,9 @@ export class Game {
     this.switchOn = false;
     this.meter = 0;
     this.stun = level.guards.map(() => 0);
+    // elke robot: 'patrol' (vaste route), 'chase' (achtervolgt je met een knuppel), 'return' (loopt terug naar zijn route) of 'stunned'
+    this.gs = level.guards.map(() => ({ mode: 'patrol', x: 0, dir: 1, moving: false, swing: 0, cool: 0, search: 0, last: 0 }));
+    this.alarmT = 0; this.alarmFloor = -1; this.alarmCool = 0;
     this.seenBy = -1;
     this.exitOpen = false;
     this.parts = [];
@@ -62,6 +68,67 @@ export class Game {
   blocked(f, xa, xb) {
     const lo = Math.min(xa, xb), hi = Math.max(xa, xb);
     return this.L.walls.some((w, i) => w.f === f && w.lock && !this.doorOpen.has(i) && w.x > lo && w.x < hi);
+  }
+  // waar een robot nu staat en kijkt: op zijn vaste route is dat een vaste functie van de tijd, anders staat hij in zijn eigen toestand
+  guardState(i) {
+    const g = this.L.guards[i], st = this.gs[i];
+    if (!st || st.mode === 'patrol' || g.kind === 'camera' || g.kind === 'drone') return guardAt(g, this.t);
+    return { x: st.x, dir: st.dir, moving: st.moving, awake: true, chase: st.mode === 'chase', swing: st.swing > 0 ? 1 - st.swing / BATON_T : 0 };
+  }
+  isRobot(i) { const k = this.L.guards[i].kind; return k !== 'camera' && k !== 'drone'; }
+  startChase(i, loud = true) {
+    const g = this.L.guards[i], st = this.gs[i], p = this.p;
+    if (st.mode === 'chase' || this.stun[i] > 0) return;
+    const s = this.guardState(i);
+    st.mode = 'chase'; st.x = s.x; st.dir = s.dir || 1; st.last = p.x; st.search = 0; st.swing = 0; st.cool = 0;
+    if (loud) this.events.push('spotted');
+  }
+  // alarm (camera, drone of laser): alle robots op de verdieping van Te-Un komen achter hem aan
+  alarm() {
+    if (this.alarmCool > 0) return;
+    this.alarmT = ALARM_T; this.alarmFloor = this.p.f; this.alarmCool = 3; this.meter = 0;
+    this.events.push('alarm');
+    this.L.guards.forEach((g, i) => { if (this.isRobot(i) && g.f === this.p.f) this.startChase(i, false); });
+  }
+  updateGuards(dt) {
+    const L = this.L, p = this.p;
+    this.alarmT = Math.max(0, this.alarmT - dt); this.alarmCool = Math.max(0, this.alarmCool - dt);
+    L.guards.forEach((g, i) => {
+      if (!this.isRobot(i)) return;
+      const st = this.gs[i];
+      st.cool = Math.max(0, st.cool - dt);
+      if (this.stun[i] > 0) { if (st.mode !== 'stunned') { const s = this.guardState(i); st.mode = 'stunned'; st.x = s.x; st.dir = s.dir || 1; st.swing = 0; } st.moving = false; return; }
+      if (st.mode === 'stunned') st.mode = 'return';
+      // zolang het alarm aan is, sluiten robots op die verdieping aan
+      if (this.alarmT > 0 && g.f === this.alarmFloor && p.f === this.alarmFloor && (st.mode === 'patrol' || st.mode === 'return')) this.startChase(i, false);
+      if (st.mode === 'patrol') return;
+      const walk = (target, speed) => {
+        const dx = target - st.x; let nx = st.x;
+        if (Math.abs(dx) > 0.12) { nx = st.x + Math.sign(dx) * Math.min(Math.abs(dx), speed * dt); st.dir = Math.sign(dx); st.moving = true; } else st.moving = false;
+        // een dichte deur houdt een robot tegen, de buitenmuur ook
+        for (let k = 0; k < L.walls.length; k++) { const w = L.walls[k]; if (w.f !== g.f || !w.lock || this.doorOpen.has(k)) continue; if ((st.x - w.x) * (nx - w.x) < 0 || Math.abs(nx - w.x) < 0.45) nx = st.x < w.x ? Math.min(nx, w.x - 0.45) : Math.max(nx, w.x + 0.45); }
+        st.x = Math.max(1.3, Math.min(W - 1.3, nx));
+      };
+      if (st.mode === 'return') {
+        const home = guardAt(g, this.t).x;
+        walk(home, 2.2);
+        if (Math.abs(st.x - home) < 0.3) { st.mode = 'patrol'; st.moving = false; }
+        return;
+      }
+      // achtervolgen
+      const out = p.f !== g.f || p.mode === 'portal' || p.mode === 'climb';
+      if (out) { st.mode = 'return'; st.swing = 0; return; }
+      if (!p.hidden) { st.last = p.x; st.search = 0; } else if (Math.abs(st.x - st.last) < 0.4) st.search += dt;
+      if (p.hidden && st.search > 2.5) { st.mode = 'return'; st.swing = 0; return; }
+      const speed = CHASE[g.kind] || 2.8;
+      if (st.swing > 0) {
+        st.swing -= dt; st.moving = false;
+        if (st.swing <= 0) { st.cool = 0.5; if (!p.hidden && Math.abs(p.x - st.x) < 1.35 && p.mode !== 'portal' && p.mode !== 'climb') this.caught('baton'); }
+        return;
+      }
+      if (!p.hidden && st.cool <= 0 && Math.abs(p.x - st.x) < 1.25) { st.swing = BATON_T; st.dir = p.x >= st.x ? 1 : -1; st.moving = false; this.events.push('swing'); return; }
+      walk(st.last, speed);
+    });
   }
   remaining() { return this.items.filter((i) => i.req && !i.done).length; }
   timeLeft() { return Math.max(0, this.L.limit - this.t); }
@@ -121,7 +188,9 @@ export class Game {
           if (st) { p.mode = 'portal'; p.work = PORTAL_T + (st.kind === 'lift' ? 0.5 : 0); p.portal = { x: st.to.x, f: st.to.f }; p.x = st.x; this.events.push('portal'); }
           else if (!up) {
             const h = L.hides.find((h) => h.f === p.f && Math.abs(h.x - p.x) < 0.6);
-            if (h) { p.mode = 'hide'; p.hidden = true; p.x = h.x; this.events.push('hide'); }
+            const near = L.guards.some((g, i) => this.gs[i].mode === 'chase' && g.f === p.f && Math.abs(this.gs[i].x - p.x) < 2.5);
+            if (h && near) this.events.push('nohide');
+            else if (h) { p.mode = 'hide'; p.hidden = true; p.x = h.x; this.events.push('hide'); }
           }
         }
       }
@@ -142,6 +211,7 @@ export class Game {
       this.exitOpen = this.remaining() === 0;
       if (this.exitOpen && p.f === ex.f && Math.abs(p.x - ex.x) < 0.7 && p.mode === 'walk') { this.status = 'won'; this.events.push('win'); }
     }
+    this.updateGuards(dt);
     this.detect(dt);
   }
   doAct() {
@@ -154,7 +224,8 @@ export class Game {
     for (let i = 0; i < this.L.guards.length; i++) {
       const g = this.L.guards[i];
       if (g.f !== p.f || g.kind === 'camera' || g.kind === 'drone' || g.kind === 'heavy' || this.stun[i] > 0) continue;
-      const s = guardAt(g, this.t);
+      if (this.gs[i].mode === 'chase') continue;
+      const s = this.guardState(i);
       if (Math.abs(s.x - p.x) < 1.1 && (p.x - s.x) * s.dir < 0.2 && !(g.kind === 'sleeper' && s.awake && (p.x - s.x) * s.dir > 0)) { this.stun[i] = STUN_T; p.swing = SWING_T; p.face = s.x >= p.x ? 1 : -1; this.events.push('stun'); return; }
     }
   }
@@ -168,22 +239,24 @@ export class Game {
   }
   detect(dt) {
     const L = this.L, p = this.p;
-    // lasers
+    // lasers: dat geeft alarm
     for (const l of L.lasers) {
       if (l.f !== p.f || Math.abs(l.x - p.x) > 0.35 + HALF * 0.5 || p.hidden || p.mode === 'portal') continue;
-      if (l.needSwitch ? !this.switchOn : laserOn(l, this.t)) { this.caught('laser'); return; }
+      if (l.needSwitch ? !this.switchOn : laserOn(l, this.t)) { this.alarm(); break; }
     }
-    // bewakers
+    // bewakers: wie je ziet, heeft even nodig. Een robot gaat je dan achtervolgen, een camera of drone geeft alarm
     let worst = 0, by = -1;
     L.guards.forEach((g, i) => {
-      if (this.stun[i] > 0) return;
-      const s = guardAt(g, this.t);
+      if (this.stun[i] > 0 || this.gs[i].mode === 'chase') return;
+      const s = this.guardState(i);
       const v = sees(g, s, p.x, p.y, p.hidden || p.mode === 'portal', (f, a, b) => this.blocked(f, a, b)); // in een trap of lift ben je niet te zien
       if (v > worst) { worst = v; by = i; }
     });
     this.seenBy = by;
-    if (worst > 0) { this.meter += dt * (1.1 + 1.6 * worst); if (this.meter >= 1) this.caught('guard'); }
-    else this.meter = Math.max(0, this.meter - dt * 0.9);
+    if (worst > 0) {
+      this.meter += dt * (1.1 + 1.6 * worst);
+      if (this.meter >= 1) { this.meter = 0; if (this.isRobot(by)) this.startChase(by); else this.alarm(); }
+    } else this.meter = Math.max(0, this.meter - dt * 0.9);
   }
   caught(why) { this.status = 'caught'; this.why = why; this.events.push('caught'); }
 }

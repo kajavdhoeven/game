@@ -176,8 +176,12 @@ export function makeLevel(n, variant = 0) {
   const lockedSet = new Set();
   for (let c = 0; c < locks; c++) {
     for (let t = 0; t < 30; t++) {
-      const w = pick(walls.filter((x) => !x.lock));
-      if (!w) break;
+      // een slot zit liefst vlak bij een trap, lift of ladder: dan blokkeert die deur de weg ernaartoe en moet je hem eerst openbreken
+      const cand = walls.filter((x) => !x.lock);
+      if (!cand.length) break;
+      const near = (x) => Math.min(99, ...stairs.filter((q) => q.f === x.f).map((q) => Math.abs(q.x - x.x)), ...ladders.filter((q) => q.f === x.f || q.f + 1 === x.f).map((q) => Math.abs(q.x - x.x)));
+      const byNear = [...cand].sort((p, q) => near(p) - near(q));
+      const w = R() < 0.7 ? byNear[Math.min(byNear.length - 1, (R() * 3) | 0)] : pick(cand);
       const reach = nodes(new Set([...lockedSet, w]));
       // het slot moet iets afsluiten wat je nodig hebt (een opdracht of de uitgang)
       const far = items.filter((i) => i.req && !reach.has(i.f, i.x)).length + (reach.has(exit.f, exit.x) ? 0 : 1);
@@ -203,12 +207,22 @@ export function makeLevel(n, variant = 0) {
   };
   // als een level te vol zit om te halen, probeert de generator een iets rustigere variant
   const sc = variant >= 40 ? 0.6 : variant >= 20 ? 0.8 : 1;
-  const nP = n < 2 ? 0 : Math.max(1, Math.floor(Math.min(6, 1 + Math.floor(d * 5.5)) * sc));
-  const nC = n >= 4 ? Math.max(1, Math.floor(Math.min(4, 1 + Math.floor(d * 3)) * sc)) : 0;
-  const nS = n >= 7 ? Math.floor(Math.floor(d * 3.5) * sc) : 0;
-  const nD = n >= 10 ? Math.floor(Math.min(3, 1 + Math.floor((d - 0.4) * 3)) * sc) : 0;
-  const nH = n >= 9 ? Math.floor(Math.floor(d * 2.5) * sc) : 0;
-  const nF = n >= 12 ? Math.floor(Math.floor(d * 3) * sc) : 0;
+  const total = n < 2 ? 0 : Math.max(1, Math.round((1 + d * 6) * sc));   // hooguit 7 bewakers in het laatste level
+  const cnt = {
+    C: n >= 4 ? Math.max(1, Math.round(Math.min(2, 1 + Math.floor(d * 2)) * (sc < 1 ? 0.7 : 1))) : 0,
+    S: n >= 7 ? Math.floor(Math.min(2, Math.floor(d * 3)) * sc) : 0,
+    D: n >= 10 ? Math.floor(Math.min(2, 1 + Math.floor((d - 0.4) * 3)) * sc) : 0,
+    H: n >= 9 ? Math.floor(Math.min(2, Math.floor(d * 2.5)) * sc) : 0,
+    F: n >= 12 ? Math.floor(Math.min(2, Math.floor(d * 2.5)) * sc) : 0,
+  };
+  // meer bewakers dan het totaal: haal eerst de soort weg waar er de meeste van zijn
+  while (n >= 2 && 1 + cnt.C + cnt.S + cnt.D + cnt.H + cnt.F > total) {
+    const k = Object.keys(cnt).sort((x, y) => cnt[y] - cnt[x])[0];
+    if (!cnt[k]) break;
+    cnt[k]--;
+  }
+  const nC = cnt.C, nS = cnt.S, nD = cnt.D, nH = cnt.H, nF = cnt.F;
+  const nP = n < 2 ? 0 : Math.max(1, Math.min(4, total - nC - nS - nD - nH - nF));
   const patrolSpec = (kind) => {
     const { f, r, i } = roomFor();
     let x0 = r.x0 + 0.8, x1 = r.x1 - 0.8;
@@ -217,20 +231,24 @@ export function makeLevel(n, variant = 0) {
     const sp = kind === 'fast' ? 2.6 + d : kind === 'heavy' ? 1.0 : kind === 'drone' ? 2.3 : 1.3 + 1.1 * d;
     return { kind, f, x0, x1, speed: sp, pause: kind === 'drone' ? 0.6 : kind === 'fast' ? 0.5 : Math.max(0.5, 1.5 - 0.9 * d), range: kind === 'heavy' ? 6.8 : kind === 'fast' ? 4.2 : 4.2 + 1.8 * d };
   };
-  for (let i = 0; i < nP; i++) addGuard(patrolSpec('patrol'));
-  for (let i = 0; i < nH; i++) addGuard(patrolSpec('heavy'));
-  for (let i = 0; i < nF; i++) addGuard(patrolSpec('fast'));
-  for (let i = 0; i < nD; i++) addGuard(patrolSpec('drone'));
-  for (let i = 0; i < nC; i++) {
-    const { f, r } = roomFor();
-    const x = Math.round(rnd(r.x0 + 2, r.x1 - 2));
-    addGuard({ kind: 'camera', f, x0: x, x1: x, amp: rnd(0.45, 0.75), period: rnd(3.8, 6), half: 0.27, range: 5.8 });
-  }
-  for (let i = 0; i < nS; i++) {
-    const { f, r } = roomFor();
-    const x = Math.round(rnd(r.x0 + 2, r.x1 - 2));
-    addGuard({ kind: 'sleeper', f, x0: x, x1: x, dir: R() < 0.5 ? 1 : -1, sleep: rnd(4, 6), awake: rnd(2.6, 3.6), range: 5.5 });
-  }
+  const camSpec = () => { const { f, r } = roomFor(); const x = Math.round(rnd(r.x0 + 2, r.x1 - 2)); return { kind: 'camera', f, x0: x, x1: x, amp: rnd(0.45, 0.75), period: rnd(3.8, 6), half: 0.27, range: 5.8 }; };
+  const sleepSpec = () => { const { f, r } = roomFor(); const x = Math.round(rnd(r.x0 + 2, r.x1 - 2)); return { kind: 'sleeper', f, x0: x, x1: x, dir: R() < 0.5 ? 1 : -1, sleep: rnd(4, 6), awake: rnd(2.6, 3.6), range: 5.5 }; };
+  // geen bewakers die door elkaar heen lopen of op dezelfde plek staan: een nieuwe moet ver genoeg van de andere op die verdieping blijven
+  const span = (g) => (g.kind === 'camera' || g.kind === 'sleeper' ? [g.x0 - 3, g.x0 + 3] : [g.x0, g.x1]);
+  const clash = (g) => guards.some((o) => {
+    if (o.f !== g.f) return false;
+    if (o.kind === 'camera' && g.kind === 'camera') return Math.abs(o.x0 - g.x0) < 6;
+    if (o.kind === 'camera' || g.kind === 'camera') return false;
+    const [a0, a1] = span(o), [b0, b1] = span(g);
+    return a0 < b1 + 2 && b0 < a1 + 2;
+  });
+  const place = (make) => { for (let t = 0; t < 70; t++) { const g = make(); if (!clash(g)) { addGuard(g); return true; } } return false; };
+  for (let i = 0; i < nP; i++) place(() => patrolSpec('patrol'));
+  for (let i = 0; i < nH; i++) place(() => patrolSpec('heavy'));
+  for (let i = 0; i < nF; i++) place(() => patrolSpec('fast'));
+  for (let i = 0; i < nD; i++) place(() => patrolSpec('drone'));
+  for (let i = 0; i < nC; i++) place(camSpec);
+  for (let i = 0; i < nS; i++) place(sleepSpec);
   guards.forEach((g) => { if (g.kind !== 'camera' && g.kind !== 'drone' && g.kind !== 'sleeper') take(g.f, (g.x0 + g.x1) / 2, 0.5); });
 
   // ---- schuilplekken: zo'n beetje in elke kamer
@@ -248,13 +266,18 @@ export function makeLevel(n, variant = 0) {
   const decor = [];
   const bag = T.props.filter((p) => p !== T.hide && p !== 'window' && p !== 'clock' && p !== 'painting');
   const wallProps = T.props.filter((p) => p === 'window' || p === 'clock' || p === 'painting');
-  for (let f = 0; f < floors; f++) for (let i = 0; i < 9; i++) {
-    const x = spot(f, 2, 30, 1.7);
-    if (x === null) continue;
-    const useWall = wallProps.length && i % 3 === 2;
-    const list = useWall ? wallProps : bag.length ? bag : T.props;
-    decor.push({ f, x, type: list[(i + f + ((R() * 3) | 0)) % list.length] });
-    take(f, x, 1.7);
+  for (let f = 0; f < floors; f++) {
+    const used = {}; let last = '';
+    for (let i = 0; i < 9; i++) {
+      const x = spot(f, 2, 30, 1.7);
+      if (x === null) continue;
+      const useWall = wallProps.length && i % 3 === 2;
+      const list = (useWall ? wallProps : bag.length ? bag : T.props).filter((t) => t !== last && (used[t] || 0) < 2);
+      if (!list.length) continue;
+      const type = list[(i + f + ((R() * 3) | 0)) % list.length];
+      decor.push({ f, x, type }); used[type] = (used[type] || 0) + 1; last = type;
+      take(f, x, 1.7);
+    }
   }
 
   const V = VARIANTS[n];

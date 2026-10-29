@@ -62,6 +62,10 @@ const SFX = {
   switch: () => beep(220, 0.15, 'square', 0.1),
   key: () => { beep(1000, 0.08, 'triangle', 0.1); beep(1500, 0.1, 'triangle', 0.1, 0.07); },
   unlock: () => { beep(300, 0.2, 'sawtooth', 0.08, 0, 200); beep(900, 0.12, 'triangle', 0.08, 0.15); },
+  spotted: () => { beep(900, 0.1, 'square', 0.08); beep(900, 0.1, 'square', 0.08, 0.14); },
+  alarm: () => { for (let i = 0; i < 4; i++) beep(i % 2 ? 620 : 880, 0.18, 'square', 0.07, i * 0.2); },
+  swing: () => beep(260, 0.18, 'sawtooth', 0.08, 0, -160),
+  nohide: () => beep(180, 0.15, 'square', 0.07),
   pick: () => { beep(1200, 0.04, 'square', 0.05); beep(900, 0.04, 'square', 0.05, 0.12); },
   code: () => [700, 900, 1200, 1500].forEach((f, i) => beep(f, 0.12, 'triangle', 0.1, i * 0.08)),
   portal: () => beep(400, 0.3, 'sine', 0.08, 0, 200),
@@ -145,42 +149,21 @@ function runCine(kind, a, fast) {
     });
   });
 }
-// een keuze: het filmpje bekijken of niet
-function askCine(title, text) {
-  return new Promise((res) => {
-    $('chTitle').textContent = title; $('chText').textContent = text; $('choice').hidden = false;
-    const done = (v) => { $('choice').hidden = true; $('chWatch').onclick = $('chSkip').onclick = null; window.removeEventListener('keydown', onKey, true); res(v); };
-    const onKey = (e) => { if (e.code === 'Enter') { e.preventDefault(); e.stopPropagation(); done('watch'); } else if (e.code === 'Escape') { e.preventDefault(); e.stopPropagation(); done('skip'); } };
-    window.addEventListener('keydown', onKey, true);
-    $('chWatch').onclick = () => done('watch'); $('chSkip').onclick = () => done('skip');
-    $('chWatch').focus();
-  });
-}
 async function playCut(id) { P.seen[id] = 1; save(); await runCine('cut', id); }
-// naar een ander hoofdstuk met het pijltje: kies of je het filmpje van dat hoofdstuk wilt zien
-async function changeChapter(i) {
+// naar een ander hoofdstuk met het pijltje: gewoon de kaart van dat hoofdstuk
+function changeChapter(i) {
   if (busy) return;
   if (!chapterOpen(i)) { toast('Haal eerst het vorige hoofdstuk'); return; }
   mapChapter = i; if (mapCtl) mapCtl.setChapter(i);
-  const id = BEFORE[CHAPTERS[i].levels[0]];
-  if (!id) return;
-  busy = true;
-  try {
-    const c = CHAPTERS[i];
-    if (await askCine(`Hoofdstuk ${c.id}: ${c.name}`, 'Wil je het filmpje van dit hoofdstuk zien?') === 'watch') { await playCut(id); goMap(c.levels[0]); }
-  } finally { busy = false; }
 }
+// het filmpje van een hoofdstuk of gebouw speelt de eerste keer vanzelf af (en is daarna terug te zien via het Dev-paneel)
 async function pickLevel(n) {
   if (busy || !unlocked(n)) return;
   busy = true;
   try {
-    const meta = levelMeta(n), b = BEFORE[n];
-    let watched = false;
-    if (b) {
-      // bij een gebouw met een eigen filmpje: dat filmpje (of niets) in plaats van de intro waarin Te-Un zijn bivakmuts opdoet
-      if (await askCine(meta.name, 'Bij dit gebouw hoort een filmpje. Wil je het zien?') === 'watch') { await playCut(b); watched = true; }
-    }
-    if (!meta.escape && !watched) await runCine('intro', n, !!P.done[n]);
+    const b = BEFORE[n];
+    if (b && !P.seen[b]) await playCut(b);
+    if (!levelMeta(n).escape) await runCine('intro', n, !!P.done[n]);
     startLevel(n);
   } finally { busy = false; }
 }
@@ -263,6 +246,9 @@ function handleEvents() {
   for (const e of game.events.splice(0)) {
     if (SFX[e]) SFX[e]();
     if (e === 'unlock') setBanner('Slot open!', 1000);
+    if (e === 'spotted') setBanner('Gezien! Ren weg of verstop je!', 1600);
+    if (e === 'alarm') setBanner('ALARM!\nDe robots op deze verdieping komen eraan', 2400);
+    if (e === 'nohide') toast('Te dichtbij om je te verstoppen!');
     if (e === 'code') { P.codeFound = true; save(); setBanner(`Kluiscode: ${KLUISCODE}\nOnthouden!`, 2600); }
     if (e === 'win') finish('won');
     if (e === 'caught') finish('caught');
@@ -291,7 +277,7 @@ function finish(kind) {
     renderMenu();
   } else if (kind === 'caught') {
     $('ovTitle').textContent = 'Gepakt!';
-    $('ovText').textContent = game.why === 'laser' ? 'Die laserstraal was niet te missen.' : 'Een bewaker heeft je gezien. Wacht tot hij wegkijkt, of verstop je met de pijl omlaag.';
+    $('ovText').textContent = 'Een robot heeft je met zijn knuppel te pakken. Ren weg, neem een trap of lift (daar kunnen ze niet mee) of verstop je op tijd.';
   } else {
     $('ovTitle').textContent = 'Tijd om!';
     $('ovText').textContent = 'De politie is onderweg. Probeer het nog eens, wat sneller.';
@@ -380,7 +366,7 @@ initTutorial({
   steps: [
     { icon: '🥷', title: 'Sluip en pak de buit', lines: ['Je bent Te-Un, de dief. Loop door het gebouw, pak de <b>papieren</b>, de <b>buit</b> en alles wat in het lijstje bovenin staat, en ga dan naar de <b>uitgang</b> voordat de tijd om is.'] },
     { icon: '⌨️', title: 'Besturing', lines: ['<kbd>←</kbd> <kbd>→</kbd> lopen. <kbd>↑</kbd> en <kbd>↓</kbd> om een ladder te beklimmen of een trap of lift te nemen. <kbd>Spatie</kbd> om iets te pakken, een computer te hacken of een schakelaar om te zetten. Op een telefoon gebruik je de knoppen onderin.', '<kbd>R</kbd> start opnieuw, <kbd>Esc</kbd> pauzeert.'] },
-    { icon: '🤖', title: 'Bewakers', lines: ['Robots kijken in een lichtkegel. Sta je daarin, dan vult het balkje boven je hoofd en word je gepakt. Wacht tot ze wegkijken. <b>Camera\'s</b> draaien heen en weer, <b>drones</b> vliegen rond, <b>slapers</b> worden af en toe wakker en <b>lasers</b> gaan aan en uit.', 'Verstoppen? Sta bij een kast, plant of kist en druk op <kbd>↓</kbd>. Dan zien ze je niet.'] },
+    { icon: '🤖', title: 'Bewakers', lines: ['Robots kijken in een lichtkegel. Zien ze je, dan vult het balkje boven je hoofd en gaan ze je <b>achtervolgen met een knuppel</b>. Pakt zo\'n robot je, dan ben je af. Ontsnappen kan met een ladder, trap of lift: robots kunnen niet van verdieping wisselen. Of verstop je op tijd (pijl omlaag), maar niet als hij vlak achter je zit.', 'Ziet een <b>camera</b> of <b>drone</b> je, of raak je een <b>laser</b>? Dan gaat het alarm af en komen alle robots op jouw verdieping achter je aan.'] },
     { icon: '🔒', title: 'Sloten en schakelaars', lines: ['Staat er een deur op slot? Ga ervoor staan en houd <kbd>Spatie</kbd> ingedrukt om het slot open te breken. Dat duurt even en je staat dan stil, dus kijk goed uit. Sommige lasers gaan pas uit als je de rode schakelaar hebt gevonden.', 'Een zwakke robot kun je van achteren slaan met <kbd>Spatie</kbd>: hij is dan 5 seconden uitgeschakeld. Een zware robot, een camera of een drone lukt niet.'] },
     { icon: '⭐', title: 'Sterren', lines: ['Hoe sneller je klaar bent, hoe meer sterren. Elk level is moeilijker dan het vorige. Je speelt vijf hoofdstukken met elk vijf gebouwen: kies een gebouw op de kaart.'] },
   ],

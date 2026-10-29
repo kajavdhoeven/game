@@ -179,15 +179,15 @@ export function buildStatic(L) {
       // de muur: dikke scheidingswand met doorsnede
       const mg = g.createLinearGradient(x - 6, 0, x + 6, 0); mg.addColorStop(0, '#171a20'); mg.addColorStop(0.5, '#3a3f4a'); mg.addColorStop(1, '#171a20');
       g.fillStyle = mg; g.fillRect(x - 6, y0 - 4, 12, (y1 - 2.6 * TS) - (y0 - 4));
-      // doorgang tussen twee kamers: een kozijn met de muur erdoorheen te zien (geen donker gat)
+      // doorgang tussen twee kamers: een opening in de scheidingswand. Het deurblad staat 90 graden gedraaid tegen de wand, dus je ziet bijna alleen de rand
       const dh = 2.6 * TS, dw = 1.5 * TS;
-      const dg = g.createLinearGradient(x - dw / 2, 0, x + dw / 2, 0); dg.addColorStop(0, shade(T.wall2, -0.22)); dg.addColorStop(0.5, shade(T.wall, -0.08)); dg.addColorStop(1, shade(T.wall2, -0.28));
+      const dg = g.createLinearGradient(x - dw / 2, 0, x + dw / 2, 0); dg.addColorStop(0, shade(T.wall2, -0.2)); dg.addColorStop(0.5, shade(T.wall, -0.06)); dg.addColorStop(1, shade(T.wall2, -0.26));
       g.fillStyle = dg; g.fillRect(x - dw / 2, y1 - dh, dw, dh);
-      g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(x - dw / 2, y1 - dh, dw, 10);
-      g.fillStyle = shade(T.trim, 0); g.fillRect(x - dw / 2 - 5, y1 - dh - 6, dw + 10, 7); g.fillRect(x - dw / 2 - 5, y1 - dh, 5, dh); g.fillRect(x + dw / 2, y1 - dh, 5, dh);
-      g.fillStyle = 'rgba(255,255,255,.28)'; g.fillRect(x - dw / 2 - 5, y1 - dh - 6, dw + 10, 1.6); g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x - dw / 2 + 0, y1 - dh + 1, dw, 3);
-      // een open deurblad dat tegen de wand staat
-      g.fillStyle = shade(T.trim, -0.15); g.beginPath(); g.moveTo(x + dw / 2, y1 - dh + 4); g.lineTo(x + dw / 2 + 12, y1 - dh + 10); g.lineTo(x + dw / 2 + 12, y1 - 2); g.lineTo(x + dw / 2, y1); g.closePath(); g.fill(); g.fillStyle = '#e8c64a'; g.fillRect(x + dw / 2 + 8, y1 - 60, 2.4, 5);
+      g.fillStyle = 'rgba(0,0,0,.22)'; g.fillRect(x - dw / 2, y1 - dh, dw, 8);
+      g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(x - dw / 2 - 1.5, y1 - dh, 1.5, dh); g.fillRect(x + dw / 2, y1 - dh, 1.5, dh);
+      g.fillStyle = shade(T.trim, -0.1); g.fillRect(x - dw / 2 - 1.5, y1 - dh - 3, dw + 3, 3);
+      // de deur zelf, van opzij gezien: een dunne rand tegen de wand
+      g.fillStyle = shade(T.trim, -0.25); g.fillRect(x + dw / 2 - 3, y1 - dh + 3, 3, dh - 3); g.fillStyle = 'rgba(255,255,255,.16)'; g.fillRect(x + dw / 2 - 3, y1 - dh + 3, 1, dh - 3);
     }
   }
   // buitenmuren en afwerking
@@ -316,11 +316,15 @@ function drawRobot(g, gd, s, t, stunned, alert) {
   if (gd.skin === 'chef') { g.fillStyle = '#fff'; g.beginPath(); g.arc(-4, -56, 8, 0, 7); g.arc(4, -56, 8, 0, 7); g.arc(0, -61, 8, 0, 7); g.fill(); }
   if (gd.skin === 'knight') { g.fillStyle = c2; g.fillRect(-2, -66, 4, 12); g.fillStyle = '#c4452e'; g.fillRect(-2, -70, 4, 6); }
   if (gd.skin === 'alien') { g.strokeStyle = c1; g.lineWidth = 2; g.beginPath(); g.moveTo(-4, -56); g.lineTo(-8, -66); g.moveTo(4, -56); g.lineTo(8, -66); g.stroke(); g.fillStyle = c1; g.beginPath(); g.arc(-8, -66, 2.5, 0, 7); g.arc(8, -66, 2.5, 0, 7); g.fill(); }
-  g.strokeStyle = c2; g.lineWidth = 5; g.lineCap = 'round'; g.beginPath(); g.moveTo(8, -36); g.lineTo(16 + step * 3, -24); g.stroke();
+  const ch = s.chase;
+  let hx = 16 + step * 3, hy = -24, bAng = 0;
+  if (ch) { bAng = s.swing > 0 ? -1.3 + 2.8 * s.swing : -0.75 + Math.sin(t * 12 + gd.id) * 0.14; hx = 8 + 14 * Math.sin(bAng); hy = -36 - 14 * Math.cos(bAng); }
+  g.strokeStyle = c2; g.lineWidth = 5; g.lineCap = 'round'; g.beginPath(); g.moveTo(8, -36); g.lineTo(hx, hy); g.stroke();
+  if (ch) { g.save(); g.translate(hx, hy); g.rotate(bAng); const bg2 = g.createLinearGradient(-3, 0, 3, 0); bg2.addColorStop(0, '#4a4f58'); bg2.addColorStop(1, '#16181c'); g.fillStyle = bg2; g.beginPath(); g.roundRect(-3, -26, 6, 28, 2.5); g.fill(); g.fillStyle = '#e8e4d8'; g.fillRect(-3, -8, 6, 2.2); g.restore(); }
   g.fillStyle = c2; rr(g, -12, -62, 24, 20, 9); g.fill(); g.fillStyle = c1; rr(g, -10, -62, 20, 17, 8); g.fill();
   const asleep = sleeper && !s.awake;
   g.fillStyle = '#10141c'; rr(g, -2, -58, 12, 9, 4); g.fill();
-  g.fillStyle = asleep ? '#4a4f58' : alert ? '#ff3a3a' : (big ? '#ff9a3a' : '#7affc8'); if (asleep) g.fillRect(1, -54, 7, 2); else { g.beginPath(); g.arc(6, -53.5, 3, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.arc(5.2, -54.4, 0.9, 0, 7); g.fill(); }
+  g.fillStyle = asleep ? '#4a4f58' : alert || s.chase ? '#ff3a3a' : (big ? '#ff9a3a' : '#7affc8'); if (asleep) g.fillRect(1, -54, 7, 2); else { g.beginPath(); g.arc(6, -53.5, 3, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.arc(5.2, -54.4, 0.9, 0, 7); g.fill(); }
   g.fillStyle = '#2a2d33'; g.fillRect(-1, -70, 2, 8); g.fillStyle = alert ? '#ff3a3a' : '#e8c64a'; g.beginPath(); g.arc(0, -71, 3, 0, 7); g.fill();
   if (big) { g.strokeStyle = '#2a2d33'; g.lineWidth = 3; g.strokeRect(-12, -44, 24, 36); }
   g.restore();
@@ -374,15 +378,16 @@ export function drawThief(g, p, t, opts = {}) {
 export function drawScene(g, game, stat, t) {
   const L = game.L, p = game.p;
   g.drawImage(stat, 0, 0);
-  // gesloten deuren: een zware stalen deur met een hangslot (spatie ingedrukt houden om het slot te forceren)
+  // gesloten deuren: een zware stalen deur in de scheidingswand (van opzij gezien, een dikke plaat) met een hangslot (spatie ingedrukt houden om het slot te forceren)
   L.walls.forEach((w, i) => {
     if (!w.lock || game.doorOpen.has(i)) return;
-    const x = w.x * TS, y1 = Y[w.f] * TS, dh = 2.6 * TS, dw = 1.5 * TS;
-    const mg = g.createLinearGradient(x - dw / 2, 0, x + dw / 2, 0); mg.addColorStop(0, '#8a929c'); mg.addColorStop(0.5, '#b8c0c8'); mg.addColorStop(1, '#6a727c');
-    g.fillStyle = mg; g.fillRect(x - dw / 2, y1 - dh, dw, dh);
-    g.strokeStyle = '#2a2f36'; g.lineWidth = 3; g.strokeRect(x - dw / 2 + 1.5, y1 - dh + 1.5, dw - 3, dh - 3);
-    g.fillStyle = 'rgba(0,0,0,.18)'; for (let yy = y1 - dh + 14; yy < y1 - 8; yy += 26) g.fillRect(x - dw / 2 + 4, yy, dw - 8, 2);
-    g.fillStyle = '#3a4048'; for (const [dx, dy] of [[6, 8], [dw - 6, 8], [6, dh - 8], [dw - 6, dh - 8]]) { g.beginPath(); g.arc(x - dw / 2 + dx, y1 - dh + dy, 2.4, 0, 7); g.fill(); }
+    const x = w.x * TS, y1 = Y[w.f] * TS, dh = 2.6 * TS, dw = 1.5 * TS, sw = 16;
+    const mg = g.createLinearGradient(x - sw / 2, 0, x + sw / 2, 0); mg.addColorStop(0, '#6a727c'); mg.addColorStop(0.35, '#c8d0d8'); mg.addColorStop(1, '#58606a');
+    g.fillStyle = mg; g.fillRect(x - sw / 2, y1 - dh, sw, dh);
+    g.strokeStyle = '#2a2f36'; g.lineWidth = 2; g.strokeRect(x - sw / 2 + 1, y1 - dh + 1, sw - 2, dh - 2);
+    g.fillStyle = 'rgba(0,0,0,.2)'; for (let yy = y1 - dh + 16; yy < y1 - 8; yy += 24) g.fillRect(x - sw / 2 + 2, yy, sw - 4, 2);
+    g.fillStyle = '#3a4048'; for (const dy of [6, dh / 2, dh - 6]) { g.beginPath(); g.arc(x - sw / 2 + 4, y1 - dh + dy, 1.8, 0, 7); g.fill(); }
+    g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(x + sw / 2, y1 - dh, 4, dh);
     // hangslot
     const lx = x, ly = y1 - dh / 2 + 4;
     g.strokeStyle = '#c8ced6'; g.lineWidth = 4; g.beginPath(); g.arc(lx, ly - 8, 7, Math.PI, 0); g.stroke();
@@ -409,8 +414,8 @@ export function drawScene(g, game, stat, t) {
   for (const it of game.items) if (!it.done) drawItem(g, it, t);
   // bewakers: eerst de lichtkegels, dan de robots
   const alertGuard = game.seenBy;
-  L.guards.forEach((gd, i) => { const s = guardAt(gd, game.t); if (game.stun[i] > 0) return; drawCone(g, gd, s, i === alertGuard); });
-  L.guards.forEach((gd, i) => drawRobot(g, gd, guardAt(gd, game.t), t, game.stun[i] > 0, i === alertGuard && game.meter > 0.2));
+  L.guards.forEach((gd, i) => { const s = game.guardState(i); if (game.stun[i] > 0) return; drawCone(g, gd, s, i === alertGuard || !!s.chase); });
+  L.guards.forEach((gd, i) => { const s = game.guardState(i); drawRobot(g, gd, s, t, game.stun[i] > 0, (i === alertGuard && game.meter > 0.2) || !!s.chase); });
   drawThief(g, p, t);
   // het meter boven Te-Un als iemand hem ziet
   if (game.meter > 0.02) {
@@ -420,4 +425,6 @@ export function drawScene(g, game, stat, t) {
     g.fillStyle = '#ff3a3a'; g.font = '700 20px Fredoka, sans-serif'; g.textAlign = 'center'; g.fillText('!', x, y - 4);
   }
   if (p.mode === 'act') { const x = p.x * TS, y = p.y * TS - 96, tot = Math.max(0.1, p.workItem ? (p.workItem.type === 'hack' || p.workItem.type === 'vault' ? 1.8 : p.workItem.type === 'code' ? 0.6 : 0.5) : 0.5); g.fillStyle = 'rgba(0,0,0,.55)'; rr(g, x - 22, y, 44, 8, 4); g.fill(); g.fillStyle = '#41d97a'; rr(g, x - 21, y + 1, 42 * (1 - Math.max(0, p.work) / tot), 6, 3); g.fill(); }
+  // alarm: rood knipperend randje
+  if (game.alarmT > 0) { const a = Math.min(1, game.alarmT / 1.5) * (0.35 + 0.25 * Math.sin(t * 14)); g.save(); g.strokeStyle = `rgba(255,40,40,${a})`; g.lineWidth = 22; g.strokeRect(0, 0, CW, CH); const vg2 = g.createRadialGradient(CW / 2, CH / 2, CH * 0.4, CW / 2, CH / 2, CW * 0.65); vg2.addColorStop(0, 'rgba(255,0,0,0)'); vg2.addColorStop(1, `rgba(255,0,0,${a * 0.6})`); g.fillStyle = vg2; g.fillRect(0, 0, CW, CH); g.restore(); }
 }

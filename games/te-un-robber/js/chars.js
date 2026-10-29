@@ -126,7 +126,7 @@ export function drawGnome(g, o = {}) {
   g.restore();
 }
 
-// ---------------------------------------------------------------- Nico: half blond, half bruin haar, baardje en kleine krulletjes
+// ---------------------------------------------------------------- Nico: blond haar met kleine krulletjes en een baardje
 export function drawNico(g, o = {}) {
   const { x = 0, y = 0, s = 1, face = 1, t = 0, pose = 'stand', alpha = 1, suit = '#23344f' } = o;
   g.save(); g.translate(x, y); g.scale(s * face, s); g.globalAlpha *= alpha;
@@ -142,11 +142,10 @@ export function drawNico(g, o = {}) {
   g.fillStyle = '#f2cfae'; g.beginPath(); g.ellipse(0, -66, 11, 12, 0, 0, 7); g.fill(); g.strokeStyle = OUT; g.lineWidth = 2; g.stroke();
   // haar: links blond, rechts bruin, kleine krulletjes
   const curl = (cx, cy, r, c) => { g.fillStyle = c; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.fill(); };
-  for (const [cx, cy] of [[-9, -72], [-5, -77], [-1, -78], [-11, -66], [-7, -70], [-3, -74]]) curl(cx, cy, 3.6, '#e6c070');
-  for (const [cx, cy] of [[9, -72], [5, -77], [1, -78], [11, -66], [7, -70], [3, -74]]) curl(cx, cy, 3.6, '#6a4228');
+  for (const [cx, cy] of [[-9, -72], [-5, -77], [-1, -78], [-11, -66], [-7, -70], [-3, -74], [9, -72], [5, -77], [1, -78], [11, -66], [7, -70], [3, -74]]) curl(cx, cy, 3.6, '#e6c070');
   g.strokeStyle = 'rgba(0,0,0,.2)'; g.lineWidth = 1; for (const [cx, cy] of [[-5, -77], [5, -77], [-9, -72], [9, -72]]) { g.beginPath(); g.arc(cx, cy, 2, 0.5, 4); g.stroke(); }
   // baardje
-  g.fillStyle = '#7a5434'; g.beginPath(); g.moveTo(-8, -60); g.quadraticCurveTo(0, -48 + talk * 1.5, 8, -60); g.quadraticCurveTo(0, -57, -8, -60); g.fill();
+  g.fillStyle = '#c9a458'; g.beginPath(); g.moveTo(-8, -60); g.quadraticCurveTo(0, -48 + talk * 1.5, 8, -60); g.quadraticCurveTo(0, -57, -8, -60); g.fill();
   g.fillStyle = '#fff'; g.beginPath(); g.arc(-4, -67, 2.6, 0, 7); g.arc(4, -67, 2.6, 0, 7); g.fill(); g.fillStyle = '#10141c'; g.beginPath(); g.arc(-3.6, -66.6, 1.3, 0, 7); g.arc(4.4, -66.6, 1.3, 0, 7); g.fill();
   g.strokeStyle = '#4a3220'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(-8, -71); g.lineTo(-1.5, -70); g.moveTo(8, -71); g.lineTo(1.5, -70); g.stroke();
   g.restore();
