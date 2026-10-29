@@ -137,6 +137,7 @@ function runCine(kind, a, fast) {
       if (!mod) return fin();
       show('cine');
       try {
+        if (kind === 'intro' && mod.prepareExterior) mod.prepareExterior(levelMeta(a).ext, a);
         if (kind === 'intro' && mod.playIntro) mod.playIntro($('cinecv'), levelMeta(a).ext, a, fin, { sfx: cineSfx, fast });
         else if (kind === 'cut' && mod.playCutscene) mod.playCutscene($('cinecv'), a, fin, { sfx: cineSfx });
         else fin();
