@@ -569,12 +569,12 @@ const SCENES = {};
 
 // ---------------------------------------------------------------- Hoofdstuk 1: intro
 SCENES.ch1_intro = [
-  (g, t, c) => { g.save(); zoomAt(g, 1 + t * 0.012, 640, 420); villageBg(g, t, -150 + t * 22, 'dusk');
+  (g, t, c) => { g.save(); c.zoom(1 + t * 0.012, 640, 420); villageBg(g, t, -150 + t * 22, 'dusk');
     for (let i = 0; i < 3; i++) gnome(g, { x: 180 + i * 90 + t * 14, y: 556 + (i % 2) * 6, s: 1.3, face: 1, walk: t * 4 + i * 2, t, hat: HATS[i], coat: COATS[i], angry: false, tool: 'none' });
     gnome(g, { x: 1100 - t * 18, y: 560, s: 1.4, face: -1, walk: t * 4, t, hat: HATS[3], coat: COATS[1], angry: false, tool: 'none' });
     teun(g, { x: 260 + t * 62, y: 548, s: 2.4, face: 1, walk: t * 7, pose: 'walk', t, outfit: 'classic' });
     g.restore(); },
-  (g, t, c) => { g.save(); zoomAt(g, 1 + t * 0.02, 760, 420); villageBg(g, t, 40 - t * 10, 'dusk');
+  (g, t, c) => { g.save(); c.zoom(1 + t * 0.02, 760, 420); villageBg(g, t, 40 - t * 10, 'dusk');
     // voorgrondheuvel
     g.fillStyle = grad(g, 0, 470, 0, H, [[0, '#2a3a22'], [1, '#0e1a10']]); g.beginPath(); g.moveTo(420, H); g.quadraticCurveTo(560, 470, 760, 478); g.quadraticCurveTo(1000, 486, 1280, 520); g.lineTo(1280, H); g.fill();
     g.fillStyle = '#1a2a16'; for (let i = 0; i < 30; i++) { const x = 560 + i * 24, y = 482 + Math.sin(i) * 3; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 3 + Math.sin(t * 2 + i) * 3, y - 14); g.lineTo(x + 6, y); g.fill(); }
@@ -583,7 +583,7 @@ SCENES.ch1_intro = [
     teun(g, { x: 800, y: 492, s: 3, face: 1, pose: 'stand', t, outfit: 'classic' });
     const k = sstep(prog(t, 2.2, 3.2)); if (k > 0) { g.save(); g.globalAlpha = k; zoomAt(g, 0.8 + 0.2 * k, 930, 280); bubble(g, 880, 160, 150, 120, 850, 320); globe(g, 955, 218, 40, t); g.restore(); }
     g.restore(); },
-  (g, t, c) => { g.save(); zoomAt(g, 1.04 + t * 0.01, 560, 360); villageBg(g, t, 0, 'dusk'); tint(g, 'rgba(10,10,40,.35)');
+  (g, t, c) => { g.save(); c.zoom(1.04 + t * 0.01, 560, 360); villageBg(g, t, 0, 'dusk'); tint(g, 'rgba(10,10,40,.35)');
     g.fillStyle = 'rgba(0,0,0,.28)'; g.fillRect(0, 0, W, H);
     const bob = Math.sin(t * 2) * 3; teun(g, { x: 440, y: 560, s: 3.6, face: 1, pose: 'sad', t, outfit: 'classic', sack: false });
     // lege zakken die naar buiten wapperen
@@ -593,7 +593,7 @@ SCENES.ch1_intro = [
     // een motje vliegt uit zijn zak
     const mt = t * 3; g.fillStyle = '#c8b898'; g.beginPath(); g.ellipse(520 + Math.sin(t) * 70 + t * 20, 470 + Math.cos(t * 1.4) * 40, 8, 3 + Math.abs(Math.sin(mt * 4)) * 8, 0.3, 0, TAU); g.fill();
     g.restore(); },
-  (g, t, c) => { g.save(); const z = 1 + t * 0.03; zoomAt(g, z, 600, 400); villageBg(g, t, 30 + t * 6, 'night'); tint(g, 'rgba(4,6,24,.45)');
+  (g, t, c) => { g.save(); const z = 1 + t * 0.03; c.zoom(z, 600, 400); villageBg(g, t, 30 + t * 6, 'night'); tint(g, 'rgba(4,6,24,.45)');
     const sp = glow; const k = prog(t, 0, 1); void sp; void k;
     // maanlicht-spot
     g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = grad(g, 620, 60, 620, 560, [[0, 'rgba(170,200,255,.28)'], [1, 'rgba(170,200,255,0)']]); g.beginPath(); g.moveTo(560, 40); g.lineTo(680, 40); g.lineTo(820, 570); g.lineTo(420, 570); g.fill(); g.restore();
@@ -607,13 +607,13 @@ SCENES.ch1_intro = [
 
 // ---------------------------------------------------------------- Hoofdstuk 1: einde
 SCENES.ch1_end = [
-  (g, t, c) => { c.cue(0.3, 'siren'); g.save(); const cam = -t * 8; zoomAt(g, 1 + t * 0.008, 640, 400); villageBg(g, t, cam, 'night'); g.drawImage(bankSprite(), 270 - cam, 25);
+  (g, t, c) => { c.cue(0.3, 'siren'); g.save(); const cam = -t * 8; c.zoom(1 + t * 0.008, 640, 400); villageBg(g, t, cam, 'night'); g.drawImage(bankSprite(), 270 - cam, 25);
     const dx = 620 - cam, al = Math.floor(t * 4) % 2; glow(g, dx, 500, 120, 'rgba(255,220,120,1)', 0.5); glow(g, 270 + 350 - cam, 270, 120, al ? 'rgba(255,40,40,1)' : 'rgba(255,40,40,.2)', 0.9);
     g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = grad(g, dx, 540, dx + 380, 560, [[0, 'rgba(255,220,130,.4)'], [1, 'rgba(255,220,130,0)']]); g.beginPath(); g.moveTo(dx - 30, 480); g.lineTo(dx + 500, 560); g.lineTo(dx + 500, 620); g.lineTo(dx - 30, 545); g.fill(); g.restore();
     const x = 670 - cam + Math.min(t * 55, 330); teun(g, { x, y: 548, s: 2.5, face: 1, pose: 'sneak', walk: t * 6, t, outfit: 'black', mask: 1, gloves: 1 });
     bills(g, t, x - 40, 440, 10, 3); beam(g, 270 + 350 - cam, 40, 1.3, 700, 12, 90, 'rgba(255,255,255,A)', 0.14);
     g.restore(); },
-  (g, t, c) => { g.save(); const sh = Math.sin(t * 5) * 2; zoomAt(g, 1.06, 640, 420); villageBg(g, t, 80, 'night'); tint(g, 'rgba(10,5,20,.35)');
+  (g, t, c) => { g.save(); const sh = Math.sin(t * 5) * 2; c.zoom(1.06, 640, 420); villageBg(g, t, 80, 'night'); tint(g, 'rgba(10,5,20,.35)');
     const fl = 0.8 + 0.2 * Math.sin(t * 17); glow(g, 640, 380, 700, 'rgba(255,120,30,1)', 0.35 * fl);
     // verre Te-Un
     teun(g, { x: 1120, y: 548, s: 1.5, face: 1, pose: 'run', walk: t * 12, t, outfit: 'black', mask: 1, gloves: 1 });
@@ -631,7 +631,7 @@ SCENES.ch1_end = [
     teun(g, { x, y: 590, s: 2.4, face: 1, pose: 'run', walk: t * 13, t, outfit: 'black', mask: 1, gloves: 1 }); dust(g, t, x - 30, 590, 5, 1.2);
     drawPlane(g, { x: 1040 - cam * 0.9 + 80, y: 515 - 24 * 0.6, s: 0.6, t });
     g.restore(); },
-  (g, t, c) => { c.cue(1.15, 'chime'); g.save(); zoomAt(g, 1 + t * 0.01, 700, 380); airportHall(g, t);
+  (g, t, c) => { c.cue(1.15, 'chime'); g.save(); c.zoom(1 + t * 0.01, 700, 380); airportHall(g, t);
     // robot achter het loket
     const rx = 920; drawRobotChar(g, { x: rx, y: 500, s: 2.6, face: -1, t, skin: 'white', alert: false }); g.fillStyle = '#d03a2a'; g.beginPath(); g.moveTo(rx - 34, 328); g.quadraticCurveTo(rx, 300, rx + 34, 328); g.lineTo(rx + 40, 334); g.lineTo(rx - 40, 334); g.fill();
     counterFront(g, 620, 470, 620);
@@ -705,7 +705,7 @@ function mapScene(g, t) {
 }
 // ---------------------------------------------------------------- Hoofdstuk 2
 SCENES.ch2_intro = [
-  (g, t, c) => { g.save(); zoomAt(g, 1 + t * 0.008, 640, 420); nlBg(g, t, -160 + t * 28, 'day');
+  (g, t, c) => { g.save(); c.zoom(1 + t * 0.008, 640, 420); nlBg(g, t, -160 + t * 28, 'day');
     for (let i = 0; i < 3; i++) { const dir = i % 2 ? -1 : 1, x = dir > 0 ? ((t * 130 + i * 520) % 1700) - 250 : 1500 - ((t * 110 + i * 600) % 1700); bike(g, x, 586 + i * 4, 1.15 - i * 0.05, t + i, ['#d03a2a', '#3a6ad0', '#e0a020'][i], ['#3a6ad0', '#d03a2a', '#4aa070'][i], dir); }
     drawPlane(g, { x: ((t * 40) % 1600) - 150, y: 110, s: 0.16, tilt: -0.06, t });
     g.strokeStyle = '#2a2f3a'; g.lineWidth = 2; for (let i = 0; i < 5; i++) { const x = ((t * 70 + i * 300) % 1500) - 100, y = 190 + i * 22 + Math.sin(t * 2 + i) * 10, f = Math.sin(t * 11 + i) * 6; g.beginPath(); g.moveTo(x - 9, y + f); g.quadraticCurveTo(x - 4, y - 6, x, y); g.quadraticCurveTo(x + 4, y - 6, x + 9, y + f); g.stroke(); }
@@ -723,7 +723,7 @@ SCENES.ch2_end = [
     const x = 560 - cam + Math.min(t * 62, 360); teun(g, { x, y: 560, s: 2.6, face: 1, pose: 'walk', walk: t * 6, t, outfit: 'classic', sack: true }); boxBami(g, x + 32 * 2.6 * 0.6 + 14, 560 - 38 * 2.6 * 0.6 + 2, 1.2, t);
     for (let i = 0; i < 3; i++) { const ph = (t * 0.6 + i / 3) % 1; sparkle(g, x + 70 + i * 22, 440 - ph * 80, 8 * (1 - ph), 1 - ph); }
     g.restore(); },
-  (g, t, c) => { g.save(); zoomAt(g, 1 + t * 0.012, 640, 420);
+  (g, t, c) => { g.save(); c.zoom(1 + t * 0.012, 640, 420);
     g.drawImage(L('rest_in', W, H, (cc) => { cc.fillStyle = grad(cc, 0, 0, 0, H, [[0, '#4a0c14'], [1, '#2a0a10']]); cc.fillRect(0, 0, W, H); cc.fillStyle = 'rgba(232,184,64,.18)'; for (let x = 0; x < W; x += 80) for (let y = 0; y < 440; y += 80) { cc.beginPath(); cc.arc(x + 40, y + 40, 20, 0, TAU); cc.fill(); } cc.fillStyle = '#e8b840'; cc.fillRect(0, 434, W, 10); cc.fillStyle = grad(cc, 0, 444, 0, H, [[0, '#2a1810'], [1, '#100806']]); cc.fillRect(0, 444, W, H - 444); cc.fillStyle = '#8a1010'; rr(cc, 410, 40, 460, 240, 10); cc.fill(); cc.strokeStyle = '#e8b840'; cc.lineWidth = 8; cc.stroke(); cjk(cc, '龍', 640, 210, 190, '#e8b840'); }), 0, 0);
     for (const [x, ph] of [[180, 0], [380, 1], [900, 2], [1100, 3]]) lantern(g, x, 40 + (ph % 2) * 30, 1.1, t, ph);
     teun(g, { x: 640, y: 590, s: 3.5, face: 1, pose: t > 3.2 ? 'celebrate' : 'stand', t, outfit: 'classic', sack: false });
@@ -749,7 +749,7 @@ SCENES.ch2_end = [
 // ---------------------------------------------------------------- Hoofdstuk 3
 function pagodaPeople(g, t, n, seed, y0, y1, sMin, sMax) { const r = rng(seed); const cols = ['#c84a4a', '#4a8ac8', '#6aa84a', '#c8a02a', '#a84ac8', '#e8e2d0']; for (let i = 0; i < n; i++) { const dir = r() > 0.5 ? 1 : -1, sp = 20 + r() * 40, s = sMin + r() * (sMax - sMin), yy = y0 + r() * (y1 - y0), x = dir > 0 ? ((t * sp + r() * 1600) % 1500) - 100 : 1380 - ((t * sp + r() * 1600) % 1500); person(g, x, yy, s, cols[i % 6], t, { walk: t * (3 + sp / 14) + i, face: dir, hat: i % 3 === 0 ? '#d8c070' : null, hair: '#14100c' }); } }
 SCENES.ch3_intro = [
-  (g, t, c) => { g.save(); zoomAt(g, 1 + t * 0.01, 640, 400); chinaBg(g, t, -200 + t * 36, 'dusk'); fireworks(g, t, 4, 4);
+  (g, t, c) => { g.save(); c.zoom(1 + t * 0.01, 640, 400); chinaBg(g, t, -200 + t * 36, 'dusk'); fireworks(g, t, 4, 4);
     pagodaPeople(g, t, 12, 3, 540, 566, 1.5, 1.9);
     for (let i = 0; i < 2; i++) bike(g, ((t * 150 + i * 700) % 1700) - 200, 575, 1, t + i, '#2a6ad0', '#e0a020', 1);
     g.restore(); },
@@ -760,7 +760,7 @@ SCENES.ch3_intro = [
     g.restore(); },
 ];
 SCENES.l15_pre = [
-  (g, t, c) => { g.save(); const cam = -240 + t * 44; zoomAt(g, 1 + t * 0.012, 700, 330); warehouseBg(g, t, cam);
+  (g, t, c) => { g.save(); const cam = -240 + t * 44; c.zoom(1 + t * 0.012, 700, 330); warehouseBg(g, t, cam);
     const tx = -300 + Math.min(t * 190, 760); truck(g, tx, 590, 1.2, t, { lights: true });
     for (const [x, d] of [[760, 1], [1000, -1]]) { const px2 = x + Math.sin(t * 0.7 + x) * 120; drawRobotChar(g, { x: px2 - cam * 0.5 * 0, y: 570, s: 1.5, face: Math.cos(t * 0.7 + x) > 0 ? 1 : -1, t, skin: 'blue', move: 1 }); void d; }
     g.restore(); },
@@ -814,16 +814,16 @@ function cctv(g, x, y, w, h, t) {
   g.fillStyle = Math.floor(t * 2) % 2 ? '#ff2a2a' : '#5a1010'; g.beginPath(); g.arc(x + 24, y + 24, 8, 0, TAU); g.fill(); txt(g, 'REC', x + 42, y + 31, 20, '#ff6a6a', 'left', 700); txt(g, 'MAGAZIJN 15', x + w - 12, y + h - 12, 18, '#9affc0', 'right', 600);
 }
 SCENES.ch4_intro = [
-  (g, t, c) => { g.save(); zoomAt(g, 1 + t * 0.035, 975 - 150, 140 + t * 4); cityNight(g, t, -60 + t * 10);
+  (g, t, c) => { g.save(); c.zoom(1 + t * 0.035, 975 - 150, 140 + t * 4); cityNight(g, t, -60 + t * 10);
     const hx = 1500 - t * 110, hy = 200 + Math.sin(t * 1.5) * 12; g.fillStyle = '#0a0c14'; g.beginPath(); g.ellipse(hx, hy, 30, 12, 0, 0, TAU); g.fill(); g.fillRect(hx - 44, hy - 3, 40, 5); g.fillRect(hx - 6, hy - 22, 3, 10); g.save(); g.translate(hx, hy - 20); g.rotate(t * 30); g.fillRect(-46, -1.5, 92, 3); g.restore(); beam(g, hx, hy + 8, 1.9, 520, 10, 150, 'rgba(255,250,210,A)', 0.2);
     for (const [x, ph] of [[300, 0], [1000, 2]]) beam(g, x, 700, -Math.PI / 2 + Math.sin(t * 0.6 + ph) * 0.5, 760, 20, 120, 'rgba(255,255,255,A)', 0.12);
     g.restore(); },
-  (g, t, c) => { g.save(); zoomAt(g, 1 + t * 0.022, 640, 330); officeBg(g, t, t * 6);
+  (g, t, c) => { g.save(); c.zoom(1 + t * 0.022, 640, 330); officeBg(g, t, t * 6);
     for (const x of [250, 1030]) drawRobotChar(g, { x, y: 560, s: 2.3, face: x < 640 ? 1 : -1, t, skin: 'blue' });
     drawNico(g, { x: 640, y: 650, s: 3.7, face: 1, t, pose: 'talk' }); deskFront(g, 360, 520, 560); deskProps(g, 400, 520, t);
     const k = sstep(prog(t, 0.6, 1.4)); g.save(); g.globalAlpha = k; for (let i = 0; i < 3; i++) { const ph = t * 0.8 + i * 0.7; cjk(g, ['這', '是', '誰'][i], 740 + i * 66, 290 - Math.sin(ph * 2) * 8 - (i === 1 ? 14 : 0), 52, '#ffe27a'); } g.restore();
     g.restore(); },
-  (g, t, c) => { g.save(); zoomAt(g, 1.14 - t * 0.014, 640, 400); officeBg(g, t, 0);
+  (g, t, c) => { g.save(); c.zoom(1.14 - t * 0.014, 640, 400); officeBg(g, t, 0);
     drawNico(g, { x: 900, y: 600, s: 2.7, face: -1, t, pose: 'talk' }); deskFront(g, 700, 490, 400); deskProps(g, 740, 490, t);
     drawRobotChar(g, { x: 200, y: 580, s: 2.4, face: 1, t, skin: 'blue' }); teun(g, { x: 370, y: 585, s: 2.6, face: 1, pose: 'stand', t, outfit: 'black', mask: 0, gloves: 1 }); drawRobotChar(g, { x: 520, y: 590, s: 2.4, face: -1, t, skin: 'blue' });
     qmark(g, 900, 250, t, 0); qmark(g, 380, 270, t, 1.5, '#ff8a5a', '!'); qmark(g, 560, 320, t, 3, '#ffe27a', '?');
@@ -847,22 +847,22 @@ SCENES.l17_end = [
     teun(g, { x, y: 548 + k * 16, s: 2.2 + k * 0.5, face: 1, pose: t < 3 ? 'sneak' : 'stand', walk: t * 6, t, outfit: 'black', mask: 1, gloves: 1 }); bills(g, t, x - 20, 440, 6, 8);
     const cx = 1700 - sstep(prog(t, 1.2, 3.8)) * 800; policeCar(g, cx, 600, 1.3, t, { face: -1 }); beam(g, cx - 150, 560, Math.PI + 0.05, 560, 24, 170, 'rgba(255,245,200,A)', 0.3); if (t > 1.2) sirenTint(g, t, 0.22);
     g.restore(); },
-  (g, t, c) => { g.save(); const cam = 160; zoomAt(g, 1 + t * 0.014, 700, 420); townBg(g, t, cam, 'suburb'); policeCar(g, 360, 560, 1.15, t, { face: 1 }); beam(g, 500, 520, 0, 700, 24, 190, 'rgba(255,245,200,A)', 0.35);
+  (g, t, c) => { g.save(); const cam = 160; c.zoom(1 + t * 0.014, 700, 420); townBg(g, t, cam, 'suburb'); policeCar(g, 360, 560, 1.15, t, { face: 1 }); beam(g, 500, 520, 0, 700, 24, 190, 'rgba(255,245,200,A)', 0.35);
     teun(g, { x: 1090, y: 570, s: 3, face: -1, pose: 'scared', t, outfit: 'black', mask: 1, gloves: 1 }); drawCop(g, { x: 760, y: 575, s: 3.2, face: 1, t }); drawCop(g, { x: 620, y: 590, s: 3, face: 1, t: t + 1 });
     for (let i = 0; i < 2; i++) qmark(g, 700 + i * 140, 230 + i * 30, t, i, '#7ab0ff', '!'); sirenTint(g, t, 0.24); g.restore(); },
-  (g, t, c) => { g.save(); zoomAt(g, 1.08 - t * 0.012, 640, 360); cellBg(g, t, 0);
+  (g, t, c) => { g.save(); c.zoom(1.08 - t * 0.012, 640, 360); cellBg(g, t, 0);
     const mx = ((t * 40) % 1500) - 100; g.fillStyle = '#6a6460'; g.beginPath(); g.ellipse(1250 - mx, 548, 14, 7, 0, 0, TAU); g.fill(); g.strokeStyle = '#6a6460'; g.lineWidth = 2; g.beginPath(); g.moveTo(1264 - mx, 548); g.quadraticCurveTo(1280 - mx, 540, 1290 - mx, 548); g.stroke();
     teun(g, { x: 620, y: 548, s: 3.1, face: 1, pose: 'sad', t, outfit: 'classic', sack: false }); cellBars(g, t); void mx;
     g.restore(); },
 ];
 SCENES.l18_end = [
-  (g, t, c) => { g.save(); const cam = -t * 5; zoomAt(g, 1.1 - t * 0.012, 640, 400); townBg(g, t, cam, 'police'); const mx = px(0.5, cam), dx = 520 + 380 + mx;
+  (g, t, c) => { g.save(); const cam = -t * 5; c.zoom(1.1 - t * 0.012, 640, 400); townBg(g, t, cam, 'police'); const mx = px(0.5, cam), dx = 520 + 380 + mx;
     for (const x of [520 + 215 + mx, 520 + 545 + mx]) { const ph = Math.floor(t * 4) % 2; glow(g, x, 410, 90, ph ? 'rgba(60,120,255,1)' : 'rgba(60,120,255,.3)', 0.9); }
     const k = prog(t, 0.3, 1.8), x = dx + sstep(k) * 240 - 60; glow(g, dx, 470, 120, 'rgba(255,255,255,1)', 0.4 * (1 - k));
     teun(g, { x: Math.max(x, dx), y: 548 + k * 10, s: 2.2 + k * 0.7, face: 1, pose: k < 1 ? 'run' : 'celebrate', walk: t * 14, t, outfit: 'classic', sack: false });
     for (let i = 0; i < 12; i++) { const ph = (t * 0.7 + i / 12) % 1; sparkle(g, 650 + Math.sin(i * 3.1) * 260, 200 + ph * 260, 8, 1 - ph, '#fff6b0'); }
     g.restore(); },
-  (g, t, c) => { g.save(); zoomAt(g, 1 + t * 0.012, 900, 380); townBg(g, t, 0, 'plain'); fogWisps(g, t, 0.07);
+  (g, t, c) => { g.save(); c.zoom(1 + t * 0.012, 900, 380); townBg(g, t, 0, 'plain'); fogWisps(g, t, 0.07);
     beam(g, 1360, 520, Math.PI, 900, 60, 260, 'rgba(255,245,200,A)', 0.35); beam(g, 1360, 590, Math.PI, 900, 60, 260, 'rgba(255,245,200,A)', 0.3);
     drawRobotChar(g, { x: 1080, y: 590, s: 2.6, face: -1, t, skin: 'blue' }); drawRobotChar(g, { x: 760, y: 590, s: 2.6, face: -1, t, skin: 'blue' });
     drawNico(g, { x: 920, y: 570, s: 3.2, face: -1, t, pose: 'talk' });
@@ -875,12 +875,12 @@ SCENES.l18_end = [
     fogWisps(g, t, 0.05, 520, 640); g.restore(); },
 ];
 SCENES.l19_end = [
-  (g, t, c) => { g.save(); zoomAt(g, 1 + t * 0.016, 640, 360); atelierIn(g, t, 0);
+  (g, t, c) => { g.save(); c.zoom(1 + t * 0.016, 640, 360); atelierIn(g, t, 0);
     mannequin(g, 140, 560, 2.2, '#d8cfa8', Math.sin(t * 0.7) * 0.03); mannequin(g, 420, 580, 2.6, '#d0c8a0', -0.05 + Math.sin(t * 0.5) * 0.03); mannequin(g, 990, 560, 2.3, '#d8cfa8', 0.08); mannequin(g, 1160, 580, 2.6, '#c8c098', Math.sin(t * 0.6) * 0.03);
     sewMachine(g, 850, 520, 1.8, t); teun(g, { x: 640, y: 575, s: 3.2, face: 1, pose: t < 2 ? 'sad' : 'stand', t, outfit: 'black', mask: 0, gloves: 1 });
     if (t > 2.2) { const k = sstep(prog(t, 2.2, 2.7)); g.save(); g.globalAlpha = k; glow(g, 640, 250, 130, 'rgba(255,230,120,1)', 0.9); g.fillStyle = '#ffe27a'; g.beginPath(); g.arc(640, 252, 30, 0, TAU); g.fill(); g.fillStyle = '#c8a020'; g.fillRect(630, 278, 20, 14); g.strokeStyle = '#ffe27a'; g.lineWidth = 4; for (let i = 0; i < 8; i++) { const a = i * TAU / 8; g.beginPath(); g.moveTo(640 + Math.cos(a) * 44, 252 + Math.sin(a) * 44); g.lineTo(640 + Math.cos(a) * 62, 252 + Math.sin(a) * 62); g.stroke(); } g.restore(); }
     g.restore(); },
-  (g, t, c) => { g.save(); const z = 1 + t * 0.03; zoomAt(g, z, 820, 360); bankBg(g, t, -t * 8);
+  (g, t, c) => { g.save(); const z = 1 + t * 0.03; c.zoom(z, 820, 360); bankBg(g, t, -t * 8);
     g.fillStyle = '#05070e'; g.beginPath(); g.moveTo(0, H); g.lineTo(0, 560); g.lineTo(330, 560); g.quadraticCurveTo(380, 560, 400, 600); g.lineTo(440, H); g.fill(); g.fillRect(0, 556, 340, 8);
     teun(g, { x: 190, y: 560, s: 3.2, face: 1, pose: 'sneak', walk: Math.sin(t * 0.8) * 0.5, t, outfit: 'black', mask: 1, gloves: 1 });
     for (let i = 0; i < 9; i++) { const k = Math.max(0, Math.sin(t * 2.2 + i * 1.3)); sparkle(g, 640 + i * 70 - t * 8, 400 + (i % 3) * 50, 7 + 11 * k, 0.3 + 0.7 * k, '#ffe27a'); }
@@ -900,7 +900,7 @@ SCENES.ch4_end = [
     teun(g, { x: 640 + Math.sin(t * 30) * sk * 2, y: 640, s: 2.9, face: 1, pose: 'stand', t, outfit: 'classic', sack: false }); seatBack(g, 640, 740, 1.9, '#2a4a8a'); drawMoneyBag(g, 880, 640, 2.2);
     if (t > 1.8) qmark(g, 640, 300, t, 0, '#ffe27a', '?'); const fl = Math.sin(t * 17) > 0.7 && t > 2.4 ? 0.3 : 0; tint(g, `rgba(0,0,0,${fl})`);
     g.restore(); },
-  (g, t, c) => { c.cue(0.1, 'plane'); g.save(); zoomAt(g, 1 + t * 0.03, 560, 380); flightSky(g, t, 'dusk', 1.4); const k = 0.5 + 0.5 * Math.sin(t * 1.3);
+  (g, t, c) => { c.cue(0.1, 'plane'); g.save(); c.zoom(1 + t * 0.03, 560, 380); flightSky(g, t, 'dusk', 1.4); const k = 0.5 + 0.5 * Math.sin(t * 1.3);
     drawPlane(g, { x: 640, y: 380 + Math.sin(t * 2) * 8, s: 2.1, tilt: 0.05 + Math.max(0, t - 2.5) * 0.06, t, smoke: t > 0.8, fire: t > 3.6 }); if (t > 2.4 && t < 3) glow(g, 600, 440, 260, 'rgba(255,170,60,1)', (1 - prog(t, 2.4, 3)) * 0.8); void k;
     g.restore(); },
   (g, t, c) => { c.cue(2.3, 'crash'); c.cue(2.4, 'boom'); g.save(); const sh = t > 2.3 ? (1 - prog(t, 2.3, 3.2)) * 10 : t * 1.2; shake(g, t, sh, 55); islandBg(g, t, 0, 'dusk');
@@ -910,7 +910,7 @@ SCENES.ch4_end = [
 ];
 // ---------------------------------------------------------------- Hoofdstuk 5
 SCENES.ch5_intro = [
-  (g, t, c) => { g.save(); zoomAt(g, 1.06 - t * 0.008, 640, 420); islandBg(g, t, 0, 'dusk');
+  (g, t, c) => { g.save(); c.zoom(1.06 - t * 0.008, 640, 420); islandBg(g, t, 0, 'dusk');
     wreckPiece(g, 330, 560, 2.1, t, { smoke: true, rot: -0.05 }); wreckPiece(g, 1010, 600, 1.6, t, { face: -1, rot: 0.1, smoke: true, seed: 3 });
     drawSuitcase(g, 760, 600, 1.8, '#9a3a3a'); drawSuitcase(g, 560, 610, 1.4, '#3a6a9a');
     for (let i = 0; i < 3; i++) { const gx = ((t * 40 + i * 400) % 1500) - 100; g.strokeStyle = '#fff'; g.lineWidth = 2.5; const f = Math.sin(t * 9 + i) * 6; g.beginPath(); g.moveTo(gx - 12, 170 + i * 30 + f); g.quadraticCurveTo(gx - 5, 160 + i * 30, gx, 170 + i * 30); g.quadraticCurveTo(gx + 5, 160 + i * 30, gx + 12, 170 + i * 30 + f); g.stroke(); }
@@ -923,7 +923,7 @@ SCENES.ch5_intro = [
     wreckPiece(g, 600 + nx + 260, 570, 1.5, t, { smoke: true, rot: 0.04 });
     teun(g, { x: xx - nx * 0 + 0, y: 590, s: 3, face: 1, pose: xx > 1080 && t > 5 ? 'celebrate' : 'walk', walk: t * 8, t, outfit: 'classic', sack: true });
     g.restore(); },
-  (g, t, c) => { g.save(); zoomAt(g, 1.1 - t * 0.016, 560, 420); islandBg(g, t, 0, 'dusk');
+  (g, t, c) => { g.save(); c.zoom(1.1 - t * 0.016, 560, 420); islandBg(g, t, 0, 'dusk');
     const sx = 980 - t * 4, sy = 456 + Math.sin(t * 1.4) * 3; g.save(); g.translate(sx, sy); g.rotate(Math.sin(t * 1.4) * 0.03); g.fillStyle = '#1a1020'; g.beginPath(); g.moveTo(-60, 0); g.lineTo(60, 0); g.lineTo(44, 20); g.lineTo(-48, 20); g.fill(); g.fillRect(-2, -60, 4, 60); g.fillStyle = '#2a1830'; g.beginPath(); g.moveTo(4, -56); g.quadraticCurveTo(46, -34, 40, -6); g.lineTo(4, -6); g.fill(); g.beginPath(); g.moveTo(-4, -50); g.quadraticCurveTo(-34, -30, -30, -6); g.lineTo(-4, -6); g.fill(); g.restore();
     const x = 420 + Math.max(0, t - 3.2) * 60; teun(g, { x, y: 586, s: 3, face: 1, pose: t > 3.2 ? 'walk' : 'stand', walk: t * 6, t, outfit: 'classic', sack: true });
     for (let i = 0; i < 5; i++) { const ph = (t * 0.5 + i / 5) % 1; sparkle(g, 700 + Math.sin(i * 5) * 200, 470 + ph * 30, 5, (1 - ph) * 0.8, '#ffe0a0'); }
@@ -966,13 +966,15 @@ SCENES.final = [
 // ================================================================ AFSPELEN: titelkaart, ondertitels, overgangen, invoer
 const WHO = { 'Te-Un': '#3f9a4a', Kabouter: '#d8362a', Nico: '#4a6ac8', Robot: '#6a7a8a', Agent: '#3a5aa8' };
 const TYPE_CPS = 40, TITLE_DUR = 2.6, FADE = 0.4;
-let GRAIN = null, VIGN = null;
-function grainPattern(g) { if (!GRAIN) { GRAIN = mkc(200, 200); const x = GRAIN.getContext('2d'), d = x.createImageData(200, 200), r = rng(99); for (let i = 0; i < d.data.length; i += 4) { const v = r() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; } x.putImageData(d, 0, 0); } return g.createPattern(GRAIN, 'repeat'); }
-function vignette() { if (!VIGN) { VIGN = mkc(W, H); const x = VIGN.getContext('2d'); x.fillStyle = rgrad(x, W / 2, H / 2, H * 0.42, H * 1.0, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,.62)']]); x.fillRect(0, 0, W, H); } return VIGN; }
+let OVER = null; // vignet + filmkorrel, 3 voorgebakken beelden (een per ~1/12 s)
+function overlay(n) {
+  if (!OVER) { OVER = []; const r = rng(99); for (let k = 0; k < 3; k++) { const c = mkc(W, H), x = c.getContext('2d'); const gr = mkc(320, 180), gx = gr.getContext('2d'), d = gx.createImageData(320, 180); for (let i = 0; i < d.data.length; i += 4) { const v = r() < 0.5 ? 0 : 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = (r() * 22) | 0; } gx.putImageData(d, 0, 0); x.imageSmoothingEnabled = false; x.drawImage(gr, 0, 0, W, H); x.fillStyle = rgrad(x, W / 2, H / 2, H * 0.42, H * 1.0, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,.62)']]); x.fillRect(0, 0, W, H); OVER.push(c); } }
+  return OVER[n % 3];
+}
 function wrapText(g, text, maxW, font) { g.font = font; const words = text.split(' '), lines = []; let cur = ''; for (const w of words) { const test = cur ? cur + ' ' + w : w; if (g.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; } else cur = test; } if (cur) lines.push(cur); return lines; }
 function drawSubtitle(g, shot, typed, t, lines, done) {
   const bx = 70, bw = 1140, lh = 40, bh = lines.length * lh + 44, by = 700 - bh;
-  g.save(); g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = 24; g.fillStyle = 'rgba(10,12,22,.78)'; rr(g, bx, by, bw, bh, 22); g.fill(); g.shadowBlur = 0; g.strokeStyle = 'rgba(255,255,255,.14)'; g.lineWidth = 2; g.stroke();
+  g.save(); g.fillStyle = 'rgba(0,0,0,.25)'; rr(g, bx - 4, by - 2, bw + 8, bh + 10, 26); g.fill(); g.fillStyle = 'rgba(10,12,22,.78)'; rr(g, bx, by, bw, bh, 22); g.fill(); g.strokeStyle = 'rgba(255,255,255,.14)'; g.lineWidth = 2; g.stroke();
   let ty = by + 40; if (shot.who) { const col = WHO[shot.who] || '#6a6a8a'; g.font = `700 24px ${FONT}`; const nw = g.measureText(shot.who).width + 40; g.fillStyle = col; rr(g, bx + 26, by - 20, nw, 40, 20); g.fill(); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#fff'; g.textAlign = 'center'; g.fillText(shot.who, bx + 26 + nw / 2, by + 8); ty = by + 48; }
   const it = !shot.who; const font = `${it ? 'italic ' : ''}500 30px ${FONT}`; g.font = font; g.textAlign = 'left'; g.fillStyle = it ? '#d8e0f4' : '#fff'; let left = typed;
   for (let i = 0; i < lines.length; i++) { const s = lines[i].slice(0, Math.max(0, left)); left -= lines[i].length + 1; g.fillText(s, bx + 32, ty + i * lh); if (left < 0) break; }
@@ -1027,8 +1029,9 @@ export function playCutscene(canvas, id, onDone, opts = {}) {
   const onKey = (e) => { if (finished) return; if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(); return; } if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); if (clock - startedAt > 0.3 && outT < 0) next(); } };
   const onPtr = (e) => { if (finished) return; e.preventDefault(); const rc = canvas.getBoundingClientRect(), x = (e.clientX - rc.left) * W / rc.width, y = (e.clientY - rc.top) * H / rc.height; if (x >= skipRect.x && x <= skipRect.x + skipRect.w && y >= skipRect.y && y <= skipRect.y + skipRect.h) { finish(); return; } if (clock - startedAt > 0.3 && outT < 0) next(); };
   window.addEventListener('keydown', onKey, true); canvas.addEventListener('pointerdown', onPtr);
-  const ctxFor = (i, live) => ({ cue: (at, name) => { if (!live) return; const k = id + i + name + at; if (st >= at && !fired.has(k)) { fired.add(k); if (sfx) try { sfx(name); } catch (e) { /* geen geluid */ } } } });
-  const render = (tg, i, tt, live) => { tg.save(); tg.setTransform(1, 0, 0, 1, 0, 0); tg.clearRect(0, 0, W, H); const fn = scenes[i]; if (fn) { try { fn(tg, tt, ctxFor(i, live)); } catch (e) { console.error('cutscene', id, i, e); tg.fillStyle = '#000'; tg.fillRect(0, 0, W, H); } } else { tg.fillStyle = '#10141c'; tg.fillRect(0, 0, W, H); } tg.restore(); };
+  const ctxFor = (i, live, zs) => ({ zoom: (z, fx, fy) => { zs.z = z; zs.fx = fx; zs.fy = fy; }, cue: (at, name) => { if (!live) return; const k = id + i + name + at; if (st >= at && !fired.has(k)) { fired.add(k); if (sfx) try { sfx(name); } catch (e) { /* geen geluid */ } } } });
+  const render = (tg, i, tt, live) => { const zs = { z: 1, fx: W / 2, fy: H / 2 }; tg.save(); tg.setTransform(1, 0, 0, 1, 0, 0); tg.clearRect(0, 0, W, H); const fn = scenes[i]; if (fn) { try { fn(tg, tt, ctxFor(i, live, zs)); } catch (e) { console.error('cutscene', id, i, e); tg.fillStyle = '#000'; tg.fillRect(0, 0, W, H); } } else { tg.fillStyle = '#10141c'; tg.fillRect(0, 0, W, H); } tg.restore(); return zs; };
+  const blit = (tg, buf, zs) => { if (zs.z > 1.0005) { tg.save(); zoomAt(tg, zs.z, zs.fx, zs.fy); tg.drawImage(buf, 0, 0); tg.restore(); } else tg.drawImage(buf, 0, 0); };
   const frame = (ts) => {
     if (finished) return; const dt = Math.min(0.05, last ? (ts - last) / 1000 : 0.016); last = ts; clock += dt; if (!startedAt) startedAt = clock - dt;
     g.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
@@ -1037,10 +1040,10 @@ export function playCutscene(canvas, id, onDone, opts = {}) {
     else if (phase === 'end') { endT += dt; drawEndCard(g, endT); if (endT > 14) outT = Math.max(outT, 0); }
     else {
       st += dt; const sh = shots[idx]; const tx = Math.max(0, st - 0.35 - (trans ? 0 : 0)); typed = Math.max(typed, Math.min(sh.text.length, Math.floor(tx * TYPE_CPS)));
-      render(ga, idx, st, true); g.drawImage(bufA, 0, 0);
-      if (trans) { trans.k += dt / FADE; if (trans.prev !== undefined) { trans.prevT += dt; render(gb, trans.prev, trans.prevT, false); g.globalAlpha = 1 - sstep(trans.k); g.drawImage(bufB, 0, 0); g.globalAlpha = 1; } else { fade = Math.max(fade, 1 - sstep(trans.k)); } if (trans.k >= 1) trans = null; }
+      blit(g, bufA, render(ga, idx, st, true));
+      if (trans) { trans.k += dt / FADE; if (trans.prev !== undefined) { trans.prevT += dt; const zb = render(gb, trans.prev, trans.prevT, false); g.globalAlpha = 1 - sstep(trans.k); blit(g, bufB, zb); g.globalAlpha = 1; } else { fade = Math.max(fade, 1 - sstep(trans.k)); } if (trans.k >= 1) trans = null; }
       if (idx === 0 && !trans && !hasTitle) fade = Math.max(fade, 1 - sstep(prog(st, 0, 0.5)));
-      g.globalAlpha = 0.07; g.fillStyle = grainPattern(g); g.save(); g.translate(Math.floor(Math.random() * 200), Math.floor(Math.random() * 200)); g.fillRect(-200, -200, W + 200, H + 200); g.restore(); g.globalAlpha = 1; g.drawImage(vignette(), 0, 0);
+      g.drawImage(overlay(Math.floor(clock * 12)), 0, 0);
       const trAlpha = trans && trans.prev !== undefined ? 1 - 0 : 1; void trAlpha;
       drawSubtitle(g, sh, typed, clock, lines, typed >= sh.text.length);
       if (outT < 0 && st >= durOf(idx) && typed >= sh.text.length && !trans) next();

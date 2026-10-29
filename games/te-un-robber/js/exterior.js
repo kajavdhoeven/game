@@ -978,12 +978,10 @@ KINDS.mushroom = {
       mushDoorFrame(c, 640, 110, 150);
       roundWin(c, 548, 450, 23, { shut: '#4a8a3a', pot: true }); roundWin(c, 732, 450, 23, { shut: '#4a8a3a', pot: true });
       // slakkenhuisje-bord, lantaarn en brievenbus
-      lantern(c, 566, 405, 9, '#ffb84a', { glow: 4 }); g.strokeStyle = '#3a2a1c'; g.lineWidth = 2; g.beginPath(); g.moveTo(566, 395); g.lineTo(566, 380); g.stroke();
       g.fillStyle = '#6a4a2a'; g.fillRect(748, 520, 4, 76); g.fillStyle = '#d8362a'; rr(g, 736, 500, 28, 22, 8); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(744, 508, 2.4, 0, TAU); g.arc(756, 512, 2, 0, TAU); g.fill();
       stoneStep(c, 640, 120, B, 2);
       cap(c, 640, 372, 320, 218, col, { spots: 11 });
       chimney(c, 806, 168, 34, 70); smoke(c, 823, 160, { n: 10, rise: 170, drift: 50, size: 11 });
-      cap(c, 236, 598, 56, 38, '#e8c84a', { spots: 4, spot: '#fff' }); stem(c, 236, 600, 236, B, 20, 24, '#efe6d0');
       // paddestoeltjes en bloemen in het gras
       for (const [x, y, s, cc] of [[400, 618, 1.1, '#d8362a'], [440, 626, 0.7, '#e8c84a'], [900, 622, 1, '#d8362a'], [1000, 632, 0.8, '#c85a2a']]) { g.fillStyle = '#efe6d0'; g.fillRect(x - 3 * s, y - 14 * s, 6 * s, 14 * s); cap(c, x, y - 12 * s, 14 * s, 11 * s, cc, { spots: 3, spot: '#fff' }); }
       flowers(c, 0, 700, 360, 70, ['#ffffff', '#ffe34a', '#ff8ac0']); flowers(c, 920, 700, 360, 70, ['#ffffff', '#ffe34a', '#a0a0ff']);
@@ -996,9 +994,8 @@ KINDS.mushroom = {
       g.fillStyle = '#6a4a2a'; g.beginPath(); g.ellipse(640, 392, 150, 20, 0, 0, TAU); g.fill(); g.fillStyle = '#8a6a3a'; g.beginPath(); g.ellipse(640, 388, 150, 18, 0, 0, TAU); g.fill();
       g.strokeStyle = '#3a2a1a'; g.lineWidth = 2; for (let a = 0; a < 24; a++) { const ax = 640 + Math.cos(a / 24 * TAU) * 146, ay = 388 + Math.sin(a / 24 * TAU) * 16; if (Math.sin(a / 24 * TAU) > -0.2) { g.beginPath(); g.moveTo(ax, ay); g.lineTo(ax, ay - 20); g.stroke(); } }
       g.strokeStyle = '#3a2a1a'; g.lineWidth = 3; g.beginPath(); g.ellipse(640, 368, 146, 16, 0, 0, Math.PI); g.stroke();
-      roundWin(c, 640, 320, 24, { frame: '#3a4a6a', lit: true }); roundWin(c, 640, 454, 22, { frame: '#3a4a6a', shut: '#d8362a' });
+      roundWin(c, 640, 320, 24, { frame: '#3a4a6a', lit: true }); 
       // trap om de steel
-      g.strokeStyle = '#6a4a2a'; g.lineWidth = 5; g.beginPath(); g.moveTo(560, 590); for (let i = 0; i < 6; i++) { g.lineTo(540 + (i % 2) * 20, 570 - i * 20); g.lineTo(536 + ((i + 1) % 2) * 22, 560 - i * 20 - 4); } g.stroke();
       stoneStep(c, 640, 110, B, 2);
       cap(c, 640, 258, 270, 178, col, { spots: 9, spot: '#f8f0ff' });
       cap(c, 640, 150, 86, 56, sh(col, 0.15), { spots: 3, spot: '#fff', seed: 4 });
@@ -1021,13 +1018,11 @@ KINDS.mushroom = {
       g.save(); g.translate(735, 440); g.rotate(0.1); roundWin(c, 0, 0, 19, { frame: '#6a4a2a', shut: '#8a5a2a' }); g.restore();
       stoneStep(c, 650, 110, B, 2);
       cap(c, 560, 380, 292, 202, col, { spots: 10, rot: -0.14, seed: 1 });
-      cap(c, 590, 140, 96, 62, '#d8722a', { spots: 4, rot: -0.3, seed: 2 }); stem(c, 596, 150, 606, 168, 34, 44, '#efe0c0');
+      cap(c, 590, 140, 96, 62, '#d8722a', { spots: 4, rot: -0.3, seed: 2 });
       chimney(c, 795, 240, 30, 60); g.save(); g.translate(0, 0); smoke(c, 810, 232, { n: 9, rise: 150, drift: 60, size: 10 }); g.restore();
       for (const [x, y, s, cc] of [[420, 628, 1.4, '#c8502a'], [860, 626, 1.2, '#8a5aa8'], [940, 640, 0.8, '#e8c84a'], [130, 640, 1, '#b8802a']]) { g.fillStyle = '#efe6d0'; g.save(); g.translate(x, y); g.rotate(0.15); g.fillRect(-3 * s, -14 * s, 6 * s, 14 * s); g.restore(); cap(c, x + 2, y - 12 * s, 14 * s, 11 * s, cc, { spots: 3, spot: '#fff', rot: 0.2 }); }
-      lantern(c, 585, 462, 9, '#ffb84a', { glow: 4 });
       c.door = { x: 650, y: B, w: 100, h: 140, type: 'hinge', style: 'round', round: true, col: '#7a4a24', int: 'warm', rot: -0.045 };
     }
-    contactShadow(g, 0, B, 0, 0);
   },
 };
 
@@ -1041,23 +1036,21 @@ KINDS.townhall = {
     // hoofdstam: steen onderin, bepleisterd erboven
     stem(c, 640, 340, 640, B, 380, 440, '#efe4cc', { bulge: 8 });
     g.save(); g.beginPath(); g.rect(440, B - 44, 400, 50); g.clip(); stoneBlocks(g, 420, B - 44, 440, 48, { base: '#9a9488', bh: 16 }); g.restore();
-    for (let i = 0; i < 5; i++) win(c, 508 + i * 66 - (i > 2 ? -0 : 0) + (i >= 3 ? 100 : 0) - (i < 2 ? 0 : 0), 400, 34, 62, { frame: '#6a4a2a', arch: true, p: 0.85, shut: i % 2 ? '#8a4a2a' : '#2a6a4a' });
-    // tweede rij ramen
-    for (const x of [470, 560, 720, 810]) win(c, x - 15, 478, 30, 52, { frame: '#6a4a2a', arch: true, p: 0.7, cols: 1, rows: 2 });
+    for (const x of [466, 520, 760, 814]) win(c, x - 18, 418, 36, 70, { frame: '#6a4a2a', arch: true, p: 0.9, shut: x < 640 ? '#2a6a4a' : '#8a4a2a' });
+    for (const x of [470, 810]) win(c, x - 15, 512, 30, 44, { frame: '#6a4a2a', arch: true, p: 0.6 });
     // klokkentoren op de hoed
     g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(612, 150, 70, 60);
-    bricks(g, 600, 70, 80, 140, { base: '#9a5a44', bw: 14, bh: 7, v: 0.12 }); wallAO(g, 600, 70, 80, 140, { top: 0.1, bot: 0.1, side: 0.35 });
-    g.fillStyle = '#e8e0d0'; g.beginPath(); g.arc(640, 112, 29, 0, TAU); g.fill(); g.strokeStyle = '#4a3a2a'; g.lineWidth = 4; g.stroke();
-    g.fillStyle = '#20242a'; for (let i = 0; i < 12; i++) { const a = i * TAU / 12; g.fillRect(640 + Math.cos(a) * 22 - 1.2, 112 + Math.sin(a) * 22 - 1.2, 2.4, 2.4); }
-    g.strokeStyle = '#20242a'; g.lineWidth = 3; g.beginPath(); g.moveTo(640, 112); g.lineTo(640, 92); g.moveTo(640, 112); g.lineTo(654, 118); g.stroke();
-    win(c, 622, 160, 36, 26, { frame: '#6a4a2a', arch: true, p: 1 });
-    cap(c, 640, 70, 72, 54, '#b8302a', { spots: 4, seed: 7 }); g.fillStyle = '#c8a030'; g.fillRect(639, 6, 3, 20); flag(c, 641, 22, 22, '#ffd02a', { w: 34, h: 20, col2: '#e84a2a' });
+    bricks(g, 600, 100, 80, 140, { base: '#9a5a44', bw: 14, bh: 7, v: 0.12 }); wallAO(g, 600, 100, 80, 140, { top: 0.1, bot: 0.1, side: 0.35 });
+    g.fillStyle = '#e8e0d0'; g.beginPath(); g.arc(640, 142, 29, 0, TAU); g.fill(); g.strokeStyle = '#4a3a2a'; g.lineWidth = 4; g.stroke();
+    g.fillStyle = '#20242a'; for (let i = 0; i < 12; i++) { const a = i * TAU / 12; g.fillRect(640 + Math.cos(a) * 22 - 1.2, 142 + Math.sin(a) * 22 - 1.2, 2.4, 2.4); }
+    g.strokeStyle = '#20242a'; g.lineWidth = 3; g.beginPath(); g.moveTo(640, 142); g.lineTo(640, 122); g.moveTo(640, 142); g.lineTo(654, 148); g.stroke();
+    cap(c, 640, 106, 72, 54, '#b8302a', { spots: 4, seed: 7 }); g.fillStyle = '#c8a030'; g.fillRect(639, 42, 3, 20); flag(c, 641, 62, 20, '#ffd02a', { w: 34, h: 18, col2: '#e84a2a' });
     cap(c, 640, 342, 400, 210, '#c8402a', { spots: 13, seed: 11 });
     // bord met GEMEENTEHUIS
     g.strokeStyle = '#3a2a1a'; g.lineWidth = 2; g.beginPath(); g.moveTo(540, 342); g.lineTo(540, 372); g.moveTo(740, 342); g.lineTo(740, 372); g.stroke();
     sign(c, 520, 366, 240, 36, c.spec.sign || 'GEMEENTEHUIS', { bg: '#6a4a2a', fg: '#ffe8a8', size: 22, lit: true, lightText: true, r: 5 });
     mushDoorFrame(c, 640, 130, 188, '#5a3a1a'); stoneStep(c, 640, 150, B, 3);
-    for (const x of [532, 748]) { g.fillStyle = grad(g, x - 7, 0, x + 7, 0, [[0, '#d8d0c0'], [1, '#8a8478']]); g.fillRect(x - 7, 420, 14, 176); g.fillStyle = '#c8c0ae'; g.fillRect(x - 10, 412, 20, 8); g.fillRect(x - 10, 590, 20, 8); }
+    for (const x of [556, 724]) { g.fillStyle = grad(g, x - 7, 0, x + 7, 0, [[0, '#d8d0c0'], [1, '#8a8478']]); g.fillRect(x - 7, 420, 14, 176); g.fillStyle = '#c8c0ae'; g.fillRect(x - 10, 412, 20, 8); g.fillRect(x - 10, 590, 20, 8); }
     lampPost(c, 420, 620, 170, { arm: 14, col: '#ffd890' }); lampPost(c, 860, 620, 170, { arm: -14, col: '#ffd890' });
     flag(c, 100, 618, 220, '#d8362a', { stripe: '#fff' }); flag(c, 1180, 618, 220, '#2a5aa8', { stripe: '#fff' });
     bench(g, 160, 660, 80); bench(g, 1040, 660, 80);
@@ -1093,10 +1086,235 @@ KINDS.mushroombank = {
     // deuropening (brons) tussen middelste zuilen
     g.fillStyle = '#20180e'; g.fillRect(588, B - 200, 104, 200); g.strokeStyle = '#c8a030'; g.lineWidth = 5; g.strokeRect(586, B - 202, 108, 202);
     for (const x of [420, 860]) lampPost(c, x, 640, 190, { arm: x < 640 ? 16 : -16, col: '#ffe0a0' });
-    for (const x of [280, 1000]) { g.fillStyle = '#6a4a2a'; g.fillRect(x - 3, 600, 6, 60); }
     bush(c, 160, 652, 90, 40, '#2f7a3a'); bush(c, 1120, 652, 90, 40, '#2f7a3a');
     for (let x = 60; x < 1280; x += 220) if (x < 300 || x > 980) bollard(g, x, 660);
     c.door = { x: 640, y: B, w: 100, h: 198, type: 'double', style: 'red', col: '#8a5a1a', int: 'warm' };
+  },
+};
+
+// ------------------------------------------------------------------ gebouwen: Nederland
+function roofSlope(c, x0, x1, yEave, yRidge, base, o = {}) { // dakvlak in vooraanzicht met pannen en dakgoot
+  const g = c.g, ins = o.inset ?? 14;
+  tilesRoof(g, [x0 + ins, yRidge, x1 - ins, yRidge, x1 + 6, yEave, x0 - 6, yEave], { base, tw: 18, th: 11 });
+  g.save(); poly(g, [x0 + ins, yRidge, x1 - ins, yRidge, x1 + 6, yEave, x0 - 6, yEave]); g.clip(); g.fillStyle = grad(g, 0, yRidge, 0, yEave, [[0, 'rgba(255,255,255,.12)'], [0.5, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,.3)']]); g.fillRect(x0 - 10, yRidge, x1 - x0 + 20, yEave - yRidge); g.restore();
+  g.fillStyle = sh(base, -0.35); g.fillRect(x0 - 8, yEave - 2, x1 - x0 + 16, 7); g.fillStyle = '#d8d4cc'; g.fillRect(x0 - 6, yEave + 4, x1 - x0 + 12, 6); g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x0 - 6, yEave + 10, x1 - x0 + 12, 5);
+  g.fillStyle = sh(base, -0.2); g.fillRect(x0 + ins, yRidge - 5, x1 - x0 - ins * 2, 6);
+}
+function dormer(c, x, y, w, h, base) {
+  const g = c.g; g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(x + 3, y + 4, w, h);
+  plaster(g, x, y, w, h, '#e8e2d2', { stains: 2 }); win(c, x + w * 0.2, y + h * 0.18, w * 0.6, h * 0.62, { frame: '#f6f2ea', p: 0.8, cols: 2, rows: 2, curt: '#d8c8a8' });
+  tilesRoof(g, [x - 6, y, x + w / 2, y - h * 0.5, x + w + 6, y], { base, tw: 12, th: 8 }); g.strokeStyle = 'rgba(0,0,0,.4)'; g.lineWidth = 2; g.beginPath(); g.moveTo(x - 6, y); g.lineTo(x + w / 2, y - h * 0.5); g.lineTo(x + w + 6, y); g.stroke();
+}
+KINDS.rowhouse = {
+  doorX: 640, scale: 2.3,
+  build(c) {
+    const g = c.g; const defs = [[-110, 190, '#8a5a46'], [190, 490, '#b0452f'], [490, 790, '#b5513b'], [790, 1090, '#c27a4a'], [1090, 1390, '#99503c']];
+    // gevels van achter naar voren
+    for (let i = 0; i < defs.length; i++) {
+      const [x0, x1, col] = defs[i], ours = i === 2, wall = ours ? 0 : 0;
+      const eave = 336 + (i % 2) * 8, ridge = 196 + (i % 2) * 16;
+      bricks(g, x0, eave, x1 - x0, B - eave, { base: col, mortar: '#b5ab9c', bw: 20, bh: 8, v: 0.14, alt: [sh(col, 0.12), sh(col, -0.12), '#7a3a2a'] });
+      // metselwerk-banden en stootvoeg
+      g.fillStyle = 'rgba(235,225,205,.5)'; g.fillRect(x0, 462, x1 - x0, 6); g.fillRect(x0, eave + 10, x1 - x0, 5); g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(x0, 468, x1 - x0, 3);
+      wallAO(g, x0, eave, x1 - x0, B - eave, { top: 0.32, bot: 0.4, side: 0.15 });
+      roofSlope(c, x0, x1, eave, ridge, i % 2 ? '#6d4640' : '#58403f');
+      g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(x1 - 3, eave - 150, 3, B - eave + 150); g.fillStyle = 'rgba(255,255,255,.1)'; g.fillRect(x0, eave - 150, 2, B - eave + 150);
+      if (!ours) {
+        const mid = (x0 + x1) / 2;
+        win(c, mid - 100, 366, 54, 80, { frame: '#f4f0e6', p: 0.7, cols: 2, rows: 3, curt: i % 2 ? '#e8c0a0' : '#c8d8e8' }); win(c, mid + 46, 366, 54, 80, { frame: '#f4f0e6', p: 0.55, cols: 2, rows: 3, curt: '#e8d8a8' });
+        win(c, mid - 110, 492, 100, 70, { frame: '#f4f0e6', p: 0.7, cols: 3, rows: 2, curt: '#d8b8a0' });
+        // deur van de buren
+        const dx2 = mid + 70; g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(dx2 - 30, B - 128, 60, 128); g.fillStyle = i % 2 ? '#2a5a7a' : '#2a6a4a'; g.fillRect(dx2 - 27, B - 124, 54, 124); g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(dx2 - 20, B - 114, 40, 44); g.fillStyle = '#d8b04a'; g.beginPath(); g.arc(dx2 + 16, B - 60, 3, 0, TAU); g.fill();
+        dormer(c, mid - 30, 268, 60, 54, i % 2 ? '#6d4640' : '#58403f');
+      }
+    }
+    // schoorstenen
+    for (const x of [190, 790]) { bricks(g, x - 18, 130, 36, 92, { base: '#8a4a36', bw: 12, bh: 6 }); wallAO(g, x - 18, 130, 36, 92, { top: 0.1, bot: 0.3, side: 0.4 }); g.fillStyle = '#5a4a44'; g.fillRect(x - 22, 124, 44, 8); }
+    smoke(c, 190, 122, { n: 8, rise: 130, drift: 40, size: 9, a: 0.4 });
+    // onze woning (midden): ramen, luifel, deur
+    win(c, 530, 366, 66, 84, { frame: '#f8f5ee', p: 0.85, cols: 2, rows: 3, curt: '#e8c8a8' }); win(c, 684, 366, 66, 84, { frame: '#f8f5ee', p: 0.45, cols: 2, rows: 3, curt: '#c8d8e8' });
+    win(c, 520, 490, 82, 66, { frame: '#f8f5ee', p: 0.9, cols: 2, rows: 2, curt: '#d8c8a0' }); win(c, 678, 490, 82, 66, { frame: '#f8f5ee', p: 0.7, cols: 2, rows: 2, curt: '#e8b8a8' });
+    dormer(c, 610, 262, 60, 56, '#58403f');
+    // deurkozijn + luifel
+    g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(604, B - 160, 72, 160); g.fillStyle = '#f2eee4'; g.fillRect(600, B - 164, 80, 6); g.fillRect(600, B - 164, 6, 164); g.fillRect(674, B - 164, 6, 164);
+    g.fillStyle = grad(g, 0, B - 186, 0, B - 168, [[0, '#9a9a96'], [1, '#6a6a68']]); poly(g, [592, B - 180, 688, B - 180, 700, B - 166, 580, B - 166]); g.fill(); g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(582, B - 166, 116, 6);
+    g.fillStyle = '#f2eee4'; rr(g, 697, 520, 24, 18, 3); g.fill(); txt(g, '12', 709, 529, 14, '#202428');
+    g.fillStyle = '#3a3a3c'; g.fillRect(588, 520, 12, 4); lampPost(c, 640, 0, 0); // (geen lamp, alleen kleine buitenlamp)
+    g.fillStyle = '#2a2a2e'; rr(g, 616 - 20, 436, 14, 20, 3); g.fill(); emit(c, (e) => { glowAt(e, 603, 446, 70, '#ffd890', 0.45); e.fillStyle = '#ffe8b0'; e.fillRect(598, 440, 10, 12); });
+    stoneStep(c, 640, 92, B, 2);
+    // voortuinen: haagjes, tulpenbedden, fietsen, kliko's
+    tulips(c, 520, B + 22, 150, ['#e83a3a', '#f5c42a', '#e86aa8', '#ffffff', '#ff8a2a']); tulips(c, 690, B + 22, 140);
+    hedge(c, 330, B + 14, 140, 20, '#3d7a3a'); hedge(c, 870, B + 14, 140, 20, '#3d7a3a'); tulips(c, 340, B + 24, 120, ['#f5c42a', '#e83a3a']); tulips(c, 880, B + 24, 120, ['#ffffff', '#e86aa8']);
+    bike(c, 430, B + 6, 1.35, '#2a5aa8'); bike(c, 466, B + 4, 1.3, '#b8302a', -1);
+    barrel(g, 1010, B + 4, 30, 50, '#3a7a4a'); barrel(g, 1048, B + 4, 30, 50, '#5a5a62');
+    g.fillStyle = '#5a5a62'; g.fillRect(1012, B - 52, 26, 4);
+    lampPost(c, 130, 668, 190, { arm: 16, col: '#ffd890' }); lampPost(c, 1160, 668, 190, { arm: -16, col: '#ffd890' });
+    tree(c, 70, 600, 200, { wide: 0.34 });
+    // wasgoed-achtig detail: zonnepanelen op het dak links
+    g.fillStyle = '#16223a'; for (let i = 0; i < 3; i++) { poly(g, [230 + i * 40, 290, 266 + i * 40, 290, 268 + i * 40, 320, 228 + i * 40, 320]); g.fill(); g.strokeStyle = '#7a8aa8'; g.lineWidth = 1; g.stroke(); }
+    c.door = { x: 640, y: B, w: 68, h: 152, type: 'hinge', style: 'panel', win: true, col: '#2a5a8a', int: 'warm' };
+  },
+};
+
+function gable(c, x0, x1, yEave, yTop, kind, col, trim = '#e8e2d2') {
+  const g = c.g, w = x1 - x0, cx = (x0 + x1) / 2;
+  const pts = () => { g.beginPath(); g.moveTo(x0, yEave);
+    if (kind === 'step') { const st = 4, sh0 = (yEave - yTop) / (st + 1); let yy = yEave, xx = x0; for (let i = 0; i < st; i++) { yy -= sh0; g.lineTo(xx, yy); xx += w * 0.12; g.lineTo(xx, yy); } g.lineTo(xx, yTop); g.lineTo(x1 - (xx - x0), yTop); xx = x1 - (xx - x0); yy = yTop; for (let i = 0; i < st; i++) { g.lineTo(xx, yy); xx += 0; yy += 0; } g.closePath(); }
+    else if (kind === 'bell') { g.lineTo(x0, yEave - (yEave - yTop) * 0.5); g.bezierCurveTo(x0, yEave - (yEave - yTop) * 0.75, cx - w * 0.3, yEave - (yEave - yTop) * 0.7, cx - w * 0.2, yTop + 14); g.quadraticCurveTo(cx, yTop - 10, cx + w * 0.2, yTop + 14); g.bezierCurveTo(cx + w * 0.3, yEave - (yEave - yTop) * 0.7, x1, yEave - (yEave - yTop) * 0.75, x1, yEave - (yEave - yTop) * 0.5); g.lineTo(x1, yEave); g.closePath(); }
+    else if (kind === 'neck') { g.lineTo(x0, yEave - (yEave - yTop) * 0.45); g.quadraticCurveTo(x0 + w * 0.14, yEave - (yEave - yTop) * 0.5, x0 + w * 0.2, yEave - (yEave - yTop) * 0.72); g.lineTo(x0 + w * 0.2, yTop + 10); g.lineTo(cx, yTop - 6); g.lineTo(x1 - w * 0.2, yTop + 10); g.lineTo(x1 - w * 0.2, yEave - (yEave - yTop) * 0.72); g.quadraticCurveTo(x1 - w * 0.14, yEave - (yEave - yTop) * 0.5, x1, yEave - (yEave - yTop) * 0.45); g.lineTo(x1, yEave); g.closePath(); }
+    else { g.lineTo(x0, yEave - (yEave - yTop) * 0.55); g.lineTo(cx, yTop); g.lineTo(x1, yEave - (yEave - yTop) * 0.55); g.lineTo(x1, yEave); g.closePath(); } };
+  if (kind === 'step') { // trapgevel: eigen vorm
+    const pts2 = [x0, yEave]; const st = 5, stepH = (yEave - yTop) / st, stepW = (w * 0.38) / st; for (let i = 0; i < st; i++) { pts2.push(x0 + i * stepW, yEave - stepH * (i + 1)); pts2.push(x0 + (i + 1) * stepW, yEave - stepH * (i + 1)); }
+    const right = []; for (let i = st - 1; i >= 0; i--) { right.push(x1 - (i + 1) * stepW, yEave - stepH * (i + 1)); right.push(x1 - i * stepW, yEave - stepH * (i + 1)); }
+    const all = pts2.concat(right).concat([x1, yEave]);
+    bricks(g, x0 - 2, yTop - 4, w + 4, yEave - yTop + 6, { base: col, mortar: '#b5ab9c', bw: 16, bh: 7, v: 0.12 });
+    // buiten de vorm weghalen: teken lucht-clip niet mogelijk; daarom vormen we via clip vooraf
+    return all;
+  }
+  return pts;
+}
+function shapedFacade(c, x0, x1, yEave, yTop, kind, col, trim) { // gevel met vorm (clip) + bakstenen + natuursteen rand
+  const g = c.g, w = x1 - x0, cx = (x0 + x1) / 2, hh = yEave - yTop;
+  const p = () => {
+    g.beginPath(); g.moveTo(x0, B);
+    if (kind === 'step') { const st = 5, stepH = hh / st, stepW = (w * 0.4) / st; g.lineTo(x0, yEave); for (let i = 0; i < st; i++) { g.lineTo(x0 + i * stepW, yEave - stepH * (i + 1) + 0); g.lineTo(x0 + (i + 1) * stepW, yEave - stepH * (i + 1)); } for (let i = st - 1; i >= 0; i--) { g.lineTo(x1 - (i + 1) * stepW, yEave - stepH * (i + 1)); g.lineTo(x1 - i * stepW, yEave - stepH * (i + 1)); } g.lineTo(x1, yEave); }
+    else if (kind === 'bell') { g.lineTo(x0, yEave - hh * 0.4); g.bezierCurveTo(x0, yEave - hh * 0.7, cx - w * 0.3, yEave - hh * 0.62, cx - w * 0.2, yTop + 16); g.quadraticCurveTo(cx, yTop - 14, cx + w * 0.2, yTop + 16); g.bezierCurveTo(cx + w * 0.3, yEave - hh * 0.62, x1, yEave - hh * 0.7, x1, yEave - hh * 0.4); }
+    else if (kind === 'neck') { g.lineTo(x0, yEave - hh * 0.35); g.quadraticCurveTo(x0 + w * 0.12, yEave - hh * 0.4, x0 + w * 0.2, yEave - hh * 0.68); g.lineTo(x0 + w * 0.2, yTop + 14); g.lineTo(cx, yTop - 4); g.lineTo(x1 - w * 0.2, yTop + 14); g.lineTo(x1 - w * 0.2, yEave - hh * 0.68); g.quadraticCurveTo(x1 - w * 0.12, yEave - hh * 0.4, x1, yEave - hh * 0.35); }
+    else { g.lineTo(x0, yEave - hh * 0.4); g.lineTo(cx, yTop); g.lineTo(x1, yEave - hh * 0.4); }
+    g.lineTo(x1, B); g.closePath();
+  };
+  g.save(); p(); g.clip(); bricks(g, x0, yTop - 20, w, B - yTop + 20, { base: col, mortar: '#b8aea0', bw: 18, bh: 7.5, v: 0.14, alt: [sh(col, 0.12), sh(col, -0.14)] }); wallAO(g, x0, yTop - 20, w, B - yTop + 20, { top: 0.28, bot: 0.4, side: 0.2 }); g.restore();
+  g.save(); p(); g.strokeStyle = trim; g.lineWidth = 5; g.lineJoin = 'round'; g.stroke(); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1.5; g.stroke(); g.restore();
+}
+KINDS.canalhouse = {
+  doorX: 640, scale: 2.3,
+  build(c) {
+    const g = c.g, W5 = 218, x00 = 640 - W5 * 2.5;
+    const defs = [['step', '#8a3a2c', 190, 330], ['neck', '#6a4638', 150, 330], ['bell', '#9a4a34', 96, 330], ['neck', '#7a4a3a', 160, 330], ['step', '#8c5036', 206, 330]];
+    const hang = [];
+    for (let i = 0; i < 5; i++) {
+      const x0 = x00 + i * W5, x1 = x0 + W5, [kind, col, top, eave] = defs[i], ours = i === 2;
+      shapedFacade(c, x0, x1, eave, top, kind, col, '#ece6d6');
+      g.fillStyle = '#ece6d6'; g.fillRect(x0, eave - 2, W5, 6); g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(x0, eave + 4, W5, 4);
+      for (let r = 0; r < 3; r++) for (let k = 0; k < (r === 2 && ours ? 0 : 2); k++) { const wx = x0 + 30 + k * 84, wy = 362 + r * 74 + (r === 2 ? 20 : 0); if (r === 2 && !ours) win(c, wx, wy - 10, 44, 80, { frame: '#f6f2e8', p: 0.5, cols: 2, rows: 3, curt: '#d8b890' }); else if (r < 2) win(c, wx, wy, 44, r === 0 ? 78 : 84, { frame: '#f6f2e8', p: 0.7, cols: 2, rows: 3, curt: pick(['#e8c8a0', '#c8d8e8', '#e8a8a8']) }); }
+      if (!ours) { const dx2 = x0 + W5 / 2 + (i % 2 ? 30 : -30); g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(dx2 - 24, B - 112, 48, 112); g.fillStyle = pick(['#2a4a6a', '#6a2a2a', '#2a5a3a']); g.fillRect(dx2 - 21, B - 108, 42, 108); g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(dx2 - 14, B - 100, 28, 34); stoneStep(c, dx2, 50, B, 2); }
+      if (i === 0 || i === 4) { g.fillStyle = '#c8c0b0'; g.fillRect(x0 + W5 / 2 - 14, top + 8, 28, 4); }
+      g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(x1 - 2, top, 2, B - top);
+      // hijsbalk met haak
+      if (ours || i === 3) { const bx = x0 + W5 / 2; g.fillStyle = '#4a3a2a'; g.fillRect(bx - 4, top - 22, 8, 22); g.fillRect(bx - 4, top - 22, 34, 6); g.strokeStyle = '#2a2a2e'; g.lineWidth = 2; g.beginPath(); g.moveTo(bx + 28, top - 16); g.lineTo(bx + 28, top - 4); g.arc(bx + 28, top, 4, -Math.PI / 2, Math.PI); g.stroke(); }
+    }
+    // onze deur midden, met waaier en trap
+    const x0 = x00 + 2 * W5;
+    g.fillStyle = 'rgba(0,0,0,.4)'; rr(g, 603, B - 172, 74, 172, [30, 30, 0, 0]); g.fill();
+    g.fillStyle = '#f2eee2'; rr(g, 599, B - 176, 82, 176, [34, 34, 0, 0]); g.fill();
+    win(c, 616, B - 232, 48, 30, { frame: '#f2eee2', arch: true, f: 4, p: 1, cols: 3, rows: 1, sill: false });
+    for (let i = 0; i < 4; i++) { g.fillStyle = grad(g, 0, B - 4 + i * 7, 0, B + 3 + i * 7, [[0, '#cfc8b8'], [1, '#8a8478']]); g.fillRect(596 - i * 8, B - 3 + i * 7, 88 + i * 16, 8); g.fillStyle = 'rgba(255,255,255,.4)'; g.fillRect(596 - i * 8, B - 3 + i * 7, 88 + i * 16, 1.5); }
+    lantern(c, 592, 470, 9, '#ffc060', { glow: 5 }); g.strokeStyle = '#2a2a2e'; g.lineWidth = 2; g.beginPath(); g.moveTo(592, 440); g.lineTo(592, 458); g.stroke();
+    // lantaarns en bomen langs de gracht
+    lampPost(c, 480, 668, 190, { arm: 16, col: '#ffc878' }); lampPost(c, 800, 668, 190, { arm: -16, col: '#ffc878' });
+    // fietsen aan het hek
+    bike(c, 170, 666, 1.15, '#7a2a2a'); bike(c, 224, 666, 1.15, '#2a4a6a', -1); bike(c, 960, 666, 1.15, '#3a5a3a'); bike(c, 1016, 666, 1.15, '#8a6a2a', -1);
+    // boot en brug
+    const bx = 940, by = 704; g.fillStyle = '#14181e'; g.beginPath(); g.moveTo(bx - 120, by - 16); g.lineTo(bx + 130, by - 16); g.quadraticCurveTo(bx + 112, by + 14, bx + 80, by + 14); g.lineTo(bx - 80, by + 14); g.quadraticCurveTo(bx - 110, by + 12, bx - 120, by - 16); g.fill(); g.fillStyle = '#7a2a2a'; g.fillRect(bx - 118, by - 20, 244, 5); g.fillStyle = '#2a2a30'; g.fillRect(bx - 30, by - 44, 60, 28); win(c, bx - 22, by - 40, 18, 16, { lit: true, sill: false, f: 2 }); win(c, bx + 4, by - 40, 18, 16, { lit: true, sill: false, f: 2 });
+    stoneBlocks(g, 0, 676, 230, 44, { base: '#8a8478', bh: 14 }); g.fillStyle = '#a8a296'; g.fillRect(0, 668, 240, 10); g.fillStyle = 'rgba(0,0,0,.5)'; g.beginPath(); g.ellipse(100, 722, 80, 40, 0, Math.PI, 0); g.fill();
+    g.fillStyle = grad(g, 0, 690, 0, 720, [[0, '#12202c'], [1, '#050b12']]); g.beginPath(); g.ellipse(100, 722, 80, 40, 0, Math.PI, 0); g.fill();
+    // weerspiegeling van de raamlichten in het water
+    if (c.lit) c.E.push((e) => { e.save(); e.globalCompositeOperation = 'lighter'; for (let i = 0; i < 70; i++) { const rx = 110 + R() * 1060, ry = 684 + R() * 34; e.fillStyle = al(pick(['#ffc060', '#ffd890', '#ffb050']), 0.12 + R() * 0.16); e.fillRect(rx, ry, rnd(2, 5), rnd(5, 20)); } e.restore(); });
+    c.door = { x: 640, y: B, w: 64, h: 156, type: 'hinge', style: 'panel', win: true, col: '#1f5a4a', int: 'warm' };
+  },
+};
+
+KINDS.supermarket = {
+  doorX: 470, scale: 2.3,
+  build(c) {
+    const g = c.g;
+    // gebouw: plint + gevel
+    concrete(g, 100, 316, 1080, B - 316, { base: '#c8c4b8', panels: 90, cracks: 3 }); wallAO(g, 100, 316, 1080, B - 316, { top: 0.35, bot: 0.3 });
+    // gekleurde band met logo en dak-rand
+    g.fillStyle = grad(g, 0, 316, 0, 380, [[0, '#e8e4da'], [1, '#c8c4b8']]); g.fillRect(100, 316, 1080, 64);
+    g.fillStyle = '#1f7a3a'; g.fillRect(100, 380, 1080, 14); g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(100, 394, 1080, 6);
+    g.fillStyle = '#9a968a'; g.fillRect(90, 304, 1100, 14); g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(90, 304, 1100, 2); g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(90, 318, 1100, 4);
+    // dakopbouw: airco, schoorsteentjes, zonnepanelen
+    for (const x of [820, 940, 1060]) { g.fillStyle = '#9aa2aa'; g.fillRect(x, 262, 90, 42); g.fillStyle = '#6a727a'; g.fillRect(x, 262, 90, 6); g.fillStyle = '#4a525a'; for (let i = 0; i < 6; i++) g.fillRect(x + 8 + i * 13, 276, 8, 20); g.fillStyle = 'rgba(255,255,255,.2)'; g.fillRect(x, 262, 90, 2); }
+    g.fillStyle = '#2a323a'; for (let i = 0; i < 5; i++) { poly(g, [130 + i * 28, 296, 150 + i * 28, 296, 148 + i * 28, 276, 134 + i * 28, 276]); g.fill(); }
+    // etalageramen met lichte interieurs (emissief)
+    const gl = [[130, 410, 270, 186], [560, 410, 280, 186]];
+    for (const [x, y, w, h] of gl) { g.fillStyle = '#4a4e54'; g.fillRect(x - 6, y - 6, w + 12, h + 6); g.fillStyle = grad(g, 0, y, 0, y + h, c.P.key === 'day' ? [[0, '#a8c8e0'], [1, '#e8f0f4']] : [[0, '#2a3a50'], [1, '#101826']]); g.fillRect(x, y, w, h); g.fillStyle = 'rgba(255,255,255,.14)'; poly(g, [x, y + h * 0.7, x + w * 0.5, y, x + w * 0.7, y, x, y + h * 0.95]); g.fill();
+      for (let k = 1; k < 4; k++) { g.fillStyle = '#4a4e54'; g.fillRect(x + (w * k) / 4 - 2, y, 4, h); }
+      if (c.lit || c.P.key === 'day') { const body = (e) => { e.save(); e.beginPath(); e.rect(x, y, w, h); e.clip(); e.fillStyle = grad(e, 0, y, 0, y + h, [[0, '#fffff4'], [1, '#e8f0e0']]); e.fillRect(x, y, w, h); for (let r = 0; r < 4; r++) { const sy = y + 44 + r * 34; e.fillStyle = '#9a9aa2'; e.fillRect(x + 10, sy, w - 20, 5); for (let q = 0; q < (w - 20) / 12; q++) { e.fillStyle = pick(['#d83a2a', '#f0c02a', '#3a8a3a', '#2a5ab8', '#f08a2a', '#ffffff', '#c83a8a']); e.fillRect(x + 12 + q * 12, sy - 20 + (q % 3) * 2, 9, 20 - (q % 3) * 2); } } e.fillStyle = 'rgba(0,0,0,.18)'; e.fillRect(x, y, w, 8); e.fillStyle = '#e8e8d8'; for (let q = 0; q < 6; q++) e.fillRect(x + 20 + q * (w / 6), y + 8, 30, 4); e.fillStyle = '#4a4e54'; for (let k = 1; k < 4; k++) e.fillRect(x + (w * k) / 4 - 2, y, 4, h); e.restore(); }; if (c.P.key === 'day') { g.save(); g.globalAlpha = 0.45; body(g); g.restore(); } else c.E.push((e) => { body(e); glowAt(e, x + w / 2, y + h / 2, w * 0.7, '#f4fff0', 0.25); }); }
+      g.fillStyle = '#6a6e74'; g.fillRect(x - 6, y + h, w + 12, 10);
+    }
+    // poster-bord rechts met grote fruit-illustratie
+    const px = 900, py = 410, pw = 250, ph = 150; g.fillStyle = '#20252b'; g.fillRect(px - 5, py - 5, pw + 10, ph + 10); g.fillStyle = '#fff6dc'; g.fillRect(px, py, pw, ph);
+    for (const [fx, fy, fr, fc] of [[px + 60, py + 90, 26, '#d8322a'], [px + 112, py + 100, 24, '#f08a1a'], [px + 160, py + 92, 28, '#7ab83a'], [px + 205, py + 100, 22, '#f0c820']]) { g.fillStyle = rgrad(g, fx - 7, fy - 8, 2, fr, [[0, sh(fc, 0.4)], [1, sh(fc, -0.25)]]); g.beginPath(); g.arc(fx, fy, fr, 0, TAU); g.fill(); g.fillStyle = '#3a7a2a'; g.beginPath(); g.ellipse(fx + 3, fy - fr - 2, 8, 3.5, 0.5, 0, TAU); g.fill(); }
+    txt(g, 'ELKE DAG VERS', px + pw / 2, py + 30, 26, '#1f7a3a', { fit: pw - 20 }); txt(g, 'DAGVERSE AANBIEDINGEN', px + pw / 2, py + 56, 14, '#6a4a2a', { weight: 500, fit: pw - 20 });
+    emit(c, (e) => { e.save(); e.globalCompositeOperation = 'lighter'; e.fillStyle = 'rgba(255,240,200,.35)'; e.fillRect(px, py, pw, ph); e.restore(); });
+    // groot bord
+    const sg = c.spec.sign || 'SUPER'; sign(c, 150, 322, 430, 52, sg, { bg: '#d8322a', fg: '#ffffff', size: 40, neon: false, lit: true, lightText: true, rim: '#8a1a14', spacing: 6 });
+    txt(g, 'GEOPEND 8-22', 780, 350, 24, '#1f7a3a', { fit: 220 }); txt(g, 'ELKE DAG', 1060, 350, 20, '#6a4a2a', { weight: 500 });
+    // ingang: luifel + schuifdeur + glazen paneel
+    g.fillStyle = '#5a5e64'; g.fillRect(390, 404, 160, 6); g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(390, 410, 160, 5); g.fillStyle = 'rgba(70,74,80,1)'; g.fillRect(390, 410, 6, 186); g.fillRect(544, 410, 6, 186);
+    g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(396, B - 198, 148, 198);
+    sign(c, 420, 413, 100, 20, 'IN / UIT', { bg: '#1f7a3a', fg: '#fff', size: 14, shadow: false, bolts: false, r: 3 });
+    // stoep, drempel
+    g.fillStyle = grad(g, 0, B, 0, B + 14, [[0, '#d8d4c8'], [1, '#9a968a']]); g.fillRect(380, B - 2, 180, 14);
+    // winkelwagens
+    for (let i = 0; i < 6; i++) cart(c, 610 + i * 14, 640 - i * 0, 1.1); g.fillStyle = '#4a525a'; g.fillRect(596, 590, 6, 52); g.fillRect(692, 590, 6, 52); g.fillRect(596, 590, 102, 4);
+    for (let i = 0; i < 3; i++) cart(c, 236 + i * 14, 640, 1.1);
+    // tl-lichten in de luifel
+    emit(c, (e) => { poolAt(e, 470, B + 20, 150, 24, '#f4fff0', 0.35); e.save(); e.globalCompositeOperation = 'lighter'; e.fillStyle = grad(e, 0, 410, 0, B, [[0, 'rgba(240,255,235,.16)'], [1, 'rgba(240,255,235,0)']]); e.fillRect(396, 410, 148, 190); e.restore(); });
+    // lantaarnpalen
+    for (const x of [90, 760, 1190]) { lampPost(c, x, 646, 300, { arm: x < 700 ? 18 : -18, col: '#fff0c8', r: 160, poolY: 26 }); }
+    // parkeerborden
+    g.fillStyle = '#2a5ab8'; g.fillRect(1100, 560, 38, 38); txt(g, 'P', 1119, 580, 28, '#fff'); g.fillStyle = '#6a6e74'; g.fillRect(1117, 598, 4, 48);
+    // geparkeerde auto's
+    car(c, 140, 726, 330, { col: '#c82a2a', lights: true }); car(c, 560, 724, 320, { col: '#2a5aa8', face: -1, lights: true }); car(c, 920, 728, 340, { col: '#e8e8ee', lights: true, face: -1 }); car(c, 1210, 730, 330, { col: '#2a2a30', lights: true });
+    car(c, 300, 694, 190, { col: '#3a8a4a', face: -1, lights: false }); car(c, 840, 690, 190, { col: '#c8a02a', lights: false });
+    c.door = { x: 470, y: B, w: 140, h: 190, type: 'slide', style: 'glass', int: 'cool' };
+  },
+};
+
+KINDS.casino = {
+  doorX: 640, scale: 2.3,
+  build(c) {
+    const g = c.g;
+    // zijvleugels
+    for (const [x0, x1, s] of [[100, 420, 1], [860, 1180, -1]]) { plaster(g, x0, 260, x1 - x0, B - 260, '#3a1a4a', { stains: 6 }); wallAO(g, x0, 260, x1 - x0, B - 260, { top: 0.3, bot: 0.4 }); g.fillStyle = '#c8a030'; g.fillRect(x0, 254, x1 - x0, 10); g.fillRect(x0, B - 10, x1 - x0, 6);
+      for (let i = 0; i < 4; i++) { const wx = x0 + 34 + i * 72; win(c, wx, 330, 40, 110, { frame: '#c8a030', arch: true, p: 0.8, lc: pick(['#ff8ac8', '#ffd060', '#8ad8ff']), cols: 1, rows: 3, f: 4 }); }
+      for (let i = 0; i < 3; i++) { const nx = x0 + 70 + i * 90 + (s < 0 ? 10 : 0); g.fillStyle = '#2a1030'; g.fillRect(nx - 3, 460, 6, 110); emit(c, (e) => { e.save(); e.shadowColor = pick(['#ff30a0', '#30e0ff']); e.shadowBlur = 20; e.fillStyle = '#ff7ac8'; e.fillRect(nx - 2, 466, 4, 98); e.restore(); }); }
+    }
+    // middenblok
+    plaster(g, 420, 130, 440, B - 130, '#4a2058', { stains: 8 }); wallAO(g, 420, 130, 440, B - 130, { top: 0.3, bot: 0.35, side: 0.25 });
+    g.fillStyle = '#c8a030'; g.fillRect(410, 124, 460, 12); g.fillRect(410, 400, 460, 8); g.fillStyle = 'rgba(255,255,255,.3)'; g.fillRect(410, 124, 460, 2);
+    for (let i = 0; i < 2; i++) for (let k = 0; k < 5; k++) win(c, 446 + k * 80, 424 + i * 0, 50, 60, { frame: '#c8a030', p: 0.9, lc: pick(['#ffd060', '#ff9ac8', '#ffe8b0']), cols: 2, rows: 2, f: 4 });
+    // marquee met lampjes
+    const mx = 450, my = 150, mw = 380, mh = 110; g.fillStyle = '#1a0a22'; rr(g, mx, my, mw, mh, 14); g.fill(); g.strokeStyle = '#c8a030'; g.lineWidth = 6; g.stroke();
+    const bulbs = []; for (let i = 0; i < 26; i++) bulbs.push([mx + 12 + (i / 25) * (mw - 24), my + 8], [mx + 12 + (i / 25) * (mw - 24), my + mh - 8]); for (let i = 1; i < 6; i++) bulbs.push([mx + 8, my + 8 + (i / 6) * (mh - 16)], [mx + mw - 8, my + 8 + (i / 6) * (mh - 16)]);
+    g.fillStyle = '#6a5a30'; for (const [bx, by] of bulbs) { g.beginPath(); g.arc(bx, by, 3.4, 0, TAU); g.fill(); }
+    neonText(c, c.spec.sign || 'CASINO', mx + mw / 2, my + mh / 2 + 4, 66, '#ff3aa8', { fit: mw - 50, spacing: 6 });
+    flicker(c, mx + 20, my + 20, mw - 40, mh - 40, 31, { rate: 5, depth: 0.5 });
+    if (c.lit) c.D.push((gg, t) => { gg.save(); gg.globalCompositeOperation = 'lighter'; bulbs.forEach(([bx, by], i) => { const on = (i + Math.floor(t * 7)) % 3 === 0; gg.fillStyle = on ? 'rgba(255,230,120,.95)' : 'rgba(255,200,80,.25)'; gg.beginPath(); gg.arc(bx, by, on ? 3.6 : 2.6, 0, TAU); gg.fill(); if (on) { gg.fillStyle = 'rgba(255,200,60,.25)'; gg.beginPath(); gg.arc(bx, by, 11, 0, TAU); gg.fill(); } }); gg.restore(); });
+    // sterren en dollars
+    for (const [sx, sy, sc] of [[470, 106, 1], [810, 106, 1], [640, 100, 1.4]]) { g.fillStyle = '#c8a030'; g.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r0 = i % 2 ? 7 : 16; g.lineTo(sx + Math.cos(a) * r0 * sc, sy + Math.sin(a) * r0 * sc); } g.closePath(); g.fill(); emit(c, (e) => { glowAt(e, sx, sy, 50, '#ffd860', 0.5); }); }
+    // ingang met zuilen, bladgoud
+    g.fillStyle = 'rgba(0,0,0,.55)'; rr(g, 566, B - 236, 148, 236, [60, 60, 0, 0]); g.fill(); g.strokeStyle = '#d8b040'; g.lineWidth = 8; rr(g, 562, B - 240, 156, 240, [64, 64, 0, 0]); g.stroke();
+    for (const x of [548, 732]) { g.fillStyle = grad(g, x - 10, 0, x + 10, 0, [[0, '#f8e090'], [0.5, '#c8a030'], [1, '#6a4a10']]); g.fillRect(x - 10, 410, 20, B - 410); g.fillStyle = '#e8c850'; g.fillRect(x - 15, 404, 30, 10); g.fillRect(x - 15, B - 10, 30, 10); }
+    // rode loper + paaltjes met koord
+    g.fillStyle = grad(g, 0, B, 0, 700, [[0, '#8a1018'], [1, '#c8222c']]); poly(g, [586, B, 694, B, 744, 700, 536, 700]); g.fill(); g.strokeStyle = '#e8c850'; g.lineWidth = 3; g.beginPath(); g.moveTo(586, B); g.lineTo(536, 700); g.moveTo(694, B); g.lineTo(744, 700); g.stroke();
+    g.strokeStyle = 'rgba(0,0,0,.2)'; g.lineWidth = 1; for (let y = 610; y < 700; y += 10) { g.beginPath(); g.moveTo(586 - (y - B) * 0.5, y); g.lineTo(694 + (y - B) * 0.5, y); g.stroke(); }
+    for (const [x, y] of [[578, 604], [550, 650], [702, 604], [730, 650]]) { g.fillStyle = '#d8b040'; g.fillRect(x - 2, y - 30, 4, 30); g.beginPath(); g.arc(x, y - 31, 4.5, 0, TAU); g.fill(); g.fillRect(x - 7, y - 2, 14, 3); }
+    g.strokeStyle = '#a01822'; g.lineWidth = 3; g.beginPath(); g.moveTo(578, 574); g.quadraticCurveTo(564, 600, 550, 620); g.moveTo(702, 574); g.quadraticCurveTo(716, 600, 730, 620); g.stroke();
+    emit(c, (e) => { poolAt(e, 640, 650, 170, 40, '#ff4a6a', 0.22); });
+    // zoeklichten
+    beam(c, 250, 250, 520, 36, '#bfe0ff', 0.5, 0, 0.16, 0.6); beam(c, 1030, 250, 520, 36, '#ffd8ff', 0.45, 2, 0.16, 0.6);
+    // palmen in bakken
+    for (const x of [470, 810]) { g.fillStyle = '#c8a030'; rr(g, x - 20, 612, 40, 26, 3); g.fill(); g.fillStyle = '#7a5a10'; g.fillRect(x - 20, 612, 40, 4); }
+    tree(c, 470, 618, 140, { type: 'palm', lean: 14 }); tree(c, 810, 618, 140, { type: 'palm', lean: -14 });
+    for (const x of [90, 1190]) lampPost(c, x, 660, 200, { arm: x < 640 ? 16 : -16, col: '#ffd0f0' });
+    // limo's
+    car(c, 215, 716, 400, { type: 'limo', col: '#14141a', lights: true, stripe: '#c8a030' }); car(c, 1060, 718, 400, { type: 'limo', col: '#e8e8ee', lights: true, face: -1, stripe: '#c8a030' });
+    c.door = { x: 640, y: B, w: 124, h: 222, type: 'double', style: 'glass', col: '#c8a030', int: 'warm' };
+    // glazen deur heeft gouden bar
   },
 };
 
