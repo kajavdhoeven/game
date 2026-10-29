@@ -110,6 +110,11 @@ export async function renderGame(app, id) {
       box.innerHTML = `<h3>Jouw voortgang</h3><div class="prog-grid"><div><b>${dn}/32</b><small>Levels af</small></div><div><b>${gm}</b><small>Stenen verzameld</small></div></div>`;
       return;
     }
+    if (g.id === 'te-un-tikkertje') {
+      const own = ['speed', 'shadow', 'wizard'].filter((k) => d.dev || (d.owned && d.owned[k])).length;
+      box.innerHTML = `<h3>Jouw voortgang</h3><div class="prog-grid"><div><b>${fmt(d.coins || 0)}</b><small>Munten</small></div><div><b>${d.wins || 0}</b><small>Gewonnen</small></div><div><b>${own}/3</b><small>Personages</small></div></div>`;
+      return;
+    }
     if (g.id === 'te-un-x3m') {
       const st = d.stars || {};
       const lv = Object.keys(st).length, sum = Object.values(st).reduce((a, b2) => a + b2, 0) + (d.bonus || 0) - (d.spent || 0);

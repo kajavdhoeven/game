@@ -320,3 +320,13 @@ values (
   '[["←  →  ↑", "VuurTe-Un: lopen en springen"], ["A  D  W", "WaterTe-Un: lopen en springen"], ["Spatie", "Wisselen (1 speler)"], ["R", "Level opnieuw"], ["Esc  of  P", "Pauze"], ["Telefoon", "Knoppen onderin beeld"]]'::jsonb,
   '/assets/vuur-water.jpg', '/assets/vuur-water-hero.jpg', '/assets/vuur-water-logo.png', '/games/vuur-water/', true, false
 ) on conflict (id) do nothing;
+
+-- zesde game: Te-Un Tikkertje
+insert into public.games (id, title, category, tags, tagline, description, controls, thumb, hero, logo, url, published, featured)
+values (
+  'te-un-tikkertje', 'Te-Un Tikkertje', 'actie', array['actie','arcade'],
+  'Ren, spring en tik: wie de tikker is na een minuut, gaat eruit.',
+  'Speel tikkertje met drie andere kabouters op zwevende platforms in een bos, de woestijn of de sneeuw. Ben je de tikker? Dan moet je iemand tikken voordat de minuut om is, anders ga jij eruit. Kies tussen normaal en hardcore, verdien munten als je wint en koop nieuwe Te-Uns met speciale krachten: de tyfus snelle Te-Un, de schaduw Te-Un en de tovenaar Te-Un.',
+  '[["←  →  of  A D", "Lopen"], ["↑  of  W", "Springen (van onderaf dwars door platforms)"], ["Spatie", "Kracht van je personage"], ["Esc  of  P", "Pauze"], ["Telefoon", "Knoppen onderin beeld"]]'::jsonb,
+  '/assets/te-un-tikkertje.jpg', '/assets/te-un-tikkertje-hero.jpg', '/assets/te-un-tikkertje-logo.png', '/games/te-un-tikkertje/', true, false
+) on conflict (id) do nothing;

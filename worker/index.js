@@ -134,6 +134,11 @@ const FALLBACK_GAMES = [{
   tagline: 'Twee kabouters, twee deuren: kom samen veilig door 32 tempellevels.',
   description: 'Bestuur twee kabouters tegelijk: VuurTe-Un en WaterTe-Un. Breng allebei veilig naar hun eigen deur, zonder dat de één in water en de ander in lava valt. Verzamel rode en blauwe stenen, druk op knoppen en trek aan hendels om poorten te openen. 32 levels in een mossige tempel. Alleen? Speel met één kabouter en wissel met de spatiebalk.',
   logo: '/assets/vuur-water-logo.png', hero: '/assets/vuur-water-hero.jpg', thumb: '/assets/vuur-water.jpg', created_at: '2025-09-01T00:00:00Z', controls: [],
+}, {
+  id: 'te-un-tikkertje', title: 'Te-Un Tikkertje', category: 'actie',
+  tagline: 'Ren, spring en tik: wie de tikker is na een minuut, gaat eruit.',
+  description: 'Speel tikkertje met drie andere kabouters op zwevende platforms in een bos, de woestijn of de sneeuw. Ben je de tikker? Dan moet je iemand tikken voordat de minuut om is, anders ga jij eruit. Kies tussen normaal en hardcore, verdien munten als je wint en koop nieuwe Te-Uns met speciale krachten: de tyfus snelle Te-Un, de schaduw Te-Un en de tovenaar Te-Un.',
+  logo: '/assets/te-un-tikkertje-logo.png', hero: '/assets/te-un-tikkertje-hero.jpg', thumb: '/assets/te-un-tikkertje.jpg', created_at: '2025-09-15T00:00:00Z', controls: [],
 }];
 
 const GENRE = (id) => { const t = String(id || 'game'); return t[0].toUpperCase() + t.slice(1); };

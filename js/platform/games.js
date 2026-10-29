@@ -65,6 +65,20 @@ export const DEFAULT_GAMES = [
     logo: '/assets/vuur-water-logo.png', thumb: '/assets/vuur-water.jpg', hero: '/assets/vuur-water-hero.jpg', url: '/games/vuur-water/',
     published: true, featured: false, created_at: '2025-09-01T00:00:00Z', plays: 0, likes: 0,
   },
+  {
+    id: 'te-un-tikkertje', title: 'Te-Un Tikkertje', category: 'actie', tags: [],
+    tagline: 'Ren, spring en tik: wie de tikker is na een minuut, gaat eruit.',
+    description: 'Speel tikkertje met drie andere kabouters op zwevende platforms in een bos, de woestijn of de sneeuw. Ben je de tikker? Dan moet je iemand tikken voordat de minuut om is, anders ga jij eruit. Kies tussen normaal en hardcore, verdien munten als je wint en koop nieuwe Te-Uns met speciale krachten: de tyfus snelle Te-Un, de schaduw Te-Un en de tovenaar Te-Un.',
+    controls: [
+      ['←  →  of  A D', 'Lopen'],
+      ['↑  of  W', 'Springen (van onderaf dwars door platforms)'],
+      ['Spatie', 'Kracht van je personage'],
+      ['Esc  of  P', 'Pauze'],
+      ['Telefoon', 'Knoppen onderin beeld'],
+    ],
+    logo: '/assets/te-un-tikkertje-logo.png', thumb: '/assets/te-un-tikkertje.jpg', hero: '/assets/te-un-tikkertje-hero.jpg', url: '/games/te-un-tikkertje/',
+    published: true, featured: false, created_at: '2025-09-15T00:00:00Z', plays: 0, likes: 0,
+  },
 ];
 
 export const genreName = (id) => {

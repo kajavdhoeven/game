@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#2b6fd6">
+  <meta name="description" content="Te-Un Tikkertje: speel tikkertje tegen drie kabouters op zwevende platforms in een bos, de woestijn of de sneeuw. Koop nieuwe Te-Uns met speciale krachten.">
+  <title>Te-Un Tikkertje</title>
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main id="menu" class="screen">
+    <h1 class="title"><img src="/assets/te-un-tikkertje-logo.png" alt="Te-Un Tikkertje" width="683" height="285"></h1>
+    <p class="sub">Ren, spring en tik. Wie na een minuut de tikker is, gaat eruit!</p>
+    <div class="coins" id="coins">🪙 <b id="coinN">0</b></div>
+    <div class="col">
+      <button id="mPlay" class="big">Spelen</button>
+      <button id="mShop" class="big alt">Winkel</button>
+    </div>
+  </main>
+
+  <section id="modeSel" class="screen" hidden>
+    <h2>Kies een niveau</h2>
+    <div class="cards">
+      <button class="pick" data-mode="normal"><b>Normaal</b><small>1 tikker per ronde.<br>Elke ronde gaat er 1 Te-Un uit.</small></button>
+      <button class="pick hard" data-mode="hardcore"><b>Hardcore</b><small>In ronde 1 zijn er 2 tikkers, dus gaan er 2 Te-Uns tegelijk uit. Daarna weer 1 per ronde.</small></button>
+    </div>
+    <button id="modeBack" class="small">&#8592; Terug</button>
+  </section>
+
+  <section id="biomeSel" class="screen" hidden>
+    <h2>Kies een omgeving</h2>
+    <div class="cards">
+      <button class="pick" data-biome="forest"><canvas width="240" height="132"></canvas><b>Bos</b><small>Gras en bomen</small></button>
+      <button class="pick" data-biome="desert"><canvas width="240" height="132"></canvas><b>Woestijn</b><small>Zand en cactussen</small></button>
+      <button class="pick" data-biome="winter"><canvas width="240" height="132"></canvas><b>Winter</b><small>Sneeuw en ijspegels</small></button>
+    </div>
+    <button id="biomeBack" class="small">&#8592; Terug</button>
+  </section>
+
+  <section id="shop" class="screen shopscr" hidden>
+    <div class="top"><button id="shopBack" class="small">&#8592; Menu</button><h2>Winkel</h2><div class="coins">🪙 <b id="shopCoins">0</b></div></div>
+    <div id="shopList" class="cards shopcards"></div>
+  </section>
+
+  <section id="play" class="screen playscr" hidden>
+    <div id="hud">
+      <div class="hbox"><span id="hRound">Ronde 1</span><span id="hAlive">4 over</span></div>
+      <div class="hbox timer" id="hTime">1:00</div>
+      <div class="hbox"><button id="pauseBtn" class="mini" aria-label="Pauze">&#10074;&#10074;</button></div>
+    </div>
+    <div id="stage"><canvas id="cv" aria-label="Speelveld"></canvas><div id="banner" class="banner" hidden></div></div>
+    <button id="abil" class="abil" hidden></button>
+    <div class="pads">
+      <div class="pad"><button data-k="l" aria-label="Links">&#9664;</button><button data-k="r" aria-label="Rechts">&#9654;</button></div>
+      <div class="pad"><button data-k="u" aria-label="Springen">&#9650;</button></div>
+    </div>
+    <div id="pauseBox" class="overlay" hidden><div class="card"><h2>Pauze</h2><div class="row"><button id="resume" class="big">Verder</button><button id="pQuit" class="big alt">Stoppen</button></div></div></div>
+    <div id="result" class="overlay" hidden><div class="card"><h2 id="resTitle"></h2><p id="resText"></p><div class="row"><button id="resAgain" class="big">Opnieuw</button><button id="resMenu" class="big alt">Menu</button></div></div></div>
+  </section>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
