@@ -139,13 +139,14 @@ export class Game {
     c.y += c.vy * dt;
     c.grounded = false;
     c.trampT = Math.max(0, c.trampT - dt);
+    c.tbT = Math.max(0, (c.tbT || 0) - dt); if (c.tbT <= 0) c.tb = 0;
     if (c.vy >= 0) {
       let best = null;
       for (const p of this.plats) if (py <= p.y + 0.02 && c.y >= p.y && c.x + HW > p.x0 && c.x - HW < p.x1 + 1 && (!best || p.y < best.y)) best = p;
       if (best) {
         c.y = best.y; c.vy = 0; c.grounded = true; c.plat = best;
         // de trampoline op de grond aan de rand
-        if (best.ground && c.x > this.tramp.x0 && c.x < this.tramp.x1 && c.trampT <= 0 && this.state === 'play') { c.vy = -TRAMP_V; c.grounded = false; c.trampT = 0.4; this.events.push({ t: 'bounce', id: c.id }); }
+        if (best.ground && c.x > this.tramp.x0 && c.x < this.tramp.x1 && c.trampT <= 0 && this.state === 'play') { c.vy = -TRAMP_V; c.grounded = false; c.trampT = 0.4; c.tb = (c.tb || 0) + 1; c.tbT = 6; this.events.push({ t: 'bounce', id: c.id }); }
       }
     }
     c.walk += Math.abs(c.vx) * dt * 0.9;
@@ -242,12 +243,16 @@ export class Game {
     const P = c.plat || this.plats[0];
     const dyF = gy - c.y;
     const toward = (x) => (Math.abs(x - c.x) < 0.12 ? 0 : x > c.x ? 1 : -1);
+    // al twee keer gestuiterd zonder verder te komen: de trampoline even negeren en er vanaf lopen
+    const stuck = (c.tb || 0) >= 2;
+    const inward = this.tramp.x0 === 0 ? 1 : -1;
+    if (stuck && c.x > this.tramp.x0 - 1 && c.x < this.tramp.x1 + 1) return { dir: inward, jump: false };
     if (!c.grounded) {
       // in de lucht: richting het doel, of naar het platform waar we heen willen
       return { dir: c.airDir !== undefined ? c.airDir : toward(gx), jump: false };
     }
     c.airDir = undefined;
-    if (dyF < -4.4 && P.ground) {
+    if (dyF < -4.4 && P.ground && !stuck) {
       // heel hoog: via de trampoline omhoog
       const tx = (this.tramp.x0 + this.tramp.x1) / 2;
       if (Math.abs(c.x - tx) > 0.2) return { dir: toward(tx), jump: false };
