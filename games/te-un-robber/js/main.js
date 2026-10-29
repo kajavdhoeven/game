@@ -80,6 +80,8 @@ const toast = (t) => { const el = $('toast'); el.textContent = t; el.classList.a
 
 // ---------------------------------------------------------------- schermen: titel, stadskaart, spel, filmpjes
 let mapCtl = null, mapChapter = 0, busy = false;
+let ghost = false; try { ghost = sessionStorage.getItem('teun-robber-ghost') === '1'; } catch (e) { /* geen opslag */ }
+const applyGhost = () => { if (!game) return; game.L.guards.length = 0; game.L.lasers.length = 0; game.stun.length = 0; game.gs.length = 0; };
 const SCREENS = ['menu', 'map', 'play', 'cine'];
 const getState = (n) => ({ unlocked: unlocked(n), done: !!P.done[n], stars: P.done[n] ? P.done[n].stars : 0 });
 function renderMenu() {
@@ -219,6 +221,7 @@ function startLevel(n) {
   buildGoals();
   setBanner(`${meta.name}\n${meta.sub}`, 3200);
   game.hasCode = P.codeFound || P.dev; updateNote();
+  if (ghost) { applyGhost(); setTimeout(() => toast('Testmodus: geen bewakers'), 600); }
   if (L.theme.key === 'mushbank' && !game.hasCode) setTimeout(() => game && cur === n && toast('Je kent de kluiscode nog niet. Die ligt in het gemeentehuis (level 4).'), 3300);
   actx && actx.state === 'suspended' && actx.resume();
 }
@@ -277,7 +280,7 @@ function finish(kind) {
     const prev = P.done[cur];
     if (!prev || stars > prev.stars || (stars === prev.stars && used < prev.time)) P.done[cur] = { stars: Math.max(stars, prev ? prev.stars : 0), time: Math.round(Math.min(used, prev && stars <= prev.stars ? prev.time : used) * 100) / 100 };
     save();
-    submitTime(GAME_ID, 'l' + cur, Math.round(used * 100) / 100);
+    if (!ghost) submitTime(GAME_ID, 'l' + cur, Math.round(used * 100) / 100);
     $('ovTitle').textContent = levelMeta(cur).escape ? 'Ontsnapt!' : 'Gelukt!';
     $('ovStars').innerHTML = [1, 2, 3].map((i) => `<i class="${i <= stars ? 'on' : ''}">★</i>`).join('');
     $('ovText').textContent = `Je was in ${fmt(used)} klaar, met ${fmt(L.limit - used)} over.`;
@@ -387,7 +390,7 @@ initDev([
   { label: 'Alle levels als gehaald markeren (3 sterren)', run: () => { for (let i = 1; i <= LEVEL_COUNT; i++) P.done[i] = { stars: 3, time: 30 }; save(); renderMenu(); return 'Alles gehaald'; } },
   { label: 'Alle filmpjes bekijken...', run: () => { openCineList(); return 'Kies een filmpje'; } },
   { label: 'Alle filmpjes opnieuw tonen', run: () => { P.seen = {}; save(); return 'Filmpjes worden weer getoond'; } },
-  { label: 'Geen bewakers zien me (testen)', run: () => { if (!game) return 'Start eerst een level'; game.L.guards.length = 0; game.L.lasers.length = 0; game.stun.length = 0; return 'Bewakers uit voor dit level'; } },
+  { label: 'Geen bewakers zien me aan/uit (testen)', run: () => { ghost = !ghost; try { sessionStorage.setItem('teun-robber-ghost', ghost ? '1' : '0'); } catch (e) { /* geen opslag */ } if (game) applyGhost(); return ghost ? 'Aan: bewakers en lasers zijn weg in elk level (tijden tellen niet mee voor het leaderboard)' : 'Uit: bewakers zijn er weer vanaf het volgende level'; } },
 ]);
 post('teun:ready');
 window.addEventListener('teun:pause', () => { if (game && game.status === 'play') paused = true; });
