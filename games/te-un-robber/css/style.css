@@ -69,3 +69,9 @@ button.big:active, button.small:active { transform: translateY(3px); box-shadow:
 #choice, #cineList { z-index: 2147483100; }
 .cinelist { display: grid; gap: 8px; max-height: 55vh; overflow: auto; margin: 10px 0 14px; text-align: left; }
 .cinelist button { text-align: left; }
+
+.note { position: absolute; right: 10px; top: 10px; z-index: 3; transform: rotate(3deg); background: linear-gradient(#fff6b8, #f0dc7a); color: #3a2a08; padding: 14px 16px 10px; border-radius: 3px; box-shadow: 0 5px 14px rgba(0,0,0,.45); text-align: center; pointer-events: none; font-family: 'Fredoka', 'Segoe UI', sans-serif; }
+.note small { display: block; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; opacity: .7; }
+.note b { display: block; font-size: 26px; letter-spacing: 4px; font-variant-numeric: tabular-nums; }
+.note .tape { position: absolute; left: 50%; top: -7px; width: 46px; height: 14px; transform: translateX(-50%) rotate(-3deg); background: rgba(255,255,255,.5); border: 1px solid rgba(0,0,0,.08); }
+@media (max-width: 700px) { .note { right: 4px; top: 4px; padding: 10px 10px 6px; } .note b { font-size: 20px; } }

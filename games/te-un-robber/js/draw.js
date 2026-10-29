@@ -282,7 +282,8 @@ const SKIN = {
   blue: ['#4a7ac8', '#2f5498'], green: ['#4aa858', '#2f7a3c'], purple: ['#8a5ac8', '#5e3a98'], gold: ['#d8b040', '#a07a1c'], white: ['#e6eef2', '#a8b8c2'],
   police: ['#3a4a9a', '#222d66'], chef: ['#f0ece0', '#b8b2a0'], orange: ['#e88a3a', '#a8561c'], knight: ['#9aa0a8', '#5e646c'], alien: ['#5ae0a8', '#2a9a70'], boss: ['#a83a4a', '#681f2a'],
 };
-function drawRobot(g, gd, s, t, stunned, alert) {
+function drawRobot(g, gd, s, t, stunT, alert) {
+  const stunned = stunT > 0;
   const [c1, c2] = SKIN[gd.skin] || SKIN.blue;
   const x = s.x * TS, y = Y[gd.f] * TS, dir = s.dir || 1;
   if (gd.kind === 'camera') { // aan het plafond
@@ -329,6 +330,13 @@ function drawRobot(g, gd, s, t, stunned, alert) {
   if (big) { g.strokeStyle = '#2a2d33'; g.lineWidth = 3; g.strokeRect(-12, -44, 24, 36); }
   g.restore();
   if (asleep) { g.fillStyle = '#e8e4d8'; g.font = '700 14px Fredoka, sans-serif'; g.textAlign = 'center'; g.fillText('z', x + 18, y - 70 - Math.sin(t * 2) * 3); g.font = '700 10px Fredoka, sans-serif'; g.fillText('z', x + 28, y - 82 - Math.sin(t * 2 + 1) * 3); }
+  if (stunned) {
+    // hoe lang hij nog uitgeschakeld is
+    const bx = x, by = y - (big ? 104 : 96);
+    g.fillStyle = 'rgba(8,10,14,.85)'; rr(g, bx - 17, by - 12, 34, 22, 11); g.fill(); g.strokeStyle = '#ffe27a'; g.lineWidth = 1.5; g.stroke();
+    g.fillStyle = '#ffe27a'; g.font = '700 14px Fredoka, sans-serif'; g.textAlign = 'center'; g.fillText(String(Math.ceil(stunT)), bx + 4, by + 4);
+    g.beginPath(); g.arc(bx - 8, by - 1, 5, 0, 7); g.strokeStyle = '#ffe27a'; g.stroke(); g.beginPath(); g.moveTo(bx - 8, by - 1); g.lineTo(bx - 8, by - 4); g.moveTo(bx - 8, by - 1); g.lineTo(bx - 6, by); g.stroke();
+  }
   if (stunned) { g.strokeStyle = '#ffe27a'; g.lineWidth = 2; for (let i = 0; i < 3; i++) { const a = t * 8 + i * 2.1; g.beginPath(); g.moveTo(x + Math.cos(a) * 10, y - 78 + Math.sin(a) * 5); g.lineTo(x + Math.cos(a) * 16, y - 80 + Math.sin(a) * 8); g.stroke(); } }
 }
 
@@ -415,7 +423,7 @@ export function drawScene(g, game, stat, t) {
   // bewakers: eerst de lichtkegels, dan de robots
   const alertGuard = game.seenBy;
   L.guards.forEach((gd, i) => { const s = game.guardState(i); if (game.stun[i] > 0) return; drawCone(g, gd, s, i === alertGuard || !!s.chase); });
-  L.guards.forEach((gd, i) => { const s = game.guardState(i); drawRobot(g, gd, s, t, game.stun[i] > 0, (i === alertGuard && game.meter > 0.2) || !!s.chase); });
+  L.guards.forEach((gd, i) => { const s = game.guardState(i); drawRobot(g, gd, s, t, game.stun[i], (i === alertGuard && game.meter > 0.2) || !!s.chase); });
   drawThief(g, p, t);
   // het meter boven Te-Un als iemand hem ziet
   if (game.meter > 0.02) {

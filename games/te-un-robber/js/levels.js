@@ -135,7 +135,7 @@ export function makeLevel(n, variant = 0) {
   // ---- lasers (de laatste mag uit met een schakelaar)
   const lasers = [];
   if (n >= 6) {
-    const cnt = 1 + Math.floor(d * 3.5);
+    const cnt = d > 0.55 ? 2 : 1;
     for (let i = 0; i < cnt; i++) {
       const f = (R() * floors) | 0;
       const x = spot(f, 6, 27, 2.4);
@@ -172,7 +172,7 @@ export function makeLevel(n, variant = 0) {
     }
     return { has: (f, x) => seen.has(id(f, roomOf(f, x))), seen };
   };
-  const locks = n >= 3 ? (n >= 18 ? 3 : n >= 9 ? 2 : 1) : 0;
+  const locks = n >= 3 ? (n >= 12 ? 2 : 1) : 0;
   const lockedSet = new Set();
   for (let c = 0; c < locks; c++) {
     for (let t = 0; t < 30; t++) {
@@ -207,13 +207,13 @@ export function makeLevel(n, variant = 0) {
   };
   // als een level te vol zit om te halen, probeert de generator een iets rustigere variant
   const sc = variant >= 40 ? 0.6 : variant >= 20 ? 0.8 : 1;
-  const total = n < 2 ? 0 : Math.max(1, Math.round((1 + d * 6) * sc));   // hooguit 7 bewakers in het laatste level
+  const total = n < 2 ? 0 : Math.max(1, Math.round((1 + d * 4) * sc));   // hooguit 5 bewakers in het laatste level
   const cnt = {
-    C: n >= 4 ? Math.max(1, Math.round(Math.min(2, 1 + Math.floor(d * 2)) * (sc < 1 ? 0.7 : 1))) : 0,
-    S: n >= 7 ? Math.floor(Math.min(2, Math.floor(d * 3)) * sc) : 0,
-    D: n >= 10 ? Math.floor(Math.min(2, 1 + Math.floor((d - 0.4) * 3)) * sc) : 0,
-    H: n >= 9 ? Math.floor(Math.min(2, Math.floor(d * 2.5)) * sc) : 0,
-    F: n >= 12 ? Math.floor(Math.min(2, Math.floor(d * 2.5)) * sc) : 0,
+    C: n >= 4 ? 1 : 0,
+    S: n >= 8 ? 1 : 0,
+    D: n >= 12 ? 1 : 0,
+    H: n >= 10 ? 1 : 0,
+    F: n >= 14 ? 1 : 0,
   };
   // meer bewakers dan het totaal: haal eerst de soort weg waar er de meeste van zijn
   while (n >= 2 && 1 + cnt.C + cnt.S + cnt.D + cnt.H + cnt.F > total) {

@@ -17,9 +17,9 @@ const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(
 
 // ---------------------------------------------------------------- opslaan + platform
 const KEY = 'te-un-robber-v1';
-let P = { done: {}, dev: false, updatedAt: 0, seen: {}, codeFound: false };
+let P = { done: {}, dev: false, updatedAt: 0, seen: {}, codeFound: false, codeUsed: false };
 try { P = Object.assign(P, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* geen opslag */ }
-const snapshot = () => ({ done: P.done, dev: P.dev, updatedAt: P.updatedAt, seen: P.seen, codeFound: P.codeFound });
+const snapshot = () => ({ done: P.done, dev: P.dev, updatedAt: P.updatedAt, seen: P.seen, codeFound: P.codeFound, codeUsed: P.codeUsed });
 const post = (type, extra = {}) => {
   if (window.parent === window) return;
   try { window.parent.postMessage({ type, game: GAME_ID, ...extra }, location.origin); } catch (e) { /* geen ouder */ }
@@ -36,7 +36,7 @@ window.addEventListener('message', (e) => {
   const m = e.data;
   if (!m || m.game !== GAME_ID || m.type !== 'teun:progress' || !m.data) return;
   const d = m.data;
-  if ((d.updatedAt || 0) > (P.updatedAt || 0)) { P.done = Object.assign({}, d.done || {}); P.seen = Object.assign({}, d.seen || {}); P.codeFound = !!d.codeFound; P.updatedAt = d.updatedAt; save(true); renderMenu(); }
+  if ((d.updatedAt || 0) > (P.updatedAt || 0)) { P.done = Object.assign({}, d.done || {}); P.seen = Object.assign({}, d.seen || {}); P.codeFound = !!d.codeFound; P.codeUsed = !!d.codeUsed; P.updatedAt = d.updatedAt; save(true); renderMenu(); }
   else if ((d.updatedAt || 0) < (P.updatedAt || 0)) post('teun:save', { data: snapshot() });
 });
 const unlocked = (n) => n === 1 || P.dev || !!P.done[n - 1];
@@ -150,11 +150,16 @@ function runCine(kind, a, fast) {
   });
 }
 async function playCut(id) { P.seen[id] = 1; save(); await runCine('cut', id); }
-// naar een ander hoofdstuk met het pijltje: gewoon de kaart van dat hoofdstuk
-function changeChapter(i) {
+// naar een volgend hoofdstuk met het pijltje: het filmpje van dat hoofdstuk speelt altijd (klik om door te gaan). Terug naar een eerder hoofdstuk: geen filmpje
+async function changeChapter(i) {
   if (busy) return;
   if (!chapterOpen(i)) { toast('Haal eerst het vorige hoofdstuk'); return; }
+  const prev = mapChapter;
   mapChapter = i; if (mapCtl) mapCtl.setChapter(i);
+  const id = i > prev ? BEFORE[CHAPTERS[i].levels[0]] : null;
+  if (!id) return;
+  busy = true;
+  try { await playCut(id); goMap(CHAPTERS[i].levels[0]); } finally { busy = false; }
 }
 // het filmpje van een hoofdstuk of gebouw speelt de eerste keer vanzelf af (en is daarna terug te zien via het Dev-paneel)
 async function pickLevel(n) {
@@ -181,6 +186,9 @@ function openCineList() {
   ov.hidden = false;
 }
 $('cineClose').onclick = () => { $('cineList').hidden = true; };
+
+// het briefje met de kluiscode: blijft in beeld tot de code gebruikt is
+const updateNote = () => { const show = P.codeFound && !P.codeUsed; $('note').hidden = !show; if (show) $('noteCode').textContent = KLUISCODE.split('').join(' '); };
 
 // ---------------------------------------------------------------- spelen
 const canvas = $('cv'); canvas.width = CW; canvas.height = CH;
@@ -210,7 +218,8 @@ function startLevel(n) {
   show('play');
   buildGoals();
   setBanner(`${meta.name}\n${meta.sub}`, 3200);
-  if (L.theme.key === 'mushbank') setTimeout(() => game && cur === n && toast(P.codeFound ? `Kluiscode: ${KLUISCODE}` : 'Je kent de kluiscode nog niet. Die lag in het gemeentehuis.'), 3300);
+  game.hasCode = P.codeFound || P.dev; updateNote();
+  if (L.theme.key === 'mushbank' && !game.hasCode) setTimeout(() => game && cur === n && toast('Je kent de kluiscode nog niet. Die ligt in het gemeentehuis (level 4).'), 3300);
   actx && actx.state === 'suspended' && actx.resume();
 }
 function setBanner(text, ms) {
@@ -240,7 +249,7 @@ function updateHud() {
     const o = types[t]; if (!o) return;
     el.querySelector('span').textContent = o.done; el.classList.toggle('ok', o.done === o.all);
   });
-  $('keys').textContent = g.L.theme.key === 'mushbank' ? `🔐 ${P.codeFound ? KLUISCODE : '????'}` : '';
+  $('keys').textContent = '';
 }
 function handleEvents() {
   for (const e of game.events.splice(0)) {
@@ -249,7 +258,9 @@ function handleEvents() {
     if (e === 'spotted') setBanner('Gezien! Ren weg of verstop je!', 1600);
     if (e === 'alarm') setBanner('ALARM!\nDe robots op deze verdieping komen eraan', 2400);
     if (e === 'nohide') toast('Te dichtbij om je te verstoppen!');
-    if (e === 'code') { P.codeFound = true; save(); setBanner(`Kluiscode: ${KLUISCODE}\nOnthouden!`, 2600); }
+    if (e === 'code') { P.codeFound = true; P.codeUsed = false; game.hasCode = true; save(); updateNote(); setBanner(`Kluiscode gevonden!\n${KLUISCODE}`, 2600); }
+    if (e === 'hacked' && game.L.theme.key === 'mushbank') { P.codeUsed = true; save(); updateNote(); setBanner('Kluis open met de code!', 1800); }
+    if (e === 'nocode') toast('Je hebt de kluiscode nog niet. Zoek hem in het gemeentehuis (level 4).');
     if (e === 'win') finish('won');
     if (e === 'caught') finish('caught');
     if (e === 'timeup') finish('timeup');

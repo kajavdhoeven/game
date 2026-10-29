@@ -61,6 +61,7 @@ export class Game {
     // elke robot: 'patrol' (vaste route), 'chase' (achtervolgt je met een knuppel), 'return' (loopt terug naar zijn route) of 'stunned'
     this.gs = level.guards.map(() => ({ mode: 'patrol', x: 0, dir: 1, moving: false, swing: 0, cool: 0, search: 0, last: 0 }));
     this.alarmT = 0; this.alarmFloor = -1; this.alarmCool = 0;
+    this.hasCode = true;            // heeft Te-Un de kluiscode al? (de bank van het Kabouterdorp gaat er niet zonder open)
     this.seenBy = -1;
     this.exitOpen = false;
     this.parts = [];
@@ -219,6 +220,7 @@ export class Game {
     // eerst een voorwerp dat dichtbij ligt
     let best = null, bd = 1.0;
     for (const it of this.items) { if (it.done || it.f !== p.f || it.type === 'key') continue; const d = Math.abs(it.x - p.x); if (d < bd) { bd = d; best = it; } }
+    if (best && best.type === 'vault' && this.L.theme.key === 'mushbank' && !this.hasCode) { this.events.push('nocode'); return; }
     if (best) { p.mode = 'act'; p.workItem = best; p.work = ACT[best.type] || 0.4; p.x = best.x; this.events.push('work'); return; }
     // anders een zwakke robot van achteren uitschakelen
     for (let i = 0; i < this.L.guards.length; i++) {
