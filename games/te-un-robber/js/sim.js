@@ -1,0 +1,171 @@
+// Spelregels van Te-Un the Robber: bewegen door een gebouw in doorsnede, bewakers (robots, camera's, drones, lasers), voorwerpen en het ontsnappen.
+// Geen scherm nodig: de levelgenerator gebruikt dezelfde regels om te controleren of een level te halen is.
+export const TS = 40, W = 32, H = 18;
+export const Y = [16, 12, 8, 4];      // de vloer van elke verdieping (onderkant van de kamer)
+export const WALK = 4, CLIMB = 3.2;   // loopsnelheid en klimsnelheid in tegels per seconde
+export const HALF = 0.3;              // halve breedte van Te-Un
+const PORTAL_T = 0.5;                 // een trap of lift duurt even
+const ACT = { doc: 0.4, loot: 0.5, switch: 0.3, hack: 1.8, key: 0 }; // hoe lang het kost om iets te doen
+
+// ---------------------------------------------------------------- bewakers: positie en blikrichting zijn een vaste functie van de tijd
+export function guardAt(g, t) {
+  if (g.kind === 'camera') return { x: g.x0, ang: g.amp * Math.sin((2 * Math.PI * (t + g.phase)) / g.period) };
+  if (g.kind === 'sleeper') { const cyc = g.sleep + g.awake; const u = (((t + g.phase) % cyc) + cyc) % cyc; return { x: g.x0, dir: g.dir, awake: u >= g.sleep, moving: false }; }
+  const L = g.x1 - g.x0, mv = L / g.speed, cyc = 2 * (mv + g.pause);
+  let u = (((t + g.phase) % cyc) + cyc) % cyc;
+  if (u < mv) return { x: g.x0 + u * g.speed, dir: 1, moving: true };
+  u -= mv; if (u < g.pause) return { x: g.x1, dir: -1, moving: false };
+  u -= g.pause; if (u < mv) return { x: g.x1 - u * g.speed, dir: -1, moving: true };
+  return { x: g.x0, dir: 1, moving: false };
+}
+// is de speler (px, py = voeten) te zien voor deze bewaker? 0 = niet, anders hoe dichtbij (0..1). blocked(f, xa, xb) = zit er een dichte deur tussen?
+export function sees(g, s, px, py, hidden, blocked) {
+  if (hidden || Math.abs(py - Y[g.f]) > 1.3) return 0;
+  if (g.kind === 'camera') {
+    const cx = s.x, cy = Y[g.f] - 3.5;
+    const dx = px - cx, dy = (py - 0.8) - cy;
+    const d = Math.hypot(dx, dy);
+    if (d > g.range) return 0;
+    const ang = Math.atan2(dx, dy);
+    if (Math.abs(ang - s.ang) > g.half) return 0;
+    return blocked(g.f, cx, px) ? 0 : 1 - (d / g.range) * 0.5;
+  }
+  if (g.kind === 'drone') return Math.abs(px - s.x) < 1.0 ? 1 : 0;
+  if (g.kind === 'sleeper' && !s.awake) return 0;
+  const dx = (px - s.x) * s.dir;
+  if (dx < -0.15 || dx > g.range) return 0;
+  return blocked(g.f, s.x, px) ? 0 : 1 - (dx / g.range) * 0.5;
+}
+export const laserOn = (l, t) => (((t + l.phase) % l.period) + l.period) % l.period < l.period * l.on;
+
+// ---------------------------------------------------------------- het spel
+export class Game {
+  constructor(level) {
+    this.L = level;
+    this.t = 0;
+    this.status = 'play'; // play | won | caught | timeup
+    this.events = [];
+    this.p = { x: level.start.x, y: Y[level.start.f], f: level.start.f, face: 1, mode: 'walk', vx: 0, work: 0, workItem: null, portal: null, climbTo: 0, hidden: false, walk: 0 };
+    this.items = level.items.map((it) => ({ ...it, done: false }));
+    this.keys = new Set();
+    this.doorOpen = new Set();      // gebroken sloten (index van de muur)
+    this.switchOn = false;
+    this.meter = 0;
+    this.stun = level.guards.map(() => 0);
+    this.seenBy = -1;
+    this.exitOpen = false;
+    this.parts = [];
+  }
+  blocked(f, xa, xb) {
+    const lo = Math.min(xa, xb), hi = Math.max(xa, xb);
+    return this.L.walls.some((w, i) => w.f === f && w.lock && !this.doorOpen.has(i) && w.x > lo && w.x < hi);
+  }
+  remaining() { return this.items.filter((i) => i.req && !i.done).length; }
+  timeLeft() { return Math.max(0, this.L.limit - this.t); }
+  // één stap. inp: { l, r, u, d, act (alleen op het moment van indrukken), actHeld }
+  step(dt, inp) {
+    if (this.status !== 'play') return;
+    this.t += dt;
+    const L = this.L, p = this.p;
+    if (this.t >= L.limit) { this.status = 'timeup'; this.events.push('timeup'); return; }
+    this.stun = this.stun.map((s) => Math.max(0, s - dt));
+    const dir = (inp.r ? 1 : 0) - (inp.l ? 1 : 0);
+
+    if (p.mode === 'portal') { // trap of lift
+      p.work -= dt;
+      if (p.work <= 0) { p.mode = 'walk'; p.x = p.portal.x; p.f = p.portal.f; p.y = Y[p.f]; p.portal = null; this.events.push('arrive'); }
+    } else if (p.mode === 'climb') {
+      const tgt = Y[p.climbTo];
+      p.y += Math.sign(tgt - p.y) * CLIMB * dt;
+      if (Math.abs(tgt - p.y) < CLIMB * dt) { p.y = tgt; p.f = p.climbTo; p.mode = 'walk'; }
+    } else if (p.mode === 'act') {
+      p.work -= dt;
+      if (p.work <= 0) this.finishWork();
+    } else if (p.mode === 'hide') {
+      if (dir || inp.u || inp.act) { p.mode = 'walk'; p.hidden = false; }
+    } else {
+      // lopen
+      p.vx = dir * WALK;
+      if (dir) p.face = dir;
+      let nx = p.x + p.vx * dt;
+      nx = Math.max(1 + HALF, Math.min(W - 1 - HALF, nx));
+      // dichte deuren: met de goede sleutel gaan ze open, anders blijf je ervoor staan
+      for (let i = 0; i < L.walls.length; i++) {
+        const w = L.walls[i];
+        if (w.f !== p.f || !w.lock || this.doorOpen.has(i)) continue;
+        const gap = HALF + 0.05;
+        if (Math.abs(nx - w.x) < gap + 0.15 || (p.x - w.x) * (nx - w.x) < 0) {
+          if (this.keys.has(w.lock)) { this.doorOpen.add(i); this.events.push('unlock'); }
+          else nx = p.x < w.x ? Math.min(nx, w.x - gap) : Math.max(nx, w.x + gap);
+        }
+      }
+      p.walk += Math.abs(nx - p.x);
+      p.x = nx;
+      // ladder, trap, lift: omhoog of omlaag
+      if (inp.u || inp.d) {
+        const up = !!inp.u;
+        const lad = L.ladders.find((l) => Math.abs(l.x - p.x) < 0.45 && ((up && l.f === p.f) || (!up && l.f + 1 === p.f)));
+        if (lad) { p.mode = 'climb'; p.x = lad.x; p.climbTo = up ? p.f + 1 : p.f - 1; p.hidden = false; }
+        else {
+          const st = L.stairs.find((s) => s.f === p.f && s.dir === (up ? 'up' : 'down') && Math.abs(s.x - p.x) < 0.55);
+          if (st) { p.mode = 'portal'; p.work = PORTAL_T + (st.kind === 'lift' ? 0.5 : 0); p.portal = { x: st.to.x, f: st.to.f }; p.x = st.x; this.events.push('portal'); }
+          else if (!up) {
+            const h = L.hides.find((h) => h.f === p.f && Math.abs(h.x - p.x) < 0.6);
+            if (h) { p.mode = 'hide'; p.hidden = true; p.x = h.x; this.events.push('hide'); }
+          }
+        }
+      }
+      // voorwerpen en bewakers: de actietoets
+      if (inp.act) this.doAct();
+      // de uitgang
+      const ex = L.exit;
+      this.exitOpen = this.remaining() === 0;
+      if (this.exitOpen && p.f === ex.f && Math.abs(p.x - ex.x) < 0.7 && p.mode === 'walk') { this.status = 'won'; this.events.push('win'); }
+    }
+    this.detect(dt);
+  }
+  doAct() {
+    const p = this.p;
+    // eerst een voorwerp dat dichtbij ligt
+    let best = null, bd = 1.0;
+    for (const it of this.items) { if (it.done || it.f !== p.f || it.type === 'key') continue; const d = Math.abs(it.x - p.x); if (d < bd) { bd = d; best = it; } }
+    if (best) { p.mode = 'act'; p.workItem = best; p.work = ACT[best.type] || 0.4; p.x = best.x; this.events.push('work'); return; }
+    // anders een zwakke robot van achteren uitschakelen
+    for (let i = 0; i < this.L.guards.length; i++) {
+      const g = this.L.guards[i];
+      if (g.f !== p.f || g.kind === 'camera' || g.kind === 'drone' || g.kind === 'heavy' || this.stun[i] > 0) continue;
+      const s = guardAt(g, this.t);
+      if (Math.abs(s.x - p.x) < 1.1 && (p.x - s.x) * s.dir < 0.2 && !(g.kind === 'sleeper' && s.awake && (p.x - s.x) * s.dir > 0)) { this.stun[i] = 7; this.events.push('stun'); return; }
+    }
+  }
+  finishWork() {
+    const p = this.p, it = p.workItem;
+    p.mode = 'walk'; p.workItem = null;
+    if (!it || it.done) return;
+    it.done = true;
+    if (it.type === 'switch') this.switchOn = true;
+    this.events.push(it.type === 'hack' ? 'hacked' : it.type === 'switch' ? 'switch' : 'grab');
+  }
+  detect(dt) {
+    const L = this.L, p = this.p;
+    // sleutels gaan vanzelf mee als je erlangs loopt
+    for (const it of this.items) if (!it.done && it.type === 'key' && it.f === p.f && Math.abs(it.x - p.x) < 0.5 && p.mode === 'walk') { it.done = true; this.keys.add(it.color); this.events.push('key'); }
+    // lasers
+    for (const l of L.lasers) {
+      if (l.f !== p.f || Math.abs(l.x - p.x) > 0.35 + HALF * 0.5 || p.hidden || p.mode === 'portal') continue;
+      if (l.needSwitch ? !this.switchOn : laserOn(l, this.t)) { this.caught('laser'); return; }
+    }
+    // bewakers
+    let worst = 0, by = -1;
+    L.guards.forEach((g, i) => {
+      if (this.stun[i] > 0) return;
+      const s = guardAt(g, this.t);
+      const v = sees(g, s, p.x, p.y, p.hidden || p.mode === 'portal', (f, a, b) => this.blocked(f, a, b)); // in een trap of lift ben je niet te zien
+      if (v > worst) { worst = v; by = i; }
+    });
+    this.seenBy = by;
+    if (worst > 0) { this.meter += dt * (1.1 + 1.6 * worst); if (this.meter >= 1) this.caught('guard'); }
+    else this.meter = Math.max(0, this.meter - dt * 0.9);
+  }
+  caught(why) { this.status = 'caught'; this.why = why; this.events.push('caught'); }
+}

@@ -79,6 +79,22 @@ export const DEFAULT_GAMES = [
     logo: '/assets/te-un-tikkertje-logo.png', thumb: '/assets/te-un-tikkertje.jpg', hero: '/assets/te-un-tikkertje-hero.jpg', url: '/games/te-un-tikkertje/',
     published: true, featured: false, created_at: '2025-09-15T00:00:00Z', plays: 0, likes: 0,
   },
+  {
+    id: 'te-un-robber', title: 'Te-Un the Robber', category: 'actie', tags: [],
+    tagline: 'Sluip door 25 gebouwen, pak de buit en ontsnap!',
+    description: 'Sluip als dief door 25 gebouwen: een huis, een bank, een museum, een politiebureau en nog veel meer. Ontwijk bewakingsrobots, camera's, drones en lasers, pak de buit, hack computers, gebruik ladders, trappen en liften en ontsnap voordat de tijd om is. Elk level is moeilijker, met meer opdrachten, een kortere tijd en slimmere bewakers.',
+    controls: [
+      ['←  →  of  A D', 'Lopen'],
+      ['↑  ↓', 'Ladder, trap of lift nemen'],
+      ['↓', 'Verstoppen bij een kast, plant of kist'],
+      ['Spatie', 'Pakken, hacken, schakelaar, zwakke robot uitschakelen'],
+      ['R', 'Level opnieuw'],
+      ['Esc  of  P', 'Pauze'],
+      ['Telefoon', 'Knoppen onderin beeld'],
+    ],
+    logo: '/assets/te-un-robber-logo.png', thumb: '/assets/te-un-robber.jpg', hero: '/assets/te-un-robber-hero.jpg', url: '/games/te-un-robber/',
+    published: true, featured: false, created_at: '2025-10-01T00:00:00Z', plays: 0, likes: 0,
+  },
 ];
 
 export const genreName = (id) => {

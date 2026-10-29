@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1b3a22">
+  <meta name="description" content="Te-Un the Robber: sluip als dief door 25 gebouwen, ontwijk bewakingsrobots, camera's en lasers, pak de buit en ontsnap voordat de tijd om is.">
+  <title>Te-Un the Robber</title>
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main id="menu" class="screen">
+    <h1 class="title"><img id="logo" src="/assets/te-un-robber-logo.png" alt="Te-Un the Robber" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'fallback',textContent:'Te-Un the Robber'}))"></h1>
+    <p class="sub">Sluip door 25 gebouwen, pak de buit en ontsnap. Laat je niet zien!</p>
+    <div id="levels" class="levels"></div>
+    <div class="row"><button id="mBoard" class="small">🏆 Leaderboard</button></div>
+  </main>
+
+  <section id="play" class="screen playscr" hidden>
+    <header id="hud">
+      <button id="back" class="mini" aria-label="Terug naar het menu">&#8592;</button>
+      <b id="lvName">Level 1</b>
+      <span id="goals" class="goals"></span>
+      <span class="grow"></span>
+      <span id="keys" class="keys"></span>
+      <span id="clock" class="clock">0:00</span>
+      <button id="restart" class="mini" aria-label="Opnieuw">&#8635;</button>
+      <button id="pauseBtn" class="mini" aria-label="Pauze">&#10074;&#10074;</button>
+    </header>
+    <div id="stage"><canvas id="cv" aria-label="Het gebouw"></canvas><div id="banner" class="banner" hidden></div></div>
+    <div class="pads">
+      <div class="pad"><button data-k="l" aria-label="Links">&#9664;</button><button data-k="r" aria-label="Rechts">&#9654;</button></div>
+      <div class="pad col"><button data-k="u" aria-label="Omhoog">&#9650;</button><button data-k="d" aria-label="Omlaag of verstoppen">&#9660;</button></div>
+      <button id="actBtn" class="actbtn">Actie</button>
+    </div>
+    <div id="pauseBox" class="overlay" hidden><div class="card"><h2>Pauze</h2><div class="row"><button id="resume" class="big">Verder</button><button id="pRestart" class="big alt">Opnieuw</button><button id="pMenu" class="big alt">Menu</button></div></div></div>
+    <div id="overlay" class="overlay" hidden>
+      <div class="card"><h2 id="ovTitle"></h2><div id="ovStars" class="stars"></div><p id="ovText"></p>
+        <div class="row"><button id="ovBoard" class="big alt" hidden>🏆</button><button id="ovMenu" class="big alt">Menu</button><button id="ovRetry" class="big alt">Opnieuw</button><button id="ovNext" class="big" hidden>Volgende level</button></div>
+      </div>
+    </div>
+  </section>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

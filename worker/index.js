@@ -4,7 +4,7 @@
 const MAX_DIST = 500000;
 const MAX_COINS = 2000000;
 const KEEP = 1500;
-const TIME_GAMES = new Set(['te-un-puzzel', 'te-un-x3m', 'te-un-drive', 'vuur-water']);
+const TIME_GAMES = new Set(['te-un-puzzel', 'te-un-x3m', 'te-un-drive', 'vuur-water', 'te-un-robber']);
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -268,6 +268,11 @@ const FALLBACK_GAMES = [{
   tagline: 'Ren, spring en tik: wie de tikker is na een minuut, gaat eruit.',
   description: 'Speel tikkertje met drie andere kabouters op zwevende platforms in een bos, de woestijn of de sneeuw. Ben je de tikker? Dan moet je iemand tikken voordat de minuut om is, anders ga jij eruit. Kies tussen normaal en hardcore, verdien munten als je wint en koop nieuwe Te-Uns met speciale krachten: de tyfus snelle Te-Un, de schaduw Te-Un en de tovenaar Te-Un.',
   logo: '/assets/te-un-tikkertje-logo.png', hero: '/assets/te-un-tikkertje-hero.jpg', thumb: '/assets/te-un-tikkertje.jpg', created_at: '2025-09-15T00:00:00Z', controls: [],
+}, {
+  id: 'te-un-robber', title: 'Te-Un the Robber', category: 'actie',
+  tagline: 'Sluip door 25 gebouwen, pak de buit en ontsnap!',
+  description: 'Sluip als dief door 25 gebouwen: een huis, een bank, een museum, een politiebureau en nog veel meer. Ontwijk bewakingsrobots, camera\'s, drones en lasers, pak de buit, hack computers, gebruik ladders, trappen en liften en ontsnap voordat de tijd om is. Elk level is moeilijker, met meer opdrachten, een kortere tijd en slimmere bewakers.',
+  logo: '/assets/te-un-robber-logo.png', hero: '/assets/te-un-robber-hero.jpg', thumb: '/assets/te-un-robber.jpg', created_at: '2025-10-01T00:00:00Z', controls: [],
 }];
 
 const GENRE = (id) => { const t = String(id || 'game'); return t[0].toUpperCase() + t.slice(1); };

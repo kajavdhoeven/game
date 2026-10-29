@@ -330,3 +330,13 @@ values (
   '[["←  →  of  A D", "Lopen"], ["↑  of  W", "Springen (van onderaf dwars door platforms)"], ["Spatie", "Kracht van je personage"], ["Esc  of  P", "Pauze"], ["Telefoon", "Knoppen onderin beeld"]]'::jsonb,
   '/assets/te-un-tikkertje.jpg', '/assets/te-un-tikkertje-hero.jpg', '/assets/te-un-tikkertje-logo.png', '/games/te-un-tikkertje/', true, false
 ) on conflict (id) do nothing;
+
+-- zevende game: Te-Un the Robber
+insert into public.games (id, title, category, tags, tagline, description, controls, thumb, hero, logo, url, published, featured)
+values (
+  'te-un-robber', 'Te-Un the Robber', 'actie', array['actie','puzzel'],
+  'Sluip door 25 gebouwen, pak de buit en ontsnap!',
+  'Sluip als dief door 25 gebouwen: een huis, een bank, een museum, een politiebureau en nog veel meer. Ontwijk bewakingsrobots, camera''s, drones en lasers, pak de buit, hack computers, gebruik ladders, trappen en liften en ontsnap voordat de tijd om is. Elk level is moeilijker, met meer opdrachten, een kortere tijd en slimmere bewakers.',
+  '[["←  →  of  A D", "Lopen"], ["↑  ↓", "Ladder, trap of lift nemen"], ["↓", "Verstoppen bij een kast, plant of kist"], ["Spatie", "Pakken, hacken, schakelaar, zwakke robot uitschakelen"], ["R", "Level opnieuw"], ["Esc  of  P", "Pauze"], ["Telefoon", "Knoppen onderin beeld"]]'::jsonb,
+  '/assets/te-un-robber.jpg', '/assets/te-un-robber-hero.jpg', '/assets/te-un-robber-logo.png', '/games/te-un-robber/', true, false
+) on conflict (id) do nothing;

@@ -28,7 +28,7 @@ function toLocalInput(iso) {
 const has = (p, k) => !!p && (p.is_owner || (p.is_admin && p.permissions && p.permissions[k] === true));
 
 const PALETTE = ['#2563eb', '#f97316', '#10b981', '#ec4899', '#8b5cf6', '#eab308', '#06b6d4'];
-const GAME_EMOJI = { 'te-un-surfers': '🚆', 'te-un-puzzel': '🧩', 'te-un-x3m': '🏍️', 'te-un-drive': '🚙', 'vuur-water': '🔥', 'te-un-tikkertje': '🏃' };
+const GAME_EMOJI = { 'te-un-surfers': '🚆', 'te-un-puzzel': '🧩', 'te-un-x3m': '🏍️', 'te-un-drive': '🚙', 'vuur-water': '🔥', 'te-un-tikkertje': '🏃', 'te-un-robber': '🥷' };
 
 function bars(items) {
   const max = Math.max(1, ...items.map((i) => i.value));
