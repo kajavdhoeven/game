@@ -39,6 +39,7 @@ export const remote = {
     });
     return user;
   },
+  async getAccessToken() { try { const { data } = await client.auth.getSession(); return (data.session && data.session.access_token) || null; } catch (e) { return null; } },
   onAuth(cb) { listeners.add(cb); return () => listeners.delete(cb); },
   getUser() { return user; },
   async signUp({ email, password, username }) {

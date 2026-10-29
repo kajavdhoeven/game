@@ -67,6 +67,7 @@ export async function renderAdmin(app) {
   const tabs = [
     ['overview', 'Overzicht', has(me, 'view_stats'), '📊'],
     ['games', 'Games', has(me, 'manage_games'), '🎮'],
+    ['online', 'Nu online', has(me, 'view_users'), '🟢'],
     ['users', 'Gebruikers', has(me, 'view_users') || has(me, 'manage_users'), '👥'],
   ].filter((t) => t[2]);
   if (!tabs.length) {
@@ -124,12 +125,51 @@ export async function renderAdmin(app) {
         const r = await fetch('/api/online', { cache: 'no-store' });
         if (!r.ok) throw new Error('geen data');
         const o = await r.json();
-        box.innerHTML = `<i>🟢</i><small>Nu op de site</small><b>${fmt(o.total)}</b><span>${fmt(o.users)} ingelogd · ${fmt(o.guests)} ${o.guests === 1 ? 'gast' : 'gasten'}</span>`;
+        box.innerHTML = `<i>🟢</i><small>Nu op de site</small><b>${fmt(o.total)}</b><span>${fmt(o.users)} ingelogd · ${fmt(o.guests)} ${o.guests === 1 ? 'gast' : 'gasten'}${has(me, 'view_users') ? ' · <u>wie?</u>' : ''}</span>`;
+        if (has(me, 'view_users')) { box.style.cursor = 'pointer'; box.onclick = () => { tab = 'online'; history.replaceState(null, '', '/admin?tab=online'); show(); }; }
       } catch (e) { box.innerHTML = '<i>🟢</i><small>Nu op de site</small><b>-</b><span>alleen op de echte site te zien</span>'; }
     };
     paintOnline();
     clearInterval(overview.timer);
     overview.timer = setInterval(() => { if (!main.querySelector('#adOnline')) { clearInterval(overview.timer); return; } paintOnline(); }, 15000);
+  }
+
+  // een hele pagina met wie er nu is ingelogd (de server geeft de namen alleen aan beheerders met het recht om gebruikers te bekijken)
+  async function onlineTab() {
+    const where = (p) => {
+      const parts = String(p || '/').split('/').filter(Boolean);
+      if (!parts.length) return 'Home';
+      if (parts[0] === 'g') { const g = (app.state.games || []).find((x) => x.id === parts[1]); return g ? `Speelt of bekijkt ${g.title}` : 'Bekijkt een game'; }
+      return ({ games: 'Alle games', favorites: 'Favorieten', profile: 'Eigen profiel', search: 'Zoeken', admin: 'Beheer' })[parts[0]] || 'Op de site';
+    };
+    const since = (t) => { const m = Math.max(0, Math.round((Date.now() - t) / 60000)); return m < 1 ? 'net online' : m < 60 ? `${m} min online` : `${Math.floor(m / 60)} uur ${m % 60} min online`; };
+    main.innerHTML = `${head('Nu online', 'Wie er op dit moment op de site is. Deze pagina ververst zichzelf elke 10 seconden.', '<button class="ad-btn" id="onRefresh">Vernieuwen</button>')}${demo}
+      <div id="onlinePage"><div class="ad-load">Laden...</div></div>`;
+    const box = main.querySelector('#onlinePage');
+    const paint = async () => {
+      if (!main.querySelector('#onlinePage')) { clearInterval(onlineTab.timer); return; }
+      try {
+        const token = await api.getAccessToken();
+        const r = await fetch('/api/online/users', { cache: 'no-store', headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        if (r.status === 403) throw new Error('Geen toegang: alleen beheerders met het recht "gebruikers bekijken" zien dit.');
+        if (!r.ok) throw new Error('Geen verbinding met de server.');
+        const o = await r.json();
+        box.innerHTML = `<div class="ad-kpis">
+            <div class="ad-kpi k5"><i>🟢</i><small>Nu op de site</small><b>${fmt(o.total)}</b><span>in totaal</span></div>
+            <div class="ad-kpi k1"><i>👤</i><small>Ingelogd</small><b>${fmt(o.users.length)}</b><span>met een account</span></div>
+            <div class="ad-kpi k2"><i>👻</i><small>Gasten</small><b>${fmt(o.guests)}</b><span>niet ingelogd</span></div>
+          </div>
+          <section class="ad-card"><h3>Ingelogde gebruikers</h3>
+            ${o.users.length ? `<ul class="ad-list on-list">${o.users.map((u) => `<li><span class="ad-av">${avatarSVG(u.avatar)}</span><b>${esc(u.name)}</b><small>${esc(where(u.path))}</small><small class="on-since">${since(u.since)}</small></li>`).join('')}</ul>` : '<p class="ad-muted">Er is nu niemand ingelogd.</p>'}
+          </section>`;
+      } catch (e) {
+        box.innerHTML = `<div class="ad-note">${esc(configured ? e.message : 'Alleen op de echte site te zien: hier in demo-modus is er geen server die bijhoudt wie er online is.')}</div>`;
+      }
+    };
+    main.querySelector('#onRefresh').onclick = paint;
+    await paint();
+    clearInterval(onlineTab.timer);
+    onlineTab.timer = setInterval(paint, 10000);
   }
 
   async function gamesTab() {
@@ -243,6 +283,7 @@ export async function renderAdmin(app) {
     try {
       if (tab === 'overview') await overview();
       else if (tab === 'games') await gamesTab();
+      else if (tab === 'online') await onlineTab();
       else await usersTab();
     } catch (e) {
       main.innerHTML = `<div class="ad-denied"><div><h1>Kon dit niet laden</h1><p>${esc(e.message)}</p></div></div>`;

@@ -1,4 +1,4 @@
-import { startPresence } from '/js/presence.js';
+import { startPresence, pingNow } from '/js/presence.js';
 import { api, configured } from './api.js';
 import { DEFAULT_GAMES } from './games.js';
 import { logoSVG, icon, teunSVG, avatarSVG } from './art.js';
@@ -315,6 +315,7 @@ async function route() {
   if (path !== 'search' && si && si.value) si.value = '';
   window.scrollTo(0, 0);
   view.focus({ preventScroll: true });
+  pingNow();
 }
 
 function renderSearch(q) {
@@ -350,7 +351,7 @@ async function boot() {
   $('#boot').classList.add('done');
   setTimeout(() => $('#boot').remove(), 600);
   maybeFirstTour();
-  startPresence(() => !!state.user);
+  startPresence(() => ({ auth: !!state.user, name: state.user && state.profile ? state.profile.username : '', avatar: state.user && state.profile ? state.profile.avatar : '' }));
 }
 
 boot();

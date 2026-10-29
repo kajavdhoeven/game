@@ -18,10 +18,35 @@ function cleanName(n) {
 }
 
 export class Leaderboard {
-  constructor(state) {
+  constructor(state, env) {
     this.state = state;
+    this.env = env;
     this.last = new Map();
     this.online = new Map(); // wie er nu op de site is: bezoeker-id -> { t, auth }
+  }
+
+  // controleert met het Supabase-token of de aanvrager beheerder is met het recht "gebruikers bekijken" (en onthoudt dat even)
+  async mayViewUsers(request) {
+    const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
+    const env = this.env;
+    if (!token || token.length > 4000 || !env || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return false;
+    this.okTokens = this.okTokens || new Map();
+    const c = this.okTokens.get(token);
+    if (c && Date.now() - c.t < 60000) return c.ok;
+    let ok = false;
+    try {
+      const h = { apikey: env.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` };
+      const u = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, { headers: h });
+      if (u.ok) {
+        const { id } = await u.json();
+        const p = await fetch(`${env.SUPABASE_URL}/rest/v1/profiles?select=is_admin,is_owner,permissions&id=eq.${encodeURIComponent(id)}`, { headers: h });
+        const r = p.ok ? (await p.json())[0] : null;
+        ok = !!r && (r.is_owner === true || (r.is_admin === true && !!r.permissions && r.permissions.view_users === true));
+      }
+    } catch (e) { ok = false; }
+    if (this.okTokens.size > 50) this.okTokens.clear();
+    this.okTokens.set(token, { ok, t: Date.now() });
+    return ok;
   }
 
   async load() {
@@ -37,7 +62,15 @@ export class Leaderboard {
       const cid = String(b.cid || '').slice(0, 40);
       if (!/^[\w-]{8,40}$/.test(cid)) return json({ error: 'bad id' }, 400);
       if (b.bye) this.online.delete(cid);
-      else if (this.online.size < 5000 || this.online.has(cid)) this.online.set(cid, { t: Date.now(), auth: !!b.auth });
+      else if (this.online.size < 5000 || this.online.has(cid)) {
+        const prev = this.online.get(cid);
+        const auth = !!b.auth;
+        this.online.set(cid, {
+          t: Date.now(), auth, since: prev && prev.auth === auth ? prev.since : Date.now(),
+          name: auth ? cleanName(b.name) : '', avatar: auth ? String(b.avatar || '').replace(/[^\w-]/g, '').slice(0, 20) : '',
+          path: String(b.path || '/').replace(/[^\w\-/]/g, '').slice(0, 60),
+        });
+      }
       return json({ ok: true });
     }
     if (url.pathname === '/api/online' && request.method === 'GET') {
@@ -45,6 +78,19 @@ export class Leaderboard {
       let users = 0, guests = 0;
       for (const [k, v] of this.online) { if (now - v.t > 75000) this.online.delete(k); else if (v.auth) users++; else guests++; }
       return json({ total: users + guests, users, guests, at: now });
+    }
+    // de namen van wie er is ingelogd zijn alleen voor beheerders met het recht "gebruikers bekijken"
+    if (url.pathname === '/api/online/users' && request.method === 'GET') {
+      if (!(await this.mayViewUsers(request))) return json({ error: 'geen toegang' }, 403);
+      const now = Date.now();
+      const users = [];
+      for (const [k, v] of this.online) {
+        if (now - v.t > 75000) { this.online.delete(k); continue; }
+        if (v.auth) users.push({ name: v.name || 'Naamloos', avatar: v.avatar || 'teun', path: v.path || '/', since: v.since || v.t, seen: v.t });
+      }
+      users.sort((a, b) => a.since - b.since);
+      const guests = [...this.online.values()].filter((v) => !v.auth).length;
+      return json({ users, guests, total: users.length + guests, at: now });
     }
     // ---- tijden-ranglijsten voor de levelgames (puzzel, X3M, Drive): per game en level de snelste tijd per speler
     if (url.pathname === '/api/times' && request.method === 'GET') {

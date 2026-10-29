@@ -19,6 +19,7 @@ const emit = () => listeners.forEach((f) => f());
 export const local = {
   mode: 'local',
   async init() { return this.getUser(); },
+  async getAccessToken() { return null; },
   onAuth(cb) { listeners.add(cb); return () => listeners.delete(cb); },
   getUser() {
     const id = rd(K.session, null);

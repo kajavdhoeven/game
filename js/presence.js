@@ -1,17 +1,18 @@
 // Laat de server weten dat deze bezoeker op de site is (zonder naam of andere gegevens), zodat de beheerder kan zien hoeveel mensen er nu zijn.
-// Alleen een willekeurig nummer van dit apparaat en of je bent ingelogd.
+// Alleen een willekeurig nummer van dit apparaat, of je bent ingelogd en (als je bent ingelogd) je gebruikersnaam en op welke pagina je bent. De namen zijn alleen voor beheerders te zien.
 let cid = '';
 try { cid = localStorage.getItem('teun-cid') || ''; } catch (e) { /* geen opslag */ }
 if (!/^[\w-]{8,40}$/.test(cid)) {
   cid = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36)).replace(/[^\w-]/g, '').slice(0, 36);
   try { localStorage.setItem('teun-cid', cid); } catch (e) { /* geen opslag */ }
 }
-let isAuth = () => false;
+let info = () => ({});
 const send = (extra = {}) => {
-  try { fetch('/api/ping', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cid, auth: !!isAuth(), ...extra }), keepalive: true }).catch(() => {}); } catch (e) { /* offline */ }
+  try { fetch('/api/ping', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cid, ...info(), path: location.pathname, ...extra }), keepalive: true }).catch(() => {}); } catch (e) { /* offline */ }
 };
-export function startPresence(authFn) {
-  isAuth = authFn;
+export const pingNow = () => { if (!document.hidden) send(); };
+export function startPresence(infoFn) {
+  info = infoFn;
   const tick = () => { if (!document.hidden) send(); };
   send();
   setInterval(tick, 30000);
