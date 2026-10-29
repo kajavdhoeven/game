@@ -4,7 +4,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #0e2a4a; col
 [hidden] { display: none !important; }
 .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 16px; background: radial-gradient(120% 100% at 50% 0%, #3b86e8, #123a6e); overflow: auto; }
 .title { margin: 0; display: flex; flex-direction: column; align-items: center; line-height: .9; transform: rotate(-3deg); font-size: clamp(54px, 13vw, 118px); }
-.title img { width: min(420px, 80vw); height: auto; display: block; filter: drop-shadow(0 6px 8px rgba(0,0,0,.4)); }
+.title img { width: min(640px, 88vw); height: auto; display: block; filter: drop-shadow(0 6px 8px rgba(0,0,0,.4)); }
 .title span { color: #fff; -webkit-text-stroke: 6px var(--ink); paint-order: stroke fill; text-shadow: 0 6px 0 rgba(0,0,0,.35); }
 .title b { font-size: 1.1em; background: linear-gradient(#fff3a0, #ffb02e); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 0 var(--ink)) drop-shadow(3px 3px 0 var(--ink)) drop-shadow(-3px -3px 0 var(--ink)) drop-shadow(3px -3px 0 var(--ink)) drop-shadow(-3px 3px 0 var(--ink)); }
 .sub { margin: 0; max-width: 480px; text-align: center; font-size: 18px; opacity: .95; }
