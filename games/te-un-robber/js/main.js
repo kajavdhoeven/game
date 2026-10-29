@@ -9,7 +9,7 @@ import { CHAPTERS, LEVELS, levelMeta, chapterOf, BEFORE, AFTER } from './story.j
 
 const KLUISCODE = '4729';
 // cutscene.js, exterior.js en citymap.js worden pas geladen als ze nodig zijn; ontbreekt er één, dan slaat het spel dat onderdeel over
-const lazy = (name) => import(name).catch(() => null);
+const lazy = (name) => import(name).catch((e) => { console.warn('module laden mislukt', name, e); return null; });
 
 const GAME_ID = 'te-un-robber';
 const $ = (id) => document.getElementById(id);
