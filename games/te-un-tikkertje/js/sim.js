@@ -4,18 +4,20 @@ const HW = 0.34, BODY = 1.5;            // halve breedte en hoogte van een kabou
 const GRAV = 38, JUMP = 16.5, SPEED = 6.5;
 export const ROUND_TIME = 60;
 
-// de grond en zwevende platforms (alleen de bovenkant telt: je springt er van onderaf doorheen, maar valt er niet doorheen als je erop staat)
-export const PLATS = [
-  { x0: 0, x1: 39, y: 20, ground: true },
-  { x0: 2, x1: 8, y: 17 }, { x0: 17, x1: 23, y: 17 }, { x0: 32, x1: 38, y: 17 },
-  { x0: 9, x1: 15, y: 14 }, { x0: 25, x1: 31, y: 14 },
-  { x0: 2, x1: 8, y: 11 }, { x0: 17, x1: 23, y: 11 }, { x0: 32, x1: 38, y: 11 },
-  { x0: 9, x1: 15, y: 8 }, { x0: 25, x1: 31, y: 8 },
-];
-const SPAWNS = [[4, 20], [20, 20], [36, 20], [5, 17], [20, 17], [35, 17], [12, 14], [28, 14], [5, 11], [35, 11], [12, 8], [28, 8]];
+// De grond en zwevende platforms per omgeving (alleen de bovenkant telt: je springt er van onderaf doorheen, maar valt er niet doorheen als je erop staat).
+// Elke omgeving heeft een eigen indeling en een trampoline aan de linker- of rechterrand.
+const G0 = { x0: 0, x1: 39, y: 20, ground: true };
+const mk = (rows) => [G0, ...rows.flatMap(([y, list]) => list.map(([x0, x1]) => ({ x0, x1, y })))];
+export const LAYOUTS = {
+  forest: { tramp: 'right', plats: mk([[17, [[2, 7], [13, 20], [26, 31]]], [14, [[5, 10], [18, 25], [33, 38]]], [11, [[1, 6], [12, 17], [28, 34]]], [8, [[8, 14], [22, 30], [35, 38]]]]) },
+  desert: { tramp: 'left', plats: mk([[17, [[4, 9], [15, 19], [24, 30], [35, 38]]], [14, [[1, 6], [11, 17], [22, 27], [31, 36]]], [11, [[7, 12], [18, 24], [29, 33]]], [8, [[2, 8], [14, 21], [26, 32]]]]) },
+  winter: { tramp: 'right', plats: mk([[17, [[3, 10], [21, 27], [32, 37]]], [14, [[1, 6], [12, 19], [28, 31]]], [11, [[4, 9], [15, 22], [26, 33]]], [8, [[10, 16], [21, 26], [31, 38]]]]) },
+};
+export const TRAMP_V = 31;   // lanceersnelheid van de trampoline
+export const TRAMP_W = 2;    // breedte in tegels
 export const SHIRTS = ['#2fa84f', '#f08a24', '#e85aa0'];
+export const TYPES = ['teun', 'speed', 'shadow', 'wizard'];
 export const COINS_FOR = { 1: 15, 2: 10, 3: 5, 4: 0 };
-
 const rng = (seed) => {
   let a = seed >>> 0;
   return () => {
@@ -27,12 +29,26 @@ const rng = (seed) => {
 };
 
 export class Game {
-  // mode: 'normal' | 'hardcore'; type: het gekozen personage van de speler: teun | wizard | speed | shadow
-  constructor({ mode = 'normal', type = 'teun', seed = (Math.random() * 1e9) | 0 } = {}) {
+  // mode: 'normal' | 'hardcore'; type: personage van speler 1; players: 1 of 2; biome: bos | woestijn | winter (bepaalt de indeling)
+  constructor({ mode = 'normal', type = 'teun', players = 1, biome = 'forest', seed = (Math.random() * 1e9) | 0 } = {}) {
     this.R = rng(seed);
-    this.mode = mode;
-    this.chars = [{ id: 0, name: 'Jij', player: true, type, shirt: '#2f6fe0' }, ...SHIRTS.map((s, i) => ({ id: i + 1, name: 'Te-Un ' + (i + 1), player: false, type: 'teun', shirt: s }))];
-    for (const c of this.chars) Object.assign(c, { x: 0, y: 20, vx: 0, vy: 0, grounded: true, face: 1, plat: PLATS[0], it: false, alive: true, immuneT: 0, coolT: 0, coyote: 0, buf: 0, jumpHeld: false, taggerTime: 0, stage: 0, invisT: 0, portal: null, goal: null, goalT: 0, walk: 0, rank: 0 });
+    this.mode = mode; this.players = players;
+    const lay = LAYOUTS[biome] || LAYOUTS.forest;
+    this.plats = lay.plats;
+    this.tramp = lay.tramp === 'left' ? { x0: 0, x1: TRAMP_W } : { x0: W - TRAMP_W, x1: W };
+    this.spawns = [];
+    for (const p of this.plats) {
+      const n = p.ground ? 3 : 1;
+      for (let i = 0; i < n; i++) this.spawns.push([p.ground ? [4, 20, 35][i] : Math.floor((p.x0 + p.x1) / 2), p.y]);
+    }
+    this.spawns = this.spawns.filter(([x]) => x < this.tramp.x0 - 1 || x > this.tramp.x1 + 1 || false);
+    const rngType = () => TYPES[(this.R() * TYPES.length) | 0];
+    const humans = players === 2
+      ? [{ name: 'Speler 1', human: true, type: 'teun', shirt: '#2f6fe0' }, { name: 'Speler 2', human: true, type: 'teun', shirt: '#e0282f' }]
+      : [{ name: 'Jij', human: true, type, shirt: '#2f6fe0' }];
+    const npcs = SHIRTS.slice(0, 4 - humans.length).map((sh, i) => ({ name: 'Te-Un ' + (i + 1), human: false, type: rngType(), shirt: sh }));
+    this.chars = [...humans, ...npcs].map((c, i) => ({ id: i, player: c.human, ...c }));
+    for (const c of this.chars) Object.assign(c, { x: 0, y: 20, vx: 0, vy: 0, grounded: true, face: 1, plat: this.plats[0], it: false, alive: true, immuneT: 0, coolT: 0, coyote: 0, buf: 0, jumpHeld: false, taggerTime: 0, stage: 0, invisT: 0, portal: null, goal: null, goalT: 0, walk: 0, rank: 0, badge: false, trampT: 0 });
     this.round = 0;
     this.events = [];
     this.parts = [];
@@ -40,14 +56,15 @@ export class Game {
     this.rank = 0; this.coins = 0;
     this.startRound();
   }
+  humans() { return this.chars.filter((c) => c.player); }
   alive() { return this.chars.filter((c) => c.alive); }
   startRound() {
     this.round++;
     const al = this.alive();
-    const spawns = SPAWNS.slice().sort(() => this.R() - 0.5);
+    const spawns = this.spawns.slice().sort(() => this.R() - 0.5);
     al.forEach((c, i) => {
       const [x, y] = spawns[i];
-      Object.assign(c, { x: x + 0.5, y, vx: 0, vy: 0, grounded: true, it: false, immuneT: 0, coolT: 0, taggerTime: 0, goal: null, goalT: 0, plat: PLATS.find((p) => p.y === y && x >= p.x0 && x <= p.x1 + 1) });
+      Object.assign(c, { x: x + 0.5, y, vx: 0, vy: 0, grounded: true, it: false, immuneT: 0, coolT: 0, taggerTime: 0, goal: null, goalT: 0, noBackT: 0, plat: this.plats.find((p) => p.y === y && x >= p.x0 && x <= p.x1 + 1) });
     });
     const k = this.mode === 'hardcore' && this.round === 1 ? 2 : 1;
     const order = al.slice().sort(() => this.R() - 0.5);
@@ -60,8 +77,9 @@ export class Game {
     if (c.type === 'speed' && !c.it) return SPEED * 2;
     return c.player ? SPEED : c.it ? SPEED * 0.88 : SPEED * 0.98;
   }
-  // één stap. pin: { dir: -1|0|1, jump: bool, ability: bool (alleen op het moment van indrukken) }
-  step(dt, pin = {}) {
+  // één stap. pins: { dir, jump, ability } voor één speler, of een lijst van die dingen (speler 1, speler 2)
+  step(dt, pins = {}) {
+    const pinOf = (i) => (Array.isArray(pins) ? pins[i] : i === 0 ? pins : null) || {};
     this.t += dt;
     for (const p of this.parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 20 * dt; }
     this.parts = this.parts.filter((p) => p.life > 0);
@@ -76,22 +94,23 @@ export class Game {
       this.stateT -= dt;
       for (const c of this.alive()) this.physics(c, 0, false, dt, 0);
       if (this.stateT <= 0) {
-        if (!this.chars[0].alive) { this.state = 'over'; this.events.push({ t: 'over', rank: this.rank, coins: this.coins }); }
-        else if (this.alive().length === 1) { this.rank = 1; this.coins = COINS_FOR[1]; this.state = 'over'; this.events.push({ t: 'over', rank: 1, coins: this.coins }); }
+        if (!this.humans().some((c) => c.alive)) this.finish();
+        else if (this.alive().length === 1) { const w = this.alive()[0]; w.rank = 1; this.finish(); }
         else this.startRound();
       }
       return;
     }
     // --- spelen
     this.roundT -= dt;
-    const me = this.chars[0];
-    // vermogens van de speler
-    if (pin.ability && me.alive) this.useAbility(me);
+    this.humans().forEach((h, i) => { if (pinOf(i).ability && h.alive) this.useAbility(h); });
     for (const c of this.alive()) {
       c.noBackT = Math.max(0, (c.noBackT || 0) - dt); c.immuneT = Math.max(0, c.immuneT - dt); c.coolT = Math.max(0, c.coolT - dt); c.invisT = Math.max(0, c.invisT - dt);
-      if (c.it) c.taggerTime += dt;
+      if (c.it) {
+        c.taggerTime += dt;
+        if (c.player && !c.badge && c.taggerTime >= 50) { c.badge = true; this.events.push({ t: 'badge', id: c.id }); }
+      }
       let dir, jump;
-      if (c.player) { dir = pin.dir || 0; jump = !!pin.jump; } else ({ dir, jump } = this.ai(c, dt));
+      if (c.player) { const h = this.humans().indexOf(c); const p = pinOf(h); dir = p.dir || 0; jump = !!p.jump; } else ({ dir, jump } = this.ai(c, dt));
       this.physics(c, dir, jump, dt, this.speedOf(c));
     }
     this.tagCheck();
@@ -99,10 +118,10 @@ export class Game {
   }
   useAbility(c) {
     if (c.type === 'wizard') {
-      if (c.stage === 0) { c.portal = { x: c.x, y: c.y }; c.stage = 1; this.events.push({ t: 'portal' }); }
-      else if (c.stage === 1) { this.puff(c.x, c.y - 0.7, '#b06bff'); c.x = c.portal.x; c.y = c.portal.y; c.vx = 0; c.vy = 0; c.grounded = true; c.portal = null; c.stage = 2; this.puff(c.x, c.y - 0.7, '#b06bff'); this.events.push({ t: 'teleport' }); }
+      if (c.stage === 0) { c.portal = { x: c.x, y: c.y }; c.stage = 1; this.events.push({ t: 'portal', id: c.id }); }
+      else if (c.stage === 1) { this.puff(c.x, c.y - 0.7, '#b06bff'); c.x = c.portal.x; c.y = c.portal.y; c.vx = 0; c.vy = 0; c.grounded = true; c.portal = null; c.stage = 2; this.puff(c.x, c.y - 0.7, '#b06bff'); this.events.push({ t: 'teleport', id: c.id }); }
     } else if (c.type === 'shadow') {
-      if (c.stage === 0) { c.stage = 1; c.invisT = 5; this.events.push({ t: 'shadow' }); }
+      if (c.stage === 0) { c.stage = 1; c.invisT = 5; this.events.push({ t: 'shadow', id: c.id }); }
     }
   }
   puff(x, y, col) { for (let i = 0; i < 14; i++) this.parts.push({ x, y, vx: (this.R() - 0.5) * 8, vy: -this.R() * 6, life: 0.5 + this.R() * 0.3, col }); }
@@ -114,15 +133,20 @@ export class Game {
     c.buf -= dt;
     c.jumpHeld = jump;
     if (c.buf > 0 && c.coyote > 0) { c.vy = -JUMP; c.grounded = false; c.coyote = 0; c.buf = 0; if (c.player) this.events.push({ t: 'jump' }); }
-    c.vy = Math.min(26, c.vy + GRAV * dt);
+    c.vy = Math.min(34, c.vy + GRAV * dt);
     c.x = Math.max(HW, Math.min(W - HW, c.x + c.vx * dt));
     const py = c.y;
     c.y += c.vy * dt;
     c.grounded = false;
+    c.trampT = Math.max(0, c.trampT - dt);
     if (c.vy >= 0) {
       let best = null;
-      for (const p of PLATS) if (py <= p.y + 0.02 && c.y >= p.y && c.x + HW > p.x0 && c.x - HW < p.x1 + 1 && (!best || p.y < best.y)) best = p;
-      if (best) { c.y = best.y; c.vy = 0; c.grounded = true; c.plat = best; }
+      for (const p of this.plats) if (py <= p.y + 0.02 && c.y >= p.y && c.x + HW > p.x0 && c.x - HW < p.x1 + 1 && (!best || p.y < best.y)) best = p;
+      if (best) {
+        c.y = best.y; c.vy = 0; c.grounded = true; c.plat = best;
+        // de trampoline op de grond aan de rand
+        if (best.ground && c.x > this.tramp.x0 && c.x < this.tramp.x1 && c.trampT <= 0 && this.state === 'play') { c.vy = -TRAMP_V; c.grounded = false; c.trampT = 0.4; this.events.push({ t: 'bounce', id: c.id }); }
+      }
     }
     c.walk += Math.abs(c.vx) * dt * 0.9;
   }
@@ -150,16 +174,33 @@ export class Game {
       c.alive = false; c.rank = before - i;
       this.puff(c.x, c.y - 0.7, '#ff6a4a');
       this.events.push({ t: 'elim', id: c.id, rank: c.rank });
-      if (c.player) { this.rank = c.rank; this.coins = COINS_FOR[c.rank]; }
     });
     this.state = 'elim'; this.stateT = 2.4;
   }
+  finish() {
+    // wie nog leeft als de rest eruit is, wint; speler 1 krijgt munten naar zijn plek
+    const me = this.chars[0];
+    this.rank = me.alive ? 1 : me.rank;
+    this.coins = COINS_FOR[this.rank] || 0;
+    this.state = 'over';
+    this.events.push({ t: 'over', rank: this.rank, coins: this.coins, ranks: this.humans().map((h) => (h.alive ? 1 : h.rank)) });
+  }
 
   // ---------------------------------------------------------------- NPC-besturing
-  // Kiest een doel (x en de vloerhoogte waar het ligt) en stuurt daar naartoe.
+  // Kiest een doel (x en de vloerhoogte waar het ligt) en stuurt daar naartoe. Ook de krachten van de NPC-personages (portaal en schim) worden hier gebruikt.
   ai(c, dt) {
     c.goalT -= dt;
     const others = this.alive().filter((o) => o !== c);
+    const its = others.filter((o) => o.it && o.invisT <= 0);
+    // krachten
+    if (!c.it && this.state === 'play') {
+      const near = its.reduce((m, t) => Math.min(m, Math.hypot(t.x - c.x, (t.y - c.y) * 1.2)), 99);
+      if (c.type === 'shadow' && c.stage === 0 && near < 4.2) this.useAbility(c);
+      if (c.type === 'wizard') {
+        if (c.stage === 0 && this.roundT < ROUND_TIME - 6 && near > 6) this.useAbility(c);                        // portaal neerzetten op een rustig moment
+        else if (c.stage === 1 && near < 2.4 && c.portal && Math.hypot(c.portal.x - c.x, c.portal.y - c.y) > 7) this.useAbility(c); // terug als het gevaarlijk wordt
+      }
+    }
     if (c.it) {
       if (c.goalT <= 0 || !c.goal || !c.goal.ref || !c.goal.ref.alive || c.goal.ref.it) {
         c.goalT = 0.25;
@@ -176,16 +217,19 @@ export class Game {
       return this.drive(c, o.x, o.y, true);
     }
     // wegrennen van de dichtstbijzijnde tikker (de speler telt niet mee als hij onzichtbaar is)
-    const its = others.filter((o) => o.it && o.invisT <= 0);
     if (!its.length) return { dir: 0, jump: false };
     const dist = (x, y) => Math.min(...its.map((t) => Math.abs(t.x - x) + 2.4 * Math.abs(t.y - y)));
     if (c.goalT <= 0 || !c.goal || c.goal.ref) {
       c.goalT = 0.55 + this.R() * 0.3;
+      const mates = others.filter((o) => !o.it);
       let best = null, bs = -1e9;
-      for (const p of PLATS) {
-        const xs = p.ground ? [1.5, 10, 20, 30, 38.5] : [p.x0 + 0.6, (p.x0 + p.x1 + 1) / 2, p.x1 + 0.4];
+      for (const p of this.plats) {
+        const xs = p.ground ? [4, 10, 20, 30, 36] : [p.x0 + 0.6, (p.x0 + p.x1 + 1) / 2, p.x1 + 0.4];
         for (const x of xs) {
-          const s = dist(x, p.y) - 0.6 * (Math.abs(x - c.x) + 2.4 * Math.abs(p.y - c.y)) + this.R() * 1.5;
+          // niet allemaal in hetzelfde hoekje: een plek dicht bij een andere vluchter is minder aantrekkelijk
+          const crowd = mates.reduce((a, o) => a + Math.max(0, 7 - (Math.abs(o.x - x) + 1.5 * Math.abs(o.y - p.y))), 0);
+          const goalCrowd = mates.reduce((a, o) => a + (o.goal && !o.goal.ref ? Math.max(0, 6 - (Math.abs(o.goal.x - x) + 1.5 * Math.abs(o.goal.y - p.y))) : 0), 0);
+          const s = dist(x, p.y) - 0.6 * (Math.abs(x - c.x) + 2.4 * Math.abs(p.y - c.y)) - 0.9 * crowd - 1.4 * goalCrowd + this.R() * 2;
           if (s > bs) { bs = s; best = { x, y: p.y }; }
         }
       }
@@ -195,7 +239,7 @@ export class Game {
   }
   // loop en spring richting (gx, gy); gy is de vloerhoogte van het doel
   drive(c, gx, gy, chase) {
-    const P = c.plat || PLATS[0];
+    const P = c.plat || this.plats[0];
     const dyF = gy - c.y;
     const toward = (x) => (Math.abs(x - c.x) < 0.12 ? 0 : x > c.x ? 1 : -1);
     if (!c.grounded) {
@@ -203,10 +247,15 @@ export class Game {
       return { dir: c.airDir !== undefined ? c.airDir : toward(gx), jump: false };
     }
     c.airDir = undefined;
+    if (dyF < -4.4 && P.ground) {
+      // heel hoog: via de trampoline omhoog
+      const tx = (this.tramp.x0 + this.tramp.x1) / 2;
+      if (Math.abs(c.x - tx) > 0.2) return { dir: toward(tx), jump: false };
+    }
     if (dyF < -0.8) {
       // het doel is hoger: zoek een platform dat 0,6 tot 3,1 tegels hoger ligt en het dichtst bij het doel
       let best = null, bd = 1e9;
-      for (const p of PLATS) {
+      for (const p of this.plats) {
         const rise = c.y - p.y;
         if (rise < 0.6 || rise > 3.1) continue;
         const lo = p.x0, hi = p.x1 + 1;
@@ -224,7 +273,7 @@ export class Game {
     }
     if (dyF > 0.8) {
       // het doel is lager: loop van de dichtstbijzijnde rand af
-      const L = P.x0 - 0.0, Rr = P.x1 + 1;
+      const L = P.x0, Rr = P.x1 + 1;
       let edge;
       if (gx < L) edge = L - 0.5; else if (gx > Rr) edge = Rr + 0.5;
       else edge = c.x - L < Rr - c.x ? L - 0.5 : Rr + 0.5;

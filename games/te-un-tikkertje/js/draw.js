@@ -1,5 +1,5 @@
 // Tekenen: drie biomes (bos, woestijn, winter), de kabouters en de pijl boven de tikker. Alles met canvas.
-import { W, H, TS, PLATS } from './sim.js';
+import { W, H, TS, LAYOUTS, TRAMP_W } from './sim.js';
 
 export const CW = W * TS, CH = H * TS;
 const hash = (x, y) => { let h = (x * 374761393 + y * 668265263) | 0; h = (h ^ (h >> 13)) * 1274126177; return ((h ^ (h >> 16)) >>> 0) / 4294967296; };
@@ -36,6 +36,8 @@ function tree(g, x, y, s, biome, seed) {
 
 export function buildBackdrop(biomeId) {
   const B = BIOMES[biomeId];
+  const PLATS = (LAYOUTS[biomeId] || LAYOUTS.forest).plats;
+  const tramp = (LAYOUTS[biomeId] || LAYOUTS.forest).tramp;
   const cv = document.createElement('canvas'); cv.width = CW; cv.height = CH;
   const g = cv.getContext('2d');
   const sky = g.createLinearGradient(0, 0, 0, CH); sky.addColorStop(0, B.sky[0]); sky.addColorStop(1, B.sky[1]);
@@ -84,6 +86,16 @@ export function buildBackdrop(biomeId) {
       const wx = p.ground ? (2 + i * 5.6 + hash(i, 11) * 2) : (p.x0 + 1 + hash(p.x0, p.y) * (p.x1 - p.x0 - 1));
       tree(g, wx * TS, p.y * TS + 1, p.ground ? 1.05 : 0.7, biomeId, i);
     }
+  }
+  // de trampoline aan de rand
+  {
+    const x0 = (tramp === 'left' ? 0 : W - TRAMP_W) * TS, w = TRAMP_W * TS, y = 20 * TS;
+    g.fillStyle = '#2b2f3a'; g.fillRect(x0 + 4, y - 14, 5, 14); g.fillRect(x0 + w - 9, y - 14, 5, 14);
+    g.strokeStyle = '#8a93a6'; g.lineWidth = 3;
+    for (let i = 0; i < 4; i++) { const sx = x0 + 10 + i * ((w - 20) / 3); g.beginPath(); g.moveTo(sx, y - 14); for (let k = 0; k < 4; k++) g.lineTo(sx + (k % 2 ? 4 : -4), y - 14 + (k + 1) * 3); g.stroke(); }
+    g.fillStyle = '#e8262f'; g.beginPath(); g.roundRect(x0, y - 22, w, 10, 5); g.fill();
+    g.fillStyle = '#ffd23a'; g.fillRect(x0 + 6, y - 20, w - 12, 3);
+    g.fillStyle = '#fff'; g.font = '700 14px Fredoka, sans-serif'; g.textAlign = 'center'; g.fillText('\u2191', x0 + w / 2, y - 26);
   }
   return cv;
 }
@@ -180,7 +192,7 @@ export function drawScene(g, game, backdrop, t) {
     if (c.it) drawArrow(g, c.x * TS, c.y * TS, t);
     if (c.player) { // kleine markering zodat je jezelf terugvindt
       g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '700 12px Fredoka, sans-serif'; g.textAlign = 'center';
-      g.fillText('JIJ', c.x * TS, c.y * TS + 15);
+      g.fillText(game.players === 2 ? String(c.id + 1) : 'JIJ', c.x * TS, c.y * TS + 15);
     }
   }
   for (const p of game.parts) { g.globalAlpha = Math.max(0, Math.min(1, p.life * 2)); g.fillStyle = p.col; g.beginPath(); g.arc(p.x * TS, p.y * TS, 3.5, 0, 7); g.fill(); }

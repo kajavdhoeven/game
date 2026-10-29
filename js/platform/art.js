@@ -66,6 +66,7 @@ export function avatarSVG(kind = 'teun') {
   if (kind === 'lambo') return lamboAvatar();
   if (kind === 'diamant') return diamantAvatar();
   if (kind === 'tovenaar') return tovenaarAvatar();
+  if (kind === 'tikker') return tikkerAvatar();
   if (kind === 'regenboog') return `<div class="av-face" style="isolation:isolate;background:linear-gradient(135deg,#ff3b3b,#ff9a1f,#ffe226,#41d97a,#38a6ff,#8a5cff)">${teunSVG({ crop: 'face' })}<div style="position:absolute;inset:0;background:linear-gradient(135deg,#ff3b3b,#ff9a1f,#ffe226,#41d97a,#38a6ff,#8a5cff,#ff5ea8);mix-blend-mode:color"></div></div>`;
   return `<div class="av-face">${teunSVG({ crop: 'face' })}</div>`;
 }
@@ -172,6 +173,16 @@ function tovenaarAvatar() {
 </svg>`;
 }
 
+// Te-Un tikker: Te-Un met het witte tikker-pijltje boven zijn hoofd (badge uit Te-Un Tikkertje)
+function tikkerAvatar() {
+  return `<div class="av-face" style="background:radial-gradient(circle at 50% 30%,#ff8a5a,#d7191f 70%)">${teunSVG({ crop: 'face' })}
+<svg class="avsvg" style="position:absolute;inset:0" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Te-Un tikker">
+<path d="M50 20 L33 4 L67 4Z" fill="#fff" stroke="#11263f" stroke-width="3.5" stroke-linejoin="round"/>
+<rect x="14" y="80" width="72" height="16" rx="8" fill="#11263f" stroke="#fff" stroke-width="2.5"/>
+<text x="50" y="92.4" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="11.5" fill="#fff" letter-spacing="1">TIKKER</text>
+</svg></div>`;
+}
+
 // Te-Un Racer: motorhelm met klep en bril
 function racerAvatar() {
   return `<svg class="avsvg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Te-Un Racer">
@@ -196,6 +207,7 @@ export const AVATARS = [
   { id: 'puzzle', name: 'Puzzel-Te-Un', desc: 'Te-Un met puzzelstukje', unlock: { game: 'te-un-puzzel', how: 'Maak alle 4 de levels van Te-Un Puzzel af binnen de tijd (30 sec, 1 min, 2,5 min en 10 min)', check: (d) => [1, 2, 3, 4].every((n) => d.fast && d.fast[n]) } },
   { id: 'slider', name: 'Schuif-Te-Un', desc: 'Te-Un als schuifpuzzel, met een paar verkeerd geschoven vakjes', unlock: { game: 'te-un-puzzel', how: 'Maak alle 4 de levels van de schuifpuzzel in Te-Un Puzzel af', check: (d) => [1, 2, 3, 4].every((n) => d.slide && d.slide[n]) } },
   { id: 'racer', name: 'Te-Un Racer', desc: 'Te-Un met motorhelm', unlock: { game: 'te-un-x3m', how: 'Haal 3 sterren op alle 25 levels van Te-Un X3M', check: (d) => Array.from({ length: 25 }, (_, i) => i + 1).every((n) => (d.stars && d.stars[n]) >= 3) } },
+  { id: 'tikker', name: 'Te-Un tikker', desc: 'Te-Un met het witte tikker-pijltje', unlock: { game: 'te-un-tikkertje', how: 'Ben in Te-Un Tikkertje 50 seconden of langer de tikker in één ronde (van 1 minuut)', check: (d) => !!d.dev || !!d.tikker } },
   { id: 'regenboog', name: 'Regenboog Te-Un', desc: 'Te-Un helemaal in regenbogenkleuren', unlock: { game: 'vuur-water', how: 'Haal alle 10 de buitenste levels van VuurTe-Un & WaterTe-Un', check: (d) => !!d.dev || !!d.rainbow } },
   { id: 'tovenaar', name: 'Tovenaar Te-Un', desc: 'Te-Un met een paarse tovenaarsmuts en een paars gewaad', unlock: { game: 'te-un-tikkertje', how: 'Koop alle 3 de personages in de winkel van Te-Un Tikkertje', check: (d) => !!d.dev || ['speed', 'shadow', 'wizard'].every((k) => d.owned && d.owned[k]) } },
   { id: 'diamant', name: 'Te-Un met diamant', desc: 'Te-Un met een diamant en een zonnebril, want het schittert te hard', unlock: { game: 'vuur-water', how: 'Verzamel alle diamanten (rood en blauw) in alle 32 levels van VuurTe-Un & WaterTe-Un', check: (d) => Array.from({ length: 32 }, (_, i) => i + 1).every((n) => d.done && d.done[n] && d.done[n].all) } },

@@ -59,3 +59,6 @@ h2 { margin: 0; font-size: 34px; text-shadow: 0 3px 0 rgba(0,0,0,.3); }
 .title img { max-height: 26vh; width: auto; max-width: 88vw; }
 @media (max-height: 560px), (max-width: 700px) { .screen { padding-top: 54px; gap: 10px; } .title img { max-height: 20vh; } }
 @media (max-height: 560px) { .sub { display: none; } .shopscr { padding-top: 54px; } .shopcards .pick { width: 190px; } .shopcards .pick canvas { height: 100px; } .pick { padding: 8px 12px; } }
+.modes { display: flex; gap: 6px; padding: 5px; border-radius: 999px; background: rgba(0,0,0,.3); }
+.modes button { font: 700 17px var(--font); padding: 8px 20px; border-radius: 999px; border: 0; background: transparent; color: #fff; cursor: pointer; }
+.modes button.on { background: linear-gradient(#ffe27a, #ffb02e); color: var(--ink); }

@@ -21,7 +21,7 @@ const ABIL = { wizard: ['Portaal plaatsen', 'Teleporteren'], shadow: ['Schim wor
 const KEY = 'te-un-tikkertje-v1';
 let P = { coins: 0, owned: {}, sel: 'teun', wins: 0, games: 0, dev: false, updatedAt: 0 };
 try { P = Object.assign(P, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* geen opslag */ }
-const snapshot = () => ({ coins: P.coins, owned: P.owned, sel: P.sel, wins: P.wins, games: P.games, dev: P.dev, updatedAt: P.updatedAt });
+const snapshot = () => ({ coins: P.coins, owned: P.owned, sel: P.sel, wins: P.wins, games: P.games, dev: P.dev, tikker: !!P.tikker, updatedAt: P.updatedAt });
 const post = (type, extra = {}) => {
   if (window.parent === window) return;
   try { window.parent.postMessage({ type, game: GAME_ID, ...extra }, location.origin); } catch (e) { /* geen ouder */ }
@@ -114,7 +114,8 @@ function renderShop() {
 // ---------------------------------------------------------------- spelen
 const canvas = $('cv'); canvas.width = CW; canvas.height = CH;
 const g2 = canvas.getContext('2d');
-let game = null, backdrop = null, cfg = { mode: 'normal', biome: 'forest' };
+const COARSE = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches); // op een telefoon is er geen 2 spelers
+let game = null, backdrop = null, cfg = { mode: 'normal', biome: 'forest', players: 1 };
 let paused = false, last = 0, acc = 0, banner = null;
 const keys = new Set();
 const touch = { l: 0, r: 0, u: 0 };
@@ -129,12 +130,13 @@ function fit() {
 window.addEventListener('resize', fit);
 
 function startGame() {
-  game = new Game({ mode: cfg.mode, type: P.sel });
+  const two = cfg.players === 2 && !COARSE;
+  game = new Game({ mode: cfg.mode, type: two ? 'teun' : P.sel, players: two ? 2 : 1, biome: cfg.biome });
   backdrop = buildBackdrop(cfg.biome);
   paused = false; acc = 0; last = performance.now();
   $('result').hidden = true; $('pauseBox').hidden = true;
   const ab = $('abil');
-  ab.hidden = !ABIL[P.sel];
+  ab.hidden = two || !ABIL[P.sel];
   show('play');
   setBanner(null);
   updateAbil();
@@ -149,23 +151,24 @@ function setBanner(text, ms) {
 }
 function updateAbil() {
   const me = game.chars[0], ab = $('abil');
-  if (!ABIL[P.sel]) return;
+  if (!ABIL[P.sel] || game.players === 2) return;
   const st = me.stage;
   const label = P.sel === 'wizard' ? (st === 0 ? 'Portaal plaatsen' : st === 1 ? 'Teleporteren' : 'Gebruikt') : (st === 0 ? 'Schim worden' : me.invisT > 0 ? 'Schim: ' + Math.ceil(me.invisT) : 'Gebruikt');
   ab.disabled = !me.alive || st >= (P.sel === 'wizard' ? 2 : 1);
   ab.textContent = label + ' [spatie]';
 }
-function who(list) { return list.map((c) => (c.player ? 'Jij' : c.name)).join(' en '); }
+function who(list) { return list.map((c) => c.name).join(' en '); }
 
 function handleEvents() {
   for (const e of game.events.splice(0)) {
     if (SFX[e.t]) SFX[e.t]();
     if (e.t === 'round') {
       const its = game.chars.filter((c) => c.it);
-      setBanner(`Ronde ${e.n}\n${its.some((c) => c.player) ? 'Jij bent de tikker!' : who(its) + (its.length > 1 ? ' zijn' : ' is') + ' de tikker'}`);
+      setBanner(`Ronde ${e.n}\n${game.players === 1 && its.some((c) => c.player) ? 'Jij bent de tikker!' : who(its) + (its.length > 1 ? ' zijn' : ' is') + ' de tikker'}`);
     }
     if (e.t === 'go') setBanner('GO!', 700);
-    if (e.t === 'elim') { const c = game.chars[e.id]; setBanner(c.player ? 'Jij bent af!' : `${c.name} is af!`, 2000); }
+    if (e.t === 'elim') { const c = game.chars[e.id]; setBanner(c.name === 'Jij' ? 'Jij bent af!' : `${c.name} is af!`, 2000); }
+    if (e.t === 'badge' && e.id === 0 && !P.tikker) { P.tikker = true; save(); toast('Badge verdiend: Te-Un tikker!'); SFX.buy(); }
     if (e.t === 'over') finish(e);
   }
 }
@@ -174,16 +177,29 @@ function finish(e) {
   P.coins += e.coins; P.games++; if (win) P.wins++;
   save();
   if (win) SFX.win();
-  $('resTitle').textContent = win ? 'Je hebt gewonnen!' : `Je bent ${e.rank}e geworden`;
-  $('resText').textContent = e.coins ? `Je krijgt ${e.coins} munten. Je hebt nu ${P.coins} munten.` : `Geen munten dit keer. Je hebt ${P.coins} munten.`;
+  const ord = (r) => (r === 1 ? '1e' : r + 'e');
+  if (game.players === 2) {
+    $('resTitle').textContent = 'Klaar!';
+    $('resText').textContent = `Speler 1: ${ord(e.ranks[0])} plek. Speler 2: ${ord(e.ranks[1])} plek.` + (e.coins ? ` Speler 1 krijgt ${e.coins} munten.` : '');
+  } else {
+    $('resTitle').textContent = win ? 'Je hebt gewonnen!' : `Je bent ${e.rank}e geworden`;
+    $('resText').textContent = e.coins ? `Je krijgt ${e.coins} munten. Je hebt nu ${P.coins} munten.` : `Geen munten dit keer. Je hebt ${P.coins} munten.`;
+  }
   setBanner(null);
   $('result').hidden = false;
   refresh();
 }
 
 function readInput() {
-  const dir = ((keys.has('ArrowRight') || keys.has('KeyD') || touch.r) ? 1 : 0) - ((keys.has('ArrowLeft') || keys.has('KeyA') || touch.l) ? 1 : 0);
-  const jump = keys.has('ArrowUp') || keys.has('KeyW') || touch.u > 0;
+  const k = (c) => keys.has(c);
+  if (game && game.players === 2) { // speler 1: A D W, speler 2: de pijltjes
+    return [
+      { dir: (k('KeyD') ? 1 : 0) - (k('KeyA') ? 1 : 0), jump: k('KeyW') },
+      { dir: (k('ArrowRight') ? 1 : 0) - (k('ArrowLeft') ? 1 : 0), jump: k('ArrowUp') },
+    ];
+  }
+  const dir = ((k('ArrowRight') || k('KeyD') || touch.r) ? 1 : 0) - ((k('ArrowLeft') || k('KeyA') || touch.l) ? 1 : 0);
+  const jump = k('ArrowUp') || k('KeyW') || touch.u > 0;
   return { dir, jump, ability: abilPress };
 }
 let lastTick = 0, lastNum = 0;
@@ -196,7 +212,8 @@ function frame(now) {
     const input = readInput();
     acc += dt;
     let first = true;
-    while (acc >= 1 / 120) { game.step(1 / 120, first ? input : { dir: input.dir, jump: input.jump }); if (first && input.ability) abilPress = false; first = false; acc -= 1 / 120; }
+    const noAbil = Array.isArray(input) ? input : { dir: input.dir, jump: input.jump };
+    while (acc >= 1 / 120) { game.step(1 / 120, first ? input : noAbil); if (first && !Array.isArray(input) && input.ability) abilPress = false; first = false; acc -= 1 / 120; }
     handleEvents();
     const t = Math.max(0, game.roundT);
     $('hTime').textContent = fmt(Math.ceil(t));
@@ -218,7 +235,7 @@ window.addEventListener('keydown', (e) => {
   if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
   if (GK.has(e.code)) { e.preventDefault(); if (document.activeElement && document.activeElement.tagName === 'BUTTON') document.activeElement.blur(); }
   if (e.code === 'Escape' || e.code === 'KeyP') { togglePause(); return; }
-  if (e.code === 'Space' && !e.repeat) abilPress = true;
+  if (e.code === 'Space' && !e.repeat && game && game.players === 1) abilPress = true;
   keys.add(e.code);
 });
 window.addEventListener('keyup', (e) => keys.delete(e.code));
@@ -243,6 +260,8 @@ $('shopBack').onclick = () => show('menu');
 $('modeBack').onclick = () => show('menu');
 $('biomeBack').onclick = () => show('modeSel');
 document.querySelectorAll('[data-mode]').forEach((b) => { b.onclick = () => { cfg.mode = b.dataset.mode; show('biomeSel'); }; });
+document.querySelectorAll('[data-pl]').forEach((b) => { b.onclick = () => { cfg.players = +b.dataset.pl; document.querySelectorAll('[data-pl]').forEach((x) => x.classList.toggle('on', x === b)); }; });
+if (COARSE) $('plSel').hidden = true;
 document.querySelectorAll('[data-biome]').forEach((b) => {
   const id = b.dataset.biome;
   const cv = b.querySelector('canvas');
@@ -264,12 +283,15 @@ initTutorial({
     { icon: '🏃', title: 'Tikkertje', lines: ['Je speelt tikkertje met 3 andere kabouters (hun shirt heeft een andere kleur). De <b>tikker</b> herken je aan het <b>witte pijltje</b> boven zijn hoofd. Als jij de tikker bent, tik je iemand door tegen hem aan te lopen. Je kunt wel gewoon door elkaar heen lopen.'] },
     { icon: '⏱️', title: 'Een minuut per ronde', lines: ['Na <b>1 minuut</b> gaat de tikker eruit. Een NPC die eruit gaat? Dan gaat het spel door met de rest. Ga jij eruit, dan is het afgelopen. Zorg dus dat je de tikker niet bent als de tijd om is!'] },
     { icon: '⌨️', title: 'Besturing', lines: ['<kbd>←</kbd> <kbd>→</kbd> of <kbd>A</kbd> <kbd>D</kbd> lopen, <kbd>↑</kbd> of <kbd>W</kbd> springen. Je springt van onderaf <b>door</b> een platform heen, maar je valt er niet doorheen als je erop staat. Op een telefoon gebruik je de knoppen onderin.', 'Heb je een speciaal personage? Dan gebruik je zijn kracht met <kbd>Spatie</kbd>.'] },
+    { icon: '🦘', title: 'Trampoline', lines: ['Aan een kant van de map staat een <b>trampoline</b>. Spring erop en je wordt hoog de lucht in gelanceerd, zodat je meteen bij de bovenste platforms bent. De NPC-kabouters kunnen ook een speciaal personage zijn en gebruiken hun krachten echt!'] },
+    { icon: '👥', title: '2 spelers', lines: ['Op een computer kun je met twee spelers op één toetsenbord spelen: speler 1 (blauw) met <kbd>A</kbd> <kbd>D</kbd> <kbd>W</kbd>, speler 2 (rood) met de <kbd>pijltjes</kbd>. Dan kun je geen ander personage kiezen. Het spel gaat door tot jullie allebei af zijn. Op een telefoon is er geen 2 spelers.'] },
     { icon: '⚔️', title: 'Normaal en hardcore', lines: ['Bij <b>Normaal</b> is er steeds 1 tikker. Bij <b>Hardcore</b> zijn er in ronde 1 twee tikkers, dus gaan er twee kabouters tegelijk uit.'] },
-    { icon: '🪙', title: 'Munten en winkel', lines: ['Winnen levert <b>15</b> munten op, de 2e plek <b>10</b>, de 3e plek <b>5</b> en de 4e niets. In de winkel koop je de Tyfus snelle Te-Un (25), de Schaduw Te-Un (75) en de Tovenaar Te-Un (100). Heb je ze alle drie, dan krijg je de profielfoto Tovenaar Te-Un.'] },
+    { icon: '🪙', title: 'Munten en winkel', lines: ['Winnen levert <b>15</b> munten op, de 2e plek <b>10</b>, de 3e plek <b>5</b> en de 4e niets. In de winkel koop je de Tyfus snelle Te-Un (25), de Schaduw Te-Un (75) en de Tovenaar Te-Un (100). Heb je ze alle drie, dan krijg je de profielfoto Tovenaar Te-Un. Ben je in één ronde 50 seconden of langer de tikker geweest, dan krijg je de badge Te-Un tikker.'] },
   ],
 });
 initDev([
   { label: '500 munten erbij', run: () => { P.coins += 500; save(); refresh(); return 'Je hebt nu ' + P.coins + ' munten'; } },
+  { label: 'Te-Un tikker-badge krijgen', run: () => { P.tikker = true; save(); return 'Badge gekregen'; } },
   { label: 'Alle personages krijgen', run: () => { P.owned = { speed: true, shadow: true, wizard: true }; save(); refresh(); return 'Alle personages gekocht'; } },
 ]);
 post('teun:ready');
