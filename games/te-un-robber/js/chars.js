@@ -47,9 +47,26 @@ export function drawTeUn(g, o = {}) {
   if (pose === 'pullmask') { ax = 4; ay = -54; }
   if (pose === 'door') { ax = 18; ay = -34; }
   if (pose === 'scared') { ax = 10; ay = -56; }
+  const tool = o.tool, tk = o.toolT || 0; // gereedschap in de hand: 'club' (klap, tk 0..1), 'screwdriver' en 'lockpick' (tk = tijd)
+  let tAng = 0;
+  if (tool === 'club') { tAng = -1.5 + 3.3 * Math.min(1, tk * 1.25); ax = 6 + 17 * Math.sin(tAng); ay = -36 - 17 * Math.cos(tAng); }
+  else if (tool === 'screwdriver') { ax = 17; ay = -30 + Math.sin(tk * 18) * 1.2; tAng = 1.15 + Math.sin(tk * 18) * 0.12; }
+  else if (tool === 'lockpick') { ax = 17; ay = -30; tAng = 1.5 + Math.sin(tk * 26) * 0.18; }
   g.strokeStyle = jacket[0]; g.lineWidth = 6; g.lineCap = 'round'; g.beginPath(); g.moveTo(6, -36); g.lineTo(ax, ay); g.stroke();
   const glove = gloves > 0.5;
   g.fillStyle = glove ? '#0c0d11' : SKIN; g.beginPath(); g.arc(ax, ay + 2, glove ? 4.2 : 3.5, 0, 7); g.fill();
+  if (tool) {
+    g.save(); g.translate(ax, ay + 1); g.rotate(tAng); g.scale(1.4, 1.4); g.lineCap = 'round';
+    if (tool === 'club') {
+      const gr = g.createLinearGradient(-3, 0, 3, 0); gr.addColorStop(0, '#9a6a3a'); gr.addColorStop(1, '#4a2c14'); g.fillStyle = gr; g.beginPath(); g.roundRect(-2.6, -34, 5.2, 36, 2.4); g.fill(); g.fillStyle = '#d8d8dc'; g.fillRect(-2.8, -9, 5.6, 2); g.fillStyle = '#16181c'; g.fillRect(-2.8, -3, 5.6, 6); g.strokeStyle = OUT; g.lineWidth = 1; g.beginPath(); g.roundRect(-2.6, -34, 5.2, 36, 2.4); g.stroke();
+    } else if (tool === 'screwdriver') {
+      g.fillStyle = '#e8b030'; g.beginPath(); g.roundRect(-2.6, -9, 5.2, 12, 2); g.fill(); g.fillStyle = '#c4452e'; g.fillRect(-2.6, -6, 5.2, 2); g.fillStyle = '#c8ced6'; g.fillRect(-0.9, -24, 1.8, 15); g.fillStyle = '#8a929c'; g.fillRect(-1.6, -26, 3.2, 3);
+    } else {
+      g.strokeStyle = '#c8ced6'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(0, 2); g.lineTo(0, -15); g.lineTo(2.6, -18); g.moveTo(-2, 2); g.lineTo(-2, -12); g.stroke();
+    }
+    g.restore();
+    if (tool === 'club' && tk > 0.55 && tk < 0.95) { g.save(); g.strokeStyle = '#ffe27a'; g.lineWidth = 2; const hx = ax + Math.sin(tAng) * 30, hy = ay - Math.cos(tAng) * 30; for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3 + 0.3; g.beginPath(); g.moveTo(hx + Math.cos(a) * 5, hy + Math.sin(a) * 5); g.lineTo(hx + Math.cos(a) * 11, hy + Math.sin(a) * 11); g.stroke(); } g.restore(); }
+  }
   // kop
   g.fillStyle = SKIN; g.beginPath(); g.arc(0, -52, 11, 0, 7); g.fill(); g.strokeStyle = OUT; g.lineWidth = 2; g.stroke();
   // punt-oren (alleen zonder bivakmuts)

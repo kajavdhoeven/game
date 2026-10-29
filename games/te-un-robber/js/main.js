@@ -5,7 +5,7 @@ import { submitTime, openTimeBoard } from '/js/leaderboard.js';
 import { Game } from './sim.js';
 import { levelFor, LEVEL_COUNT } from './levels.js';
 import { CW, CH, buildStatic, drawScene } from './draw.js';
-import { CHAPTERS, LEVELS, levelMeta, chapterOf, BEFORE, AFTER } from './story.js';
+import { CHAPTERS, LEVELS, CUTSCENES, levelMeta, chapterOf, BEFORE, AFTER } from './story.js';
 
 const KLUISCODE = '4729';
 // cutscene.js, exterior.js en citymap.js worden pas geladen als ze nodig zijn; ontbreekt er één, dan slaat het spel dat onderdeel over
@@ -100,7 +100,7 @@ async function openMap() {
   if (mod && mod.createCityMap) {
     $('fallback').hidden = true; $('mapcv').hidden = false;
     if (mapCtl) mapCtl.destroy();
-    mapCtl = mod.createCityMap($('mapcv'), { chapter: mapChapter, getState, onPick: pickLevel, onChapter: (i) => { if (!chapterOpen(i)) { toast('Haal eerst het vorige hoofdstuk'); return; } mapChapter = i; mapCtl.setChapter(i); }, sfx: (nm) => SFX[nm] && SFX[nm]() });
+    mapCtl = mod.createCityMap($('mapcv'), { chapter: mapChapter, getState, chapterOpen, onPick: pickLevel, onChapter: changeChapter, sfx: (nm) => SFX[nm] && SFX[nm]() });
     fitMap();
   } else renderFallbackMap();
 }
@@ -145,16 +145,59 @@ function runCine(kind, a, fast) {
     });
   });
 }
+// een keuze: het filmpje bekijken of niet
+function askCine(title, text) {
+  return new Promise((res) => {
+    $('chTitle').textContent = title; $('chText').textContent = text; $('choice').hidden = false;
+    const done = (v) => { $('choice').hidden = true; $('chWatch').onclick = $('chSkip').onclick = null; window.removeEventListener('keydown', onKey, true); res(v); };
+    const onKey = (e) => { if (e.code === 'Enter') { e.preventDefault(); e.stopPropagation(); done('watch'); } else if (e.code === 'Escape') { e.preventDefault(); e.stopPropagation(); done('skip'); } };
+    window.addEventListener('keydown', onKey, true);
+    $('chWatch').onclick = () => done('watch'); $('chSkip').onclick = () => done('skip');
+    $('chWatch').focus();
+  });
+}
+async function playCut(id) { P.seen[id] = 1; save(); await runCine('cut', id); }
+// naar een ander hoofdstuk met het pijltje: kies of je het filmpje van dat hoofdstuk wilt zien
+async function changeChapter(i) {
+  if (busy) return;
+  if (!chapterOpen(i)) { toast('Haal eerst het vorige hoofdstuk'); return; }
+  mapChapter = i; if (mapCtl) mapCtl.setChapter(i);
+  const id = BEFORE[CHAPTERS[i].levels[0]];
+  if (!id) return;
+  busy = true;
+  try {
+    const c = CHAPTERS[i];
+    if (await askCine(`Hoofdstuk ${c.id}: ${c.name}`, 'Wil je het filmpje van dit hoofdstuk zien?') === 'watch') { await playCut(id); goMap(c.levels[0]); }
+  } finally { busy = false; }
+}
 async function pickLevel(n) {
   if (busy || !unlocked(n)) return;
   busy = true;
   try {
-    const b = BEFORE[n];
-    if (b && !P.seen[b]) { P.seen[b] = 1; save(); await runCine('cut', b); }
-    if (!levelMeta(n).escape) await runCine('intro', n, !!P.done[n]);
+    const meta = levelMeta(n), b = BEFORE[n];
+    let watched = false;
+    if (b) {
+      // bij een gebouw met een eigen filmpje: dat filmpje (of niets) in plaats van de intro waarin Te-Un zijn bivakmuts opdoet
+      if (await askCine(meta.name, 'Bij dit gebouw hoort een filmpje. Wil je het zien?') === 'watch') { await playCut(b); watched = true; }
+    }
+    if (!meta.escape && !watched) await runCine('intro', n, !!P.done[n]);
     startLevel(n);
   } finally { busy = false; }
 }
+
+// alle filmpjes op een rij (voor beheerders, via het Dev-paneel)
+const CINE_NAMES = { ch1_intro: 'Hoofdstuk 1: begin', ch1_end: 'Hoofdstuk 1: einde (bank leeggehaald)', ch2_intro: 'Hoofdstuk 2: begin', ch2_end: 'Hoofdstuk 2: einde (bami)', ch3_intro: 'Hoofdstuk 3: begin', l15_pre: 'Voor het BUDDLEY-magazijn', ch3_end: 'Hoofdstuk 3: einde (gesnapt)', ch4_intro: 'Hoofdstuk 4: begin (Nico)', l17_end: 'Na level 17: politie', l18_end: 'Na level 18: atelier', l19_end: 'Na level 19: de grote klus', ch4_end: 'Hoofdstuk 4: einde (vliegtuig)', ch5_intro: 'Hoofdstuk 5: begin (eiland)', final: 'Het einde' };
+function openCineList() {
+  document.querySelectorAll('.teun-dev-ov').forEach((o) => o.remove());
+  const ov = $('cineList'); const box = $('cineListBtns'); box.innerHTML = '';
+  for (const id of Object.keys(CUTSCENES)) {
+    const b = document.createElement('button'); b.className = 'small'; b.textContent = `🎬 ${CINE_NAMES[id] || id}`;
+    b.onclick = async () => { ov.hidden = true; const keepMap = !$('map').hidden; await runCine('cut', id); if (keepMap) show('map'); else show('menu'); };
+    box.appendChild(b);
+  }
+  ov.hidden = false;
+}
+$('cineClose').onclick = () => { $('cineList').hidden = true; };
 
 // ---------------------------------------------------------------- spelen
 const canvas = $('cv'); canvas.width = CW; canvas.height = CH;
@@ -345,6 +388,7 @@ initTutorial({
 initDev([
   { label: 'Alle levels openen', run: () => { P.dev = true; save(); renderMenu(); return 'Alle levels open'; } },
   { label: 'Alle levels als gehaald markeren (3 sterren)', run: () => { for (let i = 1; i <= LEVEL_COUNT; i++) P.done[i] = { stars: 3, time: 30 }; save(); renderMenu(); return 'Alles gehaald'; } },
+  { label: 'Alle filmpjes bekijken...', run: () => { openCineList(); return 'Kies een filmpje'; } },
   { label: 'Alle filmpjes opnieuw tonen', run: () => { P.seen = {}; save(); return 'Filmpjes worden weer getoond'; } },
   { label: 'Geen bewakers zien me (testen)', run: () => { if (!game) return 'Start eerst een level'; game.L.guards.length = 0; game.L.lasers.length = 0; game.stun.length = 0; return 'Bewakers uit voor dit level'; } },
 ]);

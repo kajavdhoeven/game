@@ -65,3 +65,7 @@ button.big:active, button.small:active { transform: translateY(3px); box-shadow:
 .mapback { position: absolute; left: 124px; top: 8px; z-index: 5; background: #000a; }
 .hudlogo { height: 28px; width: auto; display: block; }
 @media (max-width: 700px) { .mapback { left: 124px; top: 6px; } }
+
+#choice, #cineList { z-index: 2147483100; }
+.cinelist { display: grid; gap: 8px; max-height: 55vh; overflow: auto; margin: 10px 0 14px; text-align: left; }
+.cinelist button { text-align: left; }

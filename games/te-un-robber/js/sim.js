@@ -6,6 +6,7 @@ export const WALK = 4, CLIMB = 3.2;   // loopsnelheid en klimsnelheid in tegels 
 export const HALF = 0.3;              // halve breedte van Te-Un
 const PORTAL_T = 0.5;                 // een trap of lift duurt even
 export const PICK_T = 1.6;            // zo lang moet je spatie ingedrukt houden om een slot open te breken
+export const SWING_T = 0.45;          // zo lang duurt een klap met de knuppel
 export const STUN_T = 5;              // een geslagen robot is zo lang uitgeschakeld
 const ACT = { doc: 0.4, loot: 0.5, switch: 0.3, hack: 1.8, code: 0.6, vault: 1.8, key: 0 }; // hoe lang het kost om iets te doen // hoe lang het kost om iets te doen
 
@@ -47,7 +48,7 @@ export class Game {
     this.t = 0;
     this.status = 'play'; // play | won | caught | timeup
     this.events = [];
-    this.p = { x: level.start.x, y: Y[level.start.f], f: level.start.f, face: 1, mode: 'walk', vx: 0, work: 0, workItem: null, portal: null, climbTo: 0, hidden: false, walk: 0, pick: 0, pickWall: -1 };
+    this.p = { x: level.start.x, y: Y[level.start.f], f: level.start.f, face: 1, mode: 'walk', vx: 0, work: 0, workItem: null, portal: null, climbTo: 0, hidden: false, walk: 0, pick: 0, pickWall: -1, swing: 0 };
     this.items = level.items.map((it) => ({ ...it, done: false }));
     this.keys = new Set();
     this.doorOpen = new Set();      // gebroken sloten (index van de muur)
@@ -71,6 +72,7 @@ export class Game {
     const L = this.L, p = this.p;
     if (this.t >= L.limit) { this.status = 'timeup'; this.events.push('timeup'); return; }
     this.stun = this.stun.map((s) => Math.max(0, s - dt));
+    p.swing = Math.max(0, p.swing - dt);
     const dir = (inp.r ? 1 : 0) - (inp.l ? 1 : 0);
 
     if (p.mode === 'portal') { // trap of lift
@@ -153,7 +155,7 @@ export class Game {
       const g = this.L.guards[i];
       if (g.f !== p.f || g.kind === 'camera' || g.kind === 'drone' || g.kind === 'heavy' || this.stun[i] > 0) continue;
       const s = guardAt(g, this.t);
-      if (Math.abs(s.x - p.x) < 1.1 && (p.x - s.x) * s.dir < 0.2 && !(g.kind === 'sleeper' && s.awake && (p.x - s.x) * s.dir > 0)) { this.stun[i] = STUN_T; this.events.push('stun'); return; }
+      if (Math.abs(s.x - p.x) < 1.1 && (p.x - s.x) * s.dir < 0.2 && !(g.kind === 'sleeper' && s.awake && (p.x - s.x) * s.dir > 0)) { this.stun[i] = STUN_T; p.swing = SWING_T; p.face = s.x >= p.x ? 1 : -1; this.events.push('stun'); return; }
     }
   }
   finishWork() {

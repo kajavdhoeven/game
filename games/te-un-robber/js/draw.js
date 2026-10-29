@@ -1,6 +1,6 @@
 // Tekenen: een gebouw in doorsnede met echte texturen (steen, hout, tegels, pleister met schade), schaduw en licht, kamers, deuren, ladders en trappen,
 // de bewakers met hun lichtkegels en Te-Un als dief (zwart, met bivakmuts en handschoenen). Alles met canvas.
-import { TS, W, H, Y, guardAt, laserOn, PICK_T } from './sim.js';
+import { TS, W, H, Y, guardAt, laserOn, PICK_T, SWING_T } from './sim.js';
 import { drawTeUn } from './chars.js';
 import { drawProp } from './props.js';
 import { hash2, shade, grain, blotches, bricks, plaster, wood, tiles, concrete, metal, wallpaper, stoneBlocks, mushroomWall, streak, crack } from './tex.js';
@@ -178,12 +178,12 @@ export function buildStatic(L) {
       const x = w.x * TS;
       // de muur: dikke scheidingswand met doorsnede
       const mg = g.createLinearGradient(x - 6, 0, x + 6, 0); mg.addColorStop(0, '#171a20'); mg.addColorStop(0.5, '#3a3f4a'); mg.addColorStop(1, '#171a20');
-      g.fillStyle = mg; g.fillRect(x - 6, y0 - 4, 12, y1 - y0 + 4);
-      // deuropening: donker, met licht van de ene kant, en een kozijn
+      g.fillStyle = mg; g.fillRect(x - 6, y0 - 4, 12, (y1 - 2.6 * TS) - (y0 - 4));
+      // doorgang tussen twee kamers: een kozijn met de muur erdoorheen te zien (geen donker gat)
       const dh = 2.6 * TS, dw = 1.5 * TS;
-      const dg = g.createLinearGradient(x - dw / 2, 0, x + dw / 2, 0); dg.addColorStop(0, '#0c0e12'); dg.addColorStop(1, '#232830');
+      const dg = g.createLinearGradient(x - dw / 2, 0, x + dw / 2, 0); dg.addColorStop(0, shade(T.wall2, -0.22)); dg.addColorStop(0.5, shade(T.wall, -0.08)); dg.addColorStop(1, shade(T.wall2, -0.28));
       g.fillStyle = dg; g.fillRect(x - dw / 2, y1 - dh, dw, dh);
-      g.fillStyle = 'rgba(255,240,200,.08)'; g.beginPath(); g.moveTo(x - dw / 2, y1); g.lineTo(x - dw / 2 + 14, y1 - dh); g.lineTo(x + dw / 2, y1 - dh); g.lineTo(x + dw / 2, y1); g.closePath(); g.fill();
+      g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(x - dw / 2, y1 - dh, dw, 10);
       g.fillStyle = shade(T.trim, 0); g.fillRect(x - dw / 2 - 5, y1 - dh - 6, dw + 10, 7); g.fillRect(x - dw / 2 - 5, y1 - dh, 5, dh); g.fillRect(x + dw / 2, y1 - dh, 5, dh);
       g.fillStyle = 'rgba(255,255,255,.28)'; g.fillRect(x - dw / 2 - 5, y1 - dh - 6, dw + 10, 1.6); g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x - dw / 2 + 0, y1 - dh + 1, dw, 3);
       // een open deurblad dat tegen de wand staat
@@ -355,12 +355,19 @@ function drawCone(g, gd, s, alert) {
 }
 
 // ---------------------------------------------------------------- Te-Un als dief: zwarte kleding, bivakmuts en handschoenen
+// welk gereedschap Te-Un in zijn hand heeft: een knuppel bij een klap, een schroevendraaier bij hacken, een dietrich bij een slot
+function toolOf(p, t) {
+  if (p.swing > 0) return { tool: 'club', toolT: 1 - p.swing / SWING_T };
+  if (p.mode === 'act' && p.workItem && (p.workItem.type === 'hack' || p.workItem.type === 'vault')) return { tool: 'screwdriver', toolT: t };
+  if (p.mode === 'pick') return { tool: 'lockpick', toolT: t };
+  return {};
+}
 export function drawThief(g, p, t, opts = {}) {
   const x = opts.px !== undefined ? opts.px : p.x * TS, y = opts.py !== undefined ? opts.py : p.y * TS;
   const moving = p.mode === 'walk' && Math.abs(p.vx) > 0.5, climbing = p.mode === 'climb';
   const alpha = p.mode === 'hide' || p.hidden ? 0.35 : p.mode === 'portal' ? 0.25 : 1;
   g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.ellipse(x, y - 1, 15, 3.5, 0, 0, 7); g.fill();
-  drawTeUn(g, { x, y, s: opts.scale || 1, face: p.face >= 0 ? 1 : -1, walk: p.walk * 7, t, outfit: 'black', mask: 1, gloves: 1, sack: true, alpha, pose: climbing ? 'climb' : p.mode === 'pick' ? 'sneak' : moving ? 'walk' : 'stand' });
+  drawTeUn(g, { x, y, s: opts.scale || 1, face: p.face >= 0 ? 1 : -1, walk: p.walk * 7, t, outfit: 'black', mask: 1, gloves: 1, sack: true, alpha, pose: climbing ? 'climb' : p.mode === 'pick' ? 'sneak' : moving ? 'walk' : 'stand', ...toolOf(p, t) });
 }
 
 // ---------------------------------------------------------------- hele scene

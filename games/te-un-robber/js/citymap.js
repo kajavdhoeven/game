@@ -1353,7 +1353,7 @@ export function createCityMap(canvas, opts = {}) {
   let hover = null, sel = 0, kbd = false, press = null, tip = null, tipT = -9, shake = { k: '', t: -9 }, mouse = { x: 640, y: 360 };
   let walk = null, snap = null, snapT = -9;
   const teun = { x: 0, y: 0, face: 1, idx: -1, alpha: 1, mv: null, ch: -1 };
-  const chapterOpen = (i) => i <= 0 || !!getSt(CHAPTERS[i - 1].levels[CHAPTERS[i - 1].levels.length - 1]).done;
+  const chapterOpen = (i) => (opts.chapterOpen ? !!opts.chapterOpen(i) : (i <= 0 || !!getSt(CHAPTERS[i - 1].levels[CHAPTERS[i - 1].levels.length - 1]).done));
   const lvl = (i) => CHAPTERS[ch].levels[i];
 
   function layers(c) {
