@@ -49,3 +49,6 @@ body.one .swap { display: block; }
 .screen { justify-content: safe center; }
 .title img { max-height: 16vh; width: auto; max-width: 100%; margin: 0 auto; }
 @media (max-height: 560px), (max-width: 700px) { #menu { padding-top: 54px; } }
+.node.rainbow { animation: hue 5s linear infinite; }
+@keyframes hue { to { filter: hue-rotate(360deg); } }
+@media (pointer: coarse) { #modeBtn { display: none; } }

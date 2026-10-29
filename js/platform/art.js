@@ -66,6 +66,7 @@ export function avatarSVG(kind = 'teun') {
   if (kind === 'lambo') return lamboAvatar();
   if (kind === 'diamant') return diamantAvatar();
   if (kind === 'tovenaar') return tovenaarAvatar();
+  if (kind === 'regenboog') return `<div class="av-face" style="isolation:isolate;background:linear-gradient(135deg,#ff3b3b,#ff9a1f,#ffe226,#41d97a,#38a6ff,#8a5cff)">${teunSVG({ crop: 'face' })}<div style="position:absolute;inset:0;background:linear-gradient(135deg,#ff3b3b,#ff9a1f,#ffe226,#41d97a,#38a6ff,#8a5cff,#ff5ea8);mix-blend-mode:color"></div></div>`;
   return `<div class="av-face">${teunSVG({ crop: 'face' })}</div>`;
 }
 
@@ -195,6 +196,7 @@ export const AVATARS = [
   { id: 'puzzle', name: 'Puzzel-Te-Un', desc: 'Te-Un met puzzelstukje', unlock: { game: 'te-un-puzzel', how: 'Maak alle 4 de levels van Te-Un Puzzel af binnen de tijd (30 sec, 1 min, 2,5 min en 10 min)', check: (d) => [1, 2, 3, 4].every((n) => d.fast && d.fast[n]) } },
   { id: 'slider', name: 'Schuif-Te-Un', desc: 'Te-Un als schuifpuzzel, met een paar verkeerd geschoven vakjes', unlock: { game: 'te-un-puzzel', how: 'Maak alle 4 de levels van de schuifpuzzel in Te-Un Puzzel af', check: (d) => [1, 2, 3, 4].every((n) => d.slide && d.slide[n]) } },
   { id: 'racer', name: 'Te-Un Racer', desc: 'Te-Un met motorhelm', unlock: { game: 'te-un-x3m', how: 'Haal 3 sterren op alle 25 levels van Te-Un X3M', check: (d) => Array.from({ length: 25 }, (_, i) => i + 1).every((n) => (d.stars && d.stars[n]) >= 3) } },
+  { id: 'regenboog', name: 'Regenboog Te-Un', desc: 'Te-Un helemaal in regenbogenkleuren', unlock: { game: 'vuur-water', how: 'Haal alle 10 de buitenste levels van VuurTe-Un & WaterTe-Un', check: (d) => !!d.dev || !!d.rainbow } },
   { id: 'tovenaar', name: 'Tovenaar Te-Un', desc: 'Te-Un met een paarse tovenaarsmuts en een paars gewaad', unlock: { game: 'te-un-tikkertje', how: 'Koop alle 3 de personages in de winkel van Te-Un Tikkertje', check: (d) => !!d.dev || ['speed', 'shadow', 'wizard'].every((k) => d.owned && d.owned[k]) } },
   { id: 'diamant', name: 'Te-Un met diamant', desc: 'Te-Un met een diamant en een zonnebril, want het schittert te hard', unlock: { game: 'vuur-water', how: 'Verzamel alle diamanten (rood en blauw) in alle 32 levels van VuurTe-Un & WaterTe-Un', check: (d) => Array.from({ length: 32 }, (_, i) => i + 1).every((n) => d.done && d.done[n] && d.done[n].all) } },
   { id: 'schaver', name: 'Flinke schaver gemaakt', desc: 'Hermano\'s fiets met OUTFITJE 52K', unlock: { game: 'te-un-drive', how: 'Ga een keer af met Hermano\'s fiets in Te-Un Drive', check: (d) => !!d.dev || !!d.bikeCrash } },

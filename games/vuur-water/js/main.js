@@ -2,7 +2,7 @@
 import { initDev, setDevVisible } from '/js/devmode.js';
 import { initTutorial } from '/js/tutorial.js';
 import { submitTime, openTimeBoard } from '/js/leaderboard.js';
-import { makeLevel, NODES, LEVEL_COUNT } from './levels.js';
+import { makeLevel, NODES, LEVEL_COUNT, OUTER } from './levels.js';
 import { World } from './engine.js';
 import { CW, CH, buildStatic, drawScene } from './draw.js';
 
@@ -14,7 +14,7 @@ const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(
 const KEY = 'vuur-water-v1';
 let P = { done: {}, dev: false, numbers: false, updatedAt: 0 };
 try { P = Object.assign(P, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* geen opslag */ }
-const snapshot = () => ({ done: P.done, dev: P.dev, updatedAt: P.updatedAt });
+const snapshot = () => ({ done: P.done, dev: P.dev, rainbow: !!P.rainbow, updatedAt: P.updatedAt });
 const post = (type, extra = {}) => {
   if (window.parent === window) return;
   try { window.parent.postMessage({ type, game: GAME_ID, ...extra }, location.origin); } catch (e) { /* geen ouder */ }
@@ -33,6 +33,7 @@ window.addEventListener('message', (e) => {
   const d = m.data;
   if ((d.updatedAt || 0) > (P.updatedAt || 0)) {
     P.done = Object.assign({}, d.done || {});
+    P.rainbow = !!d.rainbow;
     P.updatedAt = d.updatedAt;
     save(true);
     renderMenu();
@@ -59,6 +60,8 @@ const SFX = {
   lever: () => beep(240, 0.1, 'square', 0.08),
   gate: () => beep(140, 0.3, 'sawtooth', 0.05, 0, -50),
   die: () => { beep(300, 0.5, 'sawtooth', 0.12, 0, -250); },
+  spin: () => beep(420, 0.5, 'sawtooth', 0.07, 0, -300),
+  splash: () => beep(200, 0.25, 'sine', 0.1, 0, -100),
   win: () => [523, 659, 784, 1047].forEach((f, i) => beep(f, 0.22, 'triangle', 0.12, i * 0.12)),
 };
 
@@ -78,11 +81,18 @@ function renderMenu() {
     svgEl('line', { x1: p.x, y1: p.y, x2: nd.x, y2: nd.y, stroke: P.done[nd.parent] || P.dev ? '#8fd06a' : '#33402f', 'stroke-width': 7, 'stroke-linecap': 'round' }, lines);
   }
   const doneCount = Object.keys(P.done).length;
+  const allOuter = OUTER.every((n) => P.done[n]);
+  const hsl = (h, l) => `hsl(${h} 90% ${l}%)`;
+  const defs = svgEl('defs', {}, svg);
+  const rb = svgEl('linearGradient', { id: 'rb', x1: 0, y1: 0, x2: 1, y2: 1 }, defs);
+  ['#ff3b3b', '#ff9a1f', '#ffe226', '#41d97a', '#38a6ff', '#8a5cff', '#ff5ea8'].forEach((c, i, a) => svgEl('stop', { offset: i / (a.length - 1), 'stop-color': c }, rb));
   for (const nd of NODES) {
     const open = unlocked(nd), done = !!P.done[nd.n];
-    const pos = svgEl('g', { transform: `translate(${nd.x},${nd.y})` }, gems);
-    const g = svgEl('g', { class: 'node ' + (done ? 'done' : open ? 'new' : 'locked'), tabindex: open ? 0 : -1, role: 'button', 'aria-label': `Level ${nd.n}${open ? '' : ' (vergrendeld)'}` }, pos);
-    const c = done ? ['#4ee05a', '#bff5b0', '#1a7a2a'] : open ? ['#b8c0c8', '#eef2f6', '#6a737c'] : ['#24302a', '#2f3d35', '#161d19'];
+    const oi = OUTER.indexOf(nd.n);
+    const center = nd.n === 1 && allOuter;
+    const pos = svgEl('g', { transform: `translate(${nd.x},${nd.y})${center ? ' scale(1.7)' : ''}` }, gems);
+    const g = svgEl('g', { class: 'node ' + (done ? 'done' : open ? 'new' : 'locked') + (center ? ' rainbow' : ''), tabindex: open ? 0 : -1, role: 'button', 'aria-label': `Level ${nd.n}${open ? '' : ' (vergrendeld)'}` }, pos);
+    const c = center ? ['url(#rb)', '#ffffff', '#5a3aa0'] : done && oi >= 0 ? [hsl(oi * 36, 55), hsl(oi * 36, 85), hsl(oi * 36, 32)] : done ? ['#4ee05a', '#bff5b0', '#1a7a2a'] : open ? ['#b8c0c8', '#eef2f6', '#6a737c'] : ['#24302a', '#2f3d35', '#161d19'];
     svgEl('path', { d: 'M0 -26 L20 -8 L0 28 L-20 -8 Z', fill: c[0], stroke: '#0c1210', 'stroke-width': 3, 'stroke-linejoin': 'round' }, g);
     svgEl('path', { d: 'M0 -26 L20 -8 L0 -8 Z', fill: c[1], opacity: 0.9 }, g);
     svgEl('path', { d: 'M0 -8 L20 -8 L0 28 Z', fill: c[2], opacity: 0.8 }, g);
@@ -173,6 +183,7 @@ function finish() {
     const best = !prev || t < prev.time;
     P.done[cur.n] = { time: best ? t : prev.time, red: Math.max(prev ? prev.red : 0, w.gemsGot.red), blue: Math.max(prev ? prev.blue : 0, w.gemsGot.blue) };
     if ((prev && prev.all) || (w.gemsGot.red === w.gemsTotal.red && w.gemsGot.blue === w.gemsTotal.blue)) P.done[cur.n].all = true;
+    if (OUTER.every((n) => P.done[n])) P.rainbow = true;
     save();
     submitTime(GAME_ID, 'l' + cur.n, t);
     $('ovTitle').textContent = 'Level gehaald!';
@@ -272,13 +283,14 @@ initTutorial({
     { icon: '🔥💧', title: 'Twee kabouters, één team', lines: ['Je bestuurt <b>VuurTe-Un</b> (rood) en <b>WaterTe-Un</b> (blauw) tegelijk. Breng ze allebei naar hun eigen <b>deur</b> met het vlam- of druppelsymbool. Dan ben je klaar.'] },
     { icon: '⌨️', title: 'Besturing', lines: ['<b>VuurTe-Un:</b> <kbd>←</kbd> <kbd>→</kbd> lopen, <kbd>↑</kbd> springen.', '<b>WaterTe-Un:</b> <kbd>A</kbd> <kbd>D</kbd> lopen, <kbd>W</kbd> springen.', 'Alleen of op een telefoon? Kies <b>1 speler</b>: je bestuurt één kabouter en wisselt met <kbd>Spatie</kbd> of de wisselknop.'] },
     { icon: '☠️', title: 'Pas op voor plassen', lines: ['<b>Lava</b> (oranje) is dodelijk voor WaterTe-Un, <b>water</b> (blauw) voor VuurTe-Un en <b>groene smurrie</b> voor allebei. Over je eigen kleur kun je veilig lopen.'] },
-    { icon: '💎', title: 'Stenen, knoppen en hendels', lines: ['Rode stenen zijn voor VuurTe-Un, blauwe voor WaterTe-Un. Knoppen en hendels openen gekleurde poorten: laat de ander erdoor terwijl jij op de knop staat.', '<kbd>R</kbd> start het level opnieuw, <kbd>Esc</kbd> pauzeert.'] },
+    { icon: '💎', title: 'Stenen, poorten en bruggen', lines: ['Rode stenen zijn voor VuurTe-Un, blauwe voor WaterTe-Un. Een gekleurde <b>hendel</b> opent de poort van dezelfde kleur voorgoed: duw hem een keer aan. Een gekleurde <b>knop</b> werkt alleen zolang er iemand op staat. Daarom zit er aan beide kanten een knop: de eerste laat de ander door, die gaat op de andere knop staan en laat dan de eerste door. Zo werken ook de bruggen.'] },
+    { icon: '📦', title: 'Kratten en planken', lines: ['Duw een <b>krat</b> tegen een hoge rand, spring erop en dan op de rand. Over een grote plas <b>smurrie</b> kom je alleen met een <b>draaiende plank</b>: land precies in het midden, dan blijft hij liggen. Land je aan de zijkant, dan draait hij helemaal rond en val je erin.', '<kbd>R</kbd> start het level opnieuw, <kbd>Esc</kbd> pauzeert.'] },
   ],
 });
 initDev([
   { label: 'Alle levels openen', run: () => { P.dev = true; save(); renderMenu(); return 'Alle levels open'; } },
   { label: 'Profielfoto krijgen (alle diamanten als verzameld markeren)', run: () => { for (let i = 1; i <= LEVEL_COUNT; i++) P.done[i] = Object.assign({ time: 60, red: 0, blue: 0 }, P.done[i], { all: true }); save(); renderMenu(); return 'Alle diamanten verzameld'; } },
-  { label: 'Alle levels als gehaald markeren', run: () => { for (let i = 1; i <= LEVEL_COUNT; i++) P.done[i] = P.done[i] || { time: 60, red: 0, blue: 0 }; save(); renderMenu(); return 'Alles gehaald'; } },
+  { label: 'Alle levels als gehaald markeren (ook de regenboog)', run: () => { for (let i = 1; i <= LEVEL_COUNT; i++) P.done[i] = P.done[i] || { time: 60, red: 0, blue: 0 }; P.rainbow = true; save(); renderMenu(); return 'Alles gehaald'; } },
 ]);
 post('teun:ready');
 

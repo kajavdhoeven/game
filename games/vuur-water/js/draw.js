@@ -1,7 +1,7 @@
 // Tekenen: een mossige tempel, plassen, deuren en de twee kabouters. Alles wordt met canvas getekend, er zijn geen plaatjes nodig.
 import { W, H } from './levels.js';
 
-export const TS = 36; // pixels per tegel
+export const TS = 32; // pixels per tegel
 export const CW = W * TS, CH = H * TS;
 
 const hash = (x, y) => { let h = (x * 374761393 + y * 668265263) | 0; h = (h ^ (h >> 13)) * 1274126177; return ((h ^ (h >> 16)) >>> 0) / 4294967296; };
@@ -130,6 +130,45 @@ function drawLever(g, lv, state, color) {
   g.fillStyle = color; g.beginPath(); g.arc(x + Math.sin(a) * 22, y - 7 - Math.cos(a) * 22, 5.5, 0, 7); g.fill();
 }
 
+function drawBridge(g, b, t) {
+  const cells = Math.round(b.p * b.len);
+  for (let i = 0; i < b.len; i++) {
+    const x = (b.x + i * b.dir) * TS, y = b.y * TS;
+    if (i < cells) {
+      g.fillStyle = '#9a6a38'; g.fillRect(x, y, TS, 9);
+      g.fillStyle = '#c28b4e'; g.fillRect(x, y, TS, 3);
+      g.fillStyle = '#5d3c20'; g.fillRect(x + 2, y + 6, TS - 4, 3);
+      g.fillStyle = b.color; g.fillRect(x, y + 9, TS, 3);
+    } else { // de plek waar de brug uitschuift: een gekleurd streepje
+      g.fillStyle = b.color; g.globalAlpha = 0.45; g.fillRect(x + 4, y + 1, TS - 8, 3); g.globalAlpha = 1;
+    }
+  }
+}
+
+function drawCrate(g, c) {
+  if (c.dead > 0) return;
+  const w = 1.1 * TS, h = 1.2 * TS, x = c.x * TS - w / 2, y = c.y * TS - h;
+  g.fillStyle = '#b07a3e'; g.fillRect(x, y, w, h);
+  g.strokeStyle = '#5d3c20'; g.lineWidth = 3; g.strokeRect(x + 1.5, y + 1.5, w - 3, h - 3);
+  g.beginPath(); g.moveTo(x + 3, y + 3); g.lineTo(x + w - 3, y + h - 3); g.moveTo(x + w - 3, y + 3); g.lineTo(x + 3, y + h - 3); g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(x + 3, y + 3, w - 6, 3);
+}
+
+function drawPlank(g, p, t) {
+  const px = p.x * TS, py = p.y * TS;
+  const wob = p.spin > 0 ? 0 : Math.sin(t * 1.6 + p.x) * 0.02;
+  g.strokeStyle = '#6b6f73'; g.lineWidth = 3; g.setLineDash([6, 4]);
+  g.beginPath(); g.moveTo(px, p.anchor * TS); g.lineTo(px, py + 4); g.stroke(); g.setLineDash([]);
+  g.fillStyle = '#4a4f55'; g.beginPath(); g.arc(px, p.anchor * TS + 2, 5, 0, 7); g.fill();
+  g.save(); g.translate(px, py + 4); g.rotate(p.theta + wob);
+  const hl = p.hl * TS;
+  g.fillStyle = '#a97a44'; g.beginPath(); g.roundRect(-hl, -5, hl * 2, 10, 3); g.fill();
+  g.fillStyle = '#c99b62'; g.fillRect(-hl + 3, -5, hl * 2 - 6, 3);
+  g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(-hl + 2, 2, hl * 2 - 4, 3);
+  g.fillStyle = '#4a4f55'; g.beginPath(); g.arc(0, 0, 5, 0, 7); g.fill();
+  g.restore();
+}
+
 // ---------------------------------------------------------------- de kabouters
 // fire = Vuur-Te-Un (rode muts met vlam, witte baard), water = Water-Te-Un (blauwe muts met druppel, vlechtjes, jurk)
 function drawGnome(g, c, t) {
@@ -208,8 +247,11 @@ export function drawScene(g, level, world, staticCv, t) {
   for (const l of level.liquids) drawLiquid(g, l, t);
   for (const k of ['fire', 'water']) drawDoor(g, level.doors[k], k, world.chars.find((c) => c.kind === k).atDoor, t);
   level.buttons.forEach((b, i) => drawButton(g, b, world.buttonDown[i]));
-  level.levers.forEach((lv, i) => drawLever(g, lv, world.leverState[i], level.gates[lv.gate].color));
+  level.levers.forEach((lv, i) => drawLever(g, lv, world.leverState[i], lv.color));
+  for (const b of world.bridges) drawBridge(g, b, t);
   for (const gm of level.gems) if (!gm.got) drawGem(g, gm, t);
+  for (const c of world.crates) drawCrate(g, c);
+  for (const p of world.planks) drawPlank(g, p, t);
   for (const c of world.chars) drawGnome(g, c, t);
   world.gates.forEach((gt) => drawGate(g, gt));
 }
