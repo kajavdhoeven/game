@@ -21,6 +21,7 @@ export class Leaderboard {
   constructor(state) {
     this.state = state;
     this.last = new Map();
+    this.online = new Map(); // wie er nu op de site is: bezoeker-id -> { t, auth }
   }
 
   async load() {
@@ -29,6 +30,22 @@ export class Leaderboard {
 
   async fetch(request) {
     const url = new URL(request.url);
+    // ---- wie is er nu op de site? Elke open pagina stuurt elke halve minuut een levensteken; na 75 seconden stilte tellen we hem niet meer mee.
+    if (url.pathname === '/api/ping' && request.method === 'POST') {
+      let b;
+      try { b = await request.json(); } catch (e) { return json({ error: 'bad json' }, 400); }
+      const cid = String(b.cid || '').slice(0, 40);
+      if (!/^[\w-]{8,40}$/.test(cid)) return json({ error: 'bad id' }, 400);
+      if (b.bye) this.online.delete(cid);
+      else if (this.online.size < 5000 || this.online.has(cid)) this.online.set(cid, { t: Date.now(), auth: !!b.auth });
+      return json({ ok: true });
+    }
+    if (url.pathname === '/api/online' && request.method === 'GET') {
+      const now = Date.now();
+      let users = 0, guests = 0;
+      for (const [k, v] of this.online) { if (now - v.t > 75000) this.online.delete(k); else if (v.auth) users++; else guests++; }
+      return json({ total: users + guests, users, guests, at: now });
+    }
     // ---- tijden-ranglijsten voor de levelgames (puzzel, X3M, Drive): per game en level de snelste tijd per speler
     if (url.pathname === '/api/times' && request.method === 'GET') {
       const game = (url.searchParams.get('game') || '').slice(0, 30);

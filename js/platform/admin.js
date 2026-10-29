@@ -101,6 +101,7 @@ export async function renderAdmin(app) {
     main.innerHTML = `${head('Overzicht', 'Kerncijfers van Te-Un Games.', '<button class="ad-btn" id="adRefresh">Vernieuwen</button>')}${demo}
       <section class="ad-hero"><div><h2>${greet}, ${esc(me.username || 'beheerder')}!</h2><p>Dit is wat er gebeurt op jouw Te-Un Games. ${top ? `<b>${esc(top.title)}</b> is nu de populairste game.` : 'Voeg je eerste game toe om te beginnen.'}</p></div><div class="ad-hero-art"><span class="a1">⭐</span><span class="a2">🎮</span><span class="a3">✨</span><div>${teunSVG({ cls: 'wave' })}</div></div></section>
       <div class="ad-kpis">
+        <div class="ad-kpi k5" id="adOnline"><i>🟢</i><small>Nu op de site</small><b>...</b><span>even laden</span></div>
         <div class="ad-kpi k1"><i>👥</i><small>Aangemelde spelers</small><b>${fmt(ov.users)}</b><span>${fmt(ov.new_users_7d)} nieuw in 7 dagen</span></div>
         <div class="ad-kpi k2"><i>🎮</i><small>Games</small><b>${fmt(ov.games)}</b><span>${fmt(games.filter((g) => g.published).length)} gepubliceerd</span></div>
         <div class="ad-kpi k3"><i>▶️</i><small>Keer gespeeld</small><b>${fmt(ov.plays)}</b><span>in totaal</span></div>
@@ -115,6 +116,20 @@ export async function renderAdmin(app) {
         ${users.length ? `<section class="ad-card"><h3>Nieuwste spelers</h3><ul class="ad-list">${[...users].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5).map((u) => `<li><span class="ad-av">${avatarSVG(u.avatar)}</span><b>${esc(u.username)}</b><small>${ago(u.created_at)}</small></li>`).join('')}</ul></section>` : ''}
       </div>`;
     main.querySelector('#adRefresh').onclick = () => show();
+    // wie is er nu op de site: ververst elke 15 seconden zolang dit overzicht open staat
+    const paintOnline = async () => {
+      const box = main.querySelector('#adOnline');
+      if (!box) return;
+      try {
+        const r = await fetch('/api/online', { cache: 'no-store' });
+        if (!r.ok) throw new Error('geen data');
+        const o = await r.json();
+        box.innerHTML = `<i>🟢</i><small>Nu op de site</small><b>${fmt(o.total)}</b><span>${fmt(o.users)} ingelogd · ${fmt(o.guests)} ${o.guests === 1 ? 'gast' : 'gasten'}</span>`;
+      } catch (e) { box.innerHTML = '<i>🟢</i><small>Nu op de site</small><b>-</b><span>alleen op de echte site te zien</span>'; }
+    };
+    paintOnline();
+    clearInterval(overview.timer);
+    overview.timer = setInterval(() => { if (!main.querySelector('#adOnline')) { clearInterval(overview.timer); return; } paintOnline(); }, 15000);
   }
 
   async function gamesTab() {

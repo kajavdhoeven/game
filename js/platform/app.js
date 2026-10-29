@@ -1,3 +1,4 @@
+import { startPresence } from '/js/presence.js';
 import { api, configured } from './api.js';
 import { DEFAULT_GAMES } from './games.js';
 import { logoSVG, icon, teunSVG, avatarSVG } from './art.js';
@@ -349,6 +350,7 @@ async function boot() {
   $('#boot').classList.add('done');
   setTimeout(() => $('#boot').remove(), 600);
   maybeFirstTour();
+  startPresence(() => !!state.user);
 }
 
 boot();
