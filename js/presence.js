@@ -7,8 +7,13 @@ if (!/^[\w-]{8,40}$/.test(cid)) {
   try { localStorage.setItem('teun-cid', cid); } catch (e) { /* geen opslag */ }
 }
 let info = () => ({});
+// speelt hij nu? Dat is zo als hij op een gamepagina staat en de game is gestart
+const playingNow = () => {
+  const m = location.pathname.match(/^\/g\/([\w-]+)/);
+  return m && document.querySelector('#player.playing') ? m[1] : '';
+};
 const send = (extra = {}) => {
-  try { fetch('/api/ping', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cid, ...info(), path: location.pathname, ...extra }), keepalive: true }).catch(() => {}); } catch (e) { /* offline */ }
+  try { fetch('/api/ping', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cid, ...info(), path: location.pathname, playing: playingNow(), ...extra }), keepalive: true }).catch(() => {}); } catch (e) { /* offline */ }
 };
 export const pingNow = () => { if (!document.hidden) send(); };
 export function startPresence(infoFn) {

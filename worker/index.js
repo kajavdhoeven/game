@@ -49,6 +49,20 @@ export class Leaderboard {
     return ok;
   }
 
+  // telt speeltijd op per dag (Nederlandse tijd), per speler en per game
+  async addPlaytime(sec, who, game) {
+    if (!(sec > 0)) return;
+    const day = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Amsterdam' }).format(new Date());
+    const key = `pt:${day}`;
+    const d = (await this.state.storage.get(key)) || { t: 0, u: {}, g: {} };
+    d.t += sec; d.u[who] = (d.u[who] || 0) + sec; d.g[game] = (d.g[game] || 0) + sec;
+    await this.state.storage.put(key, d);
+    if (Math.random() < 0.01) { // af en toe oude dagen (ouder dan 400 dagen) opruimen
+      const old = await this.state.storage.list({ prefix: 'pt:', end: `pt:${new Date(Date.now() - 400 * 864e5).toISOString().slice(0, 10)}` });
+      for (const k of old.keys()) await this.state.storage.delete(k);
+    }
+  }
+
   async load() {
     return (await this.state.storage.get('entries')) || {};
   }
@@ -65,8 +79,12 @@ export class Leaderboard {
       else if (this.online.size < 5000 || this.online.has(cid)) {
         const prev = this.online.get(cid);
         const auth = !!b.auth;
+        const now = Date.now();
+        const playing = /^[\w-]{2,40}$/.test(String(b.playing || '')) ? String(b.playing) : '';
+        // speeltijd: telt alleen als hij bij de vorige en deze melding een game aan het spelen was (maximaal 45 seconden per melding)
+        if (playing && prev && prev.playing) await this.addPlaytime(Math.min(45, (now - prev.t) / 1000), auth ? cleanName(b.name) : 'Gasten', prev.playing);
         this.online.set(cid, {
-          t: Date.now(), auth, since: prev && prev.auth === auth ? prev.since : Date.now(),
+          t: now, auth, playing, since: prev && prev.auth === auth ? prev.since : now,
           name: auth ? cleanName(b.name) : '', avatar: auth ? String(b.avatar || '').replace(/[^\w-]/g, '').slice(0, 20) : '',
           path: String(b.path || '/').replace(/[^\w\-/]/g, '').slice(0, 60),
         });
@@ -91,6 +109,16 @@ export class Leaderboard {
       users.sort((a, b) => a.since - b.since);
       const guests = [...this.online.values()].filter((v) => !v.auth).length;
       return json({ users, guests, total: users.length + guests, at: now });
+    }
+    // speeltijd per dag van een hele maand (alleen voor beheerders, want er staan namen in)
+    if (url.pathname === '/api/playtime' && request.method === 'GET') {
+      if (!(await this.mayViewUsers(request))) return json({ error: 'geen toegang' }, 403);
+      let month = url.searchParams.get('month') || '';
+      if (!/^\d{4}-\d{2}$/.test(month)) month = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Amsterdam' }).format(new Date()).slice(0, 7);
+      const rows = await this.state.storage.list({ prefix: `pt:${month}-` });
+      const days = [];
+      for (const [k, v] of rows) days.push({ day: k.slice(3), total: Math.round(v.t), users: Object.fromEntries(Object.entries(v.u || {}).map(([n, s]) => [n, Math.round(s)])), games: Object.fromEntries(Object.entries(v.g || {}).map(([n, s]) => [n, Math.round(s)])) });
+      return json({ month, days });
     }
     // ---- tijden-ranglijsten voor de levelgames (puzzel, X3M, Drive): per game en level de snelste tijd per speler
     if (url.pathname === '/api/times' && request.method === 'GET') {

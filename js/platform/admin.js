@@ -68,6 +68,7 @@ export async function renderAdmin(app) {
     ['overview', 'Overzicht', has(me, 'view_stats'), '📊'],
     ['games', 'Games', has(me, 'manage_games'), '🎮'],
     ['online', 'Nu online', has(me, 'view_users'), '🟢'],
+    ['time', 'Speeltijd', has(me, 'view_users'), '⏱️'],
     ['users', 'Gebruikers', has(me, 'view_users') || has(me, 'manage_users'), '👥'],
   ].filter((t) => t[2]);
   if (!tabs.length) {
@@ -125,6 +126,7 @@ export async function renderAdmin(app) {
         const r = await fetch('/api/online', { cache: 'no-store' });
         if (!r.ok) throw new Error('geen data');
         const o = await r.json();
+        if (typeof o.total !== 'number') throw new Error('oude server');
         box.innerHTML = `<i>🟢</i><small>Nu op de site</small><b>${fmt(o.total)}</b><span>${fmt(o.users)} ingelogd · ${fmt(o.guests)} ${o.guests === 1 ? 'gast' : 'gasten'}${has(me, 'view_users') ? ' · <u>wie?</u>' : ''}</span>`;
         if (has(me, 'view_users')) { box.style.cursor = 'pointer'; box.onclick = () => { tab = 'online'; history.replaceState(null, '', '/admin?tab=online'); show(); }; }
       } catch (e) { box.innerHTML = '<i>🟢</i><small>Nu op de site</small><b>-</b><span>alleen op de echte site te zien</span>'; }
@@ -154,6 +156,7 @@ export async function renderAdmin(app) {
         if (r.status === 403) throw new Error('Geen toegang: alleen beheerders met het recht "gebruikers bekijken" zien dit.');
         if (!r.ok) throw new Error('Geen verbinding met de server.');
         const o = await r.json();
+        if (!Array.isArray(o.users)) throw new Error('De server (Worker) is nog niet bijgewerkt. Zodra de nieuwste versie live staat, werkt deze pagina.');
         box.innerHTML = `<div class="ad-kpis">
             <div class="ad-kpi k5"><i>🟢</i><small>Nu op de site</small><b>${fmt(o.total)}</b><span>in totaal</span></div>
             <div class="ad-kpi k1"><i>👤</i><small>Ingelogd</small><b>${fmt(o.users.length)}</b><span>met een account</span></div>
@@ -170,6 +173,83 @@ export async function renderAdmin(app) {
     await paint();
     clearInterval(onlineTab.timer);
     onlineTab.timer = setInterval(paint, 10000);
+  }
+
+  // speeltijd per dag, voor iedereen of voor één speler, een hele maand lang
+  async function timeTab() {
+    const dur = (s) => { const m = Math.round(s / 60); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} u ${String(m % 60).padStart(2, '0')} min`; };
+    const MONTHS = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
+    const nowM = new Date();
+    let ym = [nowM.getFullYear(), nowM.getMonth() + 1];
+    let who = '';
+    let data = null;
+    const key = () => `${ym[0]}-${String(ym[1]).padStart(2, '0')}`;
+    const chart = (vals, color) => {
+      const n = vals.length, Wd = 760, Ht = 220, pad = 34, bw = (Wd - pad) / n;
+      const max = Math.max(60, ...vals.map((v) => v.sec));
+      const top = Math.max(1, Math.ceil(max / 3600)); // hele uren op de as
+      const scale = Math.max(max, top * 3600);
+      const y = (s) => Ht - 24 - (s / scale) * (Ht - 44);
+      const ticks = Array.from({ length: Math.min(top, 5) + 1 }, (_, i) => Math.round((top / Math.min(top, 5)) * i));
+      return `<svg class="ad-line" viewBox="0 0 ${Wd} ${Ht}" role="img" aria-label="Speeltijd per dag">
+        ${[...new Set(ticks)].map((h) => `<line x1="${pad}" x2="${Wd}" y1="${y(h * 3600)}" y2="${y(h * 3600)}" stroke="#e8ecf3"/><text x="${pad - 6}" y="${y(h * 3600) + 4}" text-anchor="end" class="lt">${h} u</text>`).join('')}
+        ${vals.map((v, i) => { const h = Math.max(0, Ht - 24 - y(v.sec)); const x = pad + i * bw + bw * 0.14; return `<g><rect x="${x.toFixed(1)}" y="${y(v.sec).toFixed(1)}" width="${(bw * 0.72).toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${color}" opacity="${v.sec ? 1 : 0}"><title>${v.label}: ${dur(v.sec)}</title></rect><rect x="${(pad + i * bw).toFixed(1)}" y="0" width="${bw.toFixed(1)}" height="${Ht - 24}" fill="transparent"><title>${v.label}: ${dur(v.sec)}</title></rect><text x="${(pad + i * bw + bw / 2).toFixed(1)}" y="${Ht - 6}" text-anchor="middle" class="lt">${i % 2 === 0 || n < 20 ? v.n : ''}</text></g>`; }).join('')}
+      </svg>`;
+    };
+    const paint = () => {
+      const days = data.days;
+      const dim = new Date(ym[0], ym[1], 0).getDate();
+      const byDay = Object.fromEntries(days.map((x) => [x.day, x]));
+      const names = {};
+      const gamesT = {};
+      let total = 0;
+      for (const x of days) { total += x.total; for (const [k, v] of Object.entries(x.users)) names[k] = (names[k] || 0) + v; for (const [k, v] of Object.entries(x.games)) gamesT[k] = (gamesT[k] || 0) + v; }
+      const ranked = Object.entries(names).sort((a, b) => b[1] - a[1]);
+      if (who && !names[who]) who = '';
+      const vals = Array.from({ length: dim }, (_, i) => {
+        const day = `${key()}-${String(i + 1).padStart(2, '0')}`;
+        const x = byDay[day];
+        return { n: i + 1, label: `${i + 1} ${MONTHS[ym[1] - 1]}`, sec: x ? (who ? x.users[who] || 0 : x.total) : 0 };
+      });
+      const sel = vals.reduce((a, v) => a + v.sec, 0);
+      const best = vals.reduce((a, v) => (v.sec > a.sec ? v : a), { sec: 0 });
+      const activeDays = vals.filter((v) => v.sec > 0).length;
+      const gname = (id) => { const g = (app.state.games || []).find((x) => x.id === id); return g ? g.title : id; };
+      box.innerHTML = `<div class="ad-kpis">
+          <div class="ad-kpi k1"><i>⏱️</i><small>${who ? esc(who) : 'Iedereen'}, totaal</small><b>${dur(sel)}</b><span>in ${MONTHS[ym[1] - 1]}</span></div>
+          <div class="ad-kpi k3"><i>📅</i><small>Drukste dag</small><b>${best.sec ? best.n + ' ' + MONTHS[ym[1] - 1].slice(0, 3) : '-'}</b><span>${best.sec ? dur(best.sec) : 'nog niets gespeeld'}</span></div>
+          <div class="ad-kpi k2"><i>📈</i><small>Gemiddeld per speeldag</small><b>${activeDays ? dur(sel / activeDays) : '-'}</b><span>${activeDays} dagen gespeeld</span></div>
+          <div class="ad-kpi k4"><i>👥</i><small>Spelers</small><b>${ranked.length}</b><span>deze maand</span></div>
+        </div>
+        <section class="ad-card"><div class="tm-top"><h3>Speeltijd per dag</h3><label class="tm-sel">Wie: <select id="tmWho"><option value="">Iedereen</option>${ranked.map(([n]) => `<option value="${esc(n)}" ${n === who ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label></div>${chart(vals, who ? '#8b5cf6' : '#2563eb')}</section>
+        <div class="ad-grid">
+          <section class="ad-card"><h3>Per speler</h3><p class="ad-muted">Klik op een naam om alleen die speler te zien.</p>${ranked.length ? `<div class="ad-bars tm-people">${(() => { const mx = Math.max(1, ranked[0][1]); return ranked.slice(0, 15).map(([n, s]) => `<button class="ad-bar tm-bar ${n === who ? 'on' : ''}" data-who="${esc(n)}"><span title="${esc(n)}">${esc(n)}</span><div><i style="width:${(s / mx) * 100}%;background:linear-gradient(90deg,#8b5cf6,#6366f1)"></i></div><b>${dur(s)}</b></button>`).join(''); })()}</div>` : '<p class="ad-muted">Nog geen speeltijd gemeten.</p>'}</section>
+          <section class="ad-card"><h3>Per game</h3>${Object.keys(gamesT).length ? bars(Object.entries(gamesT).sort((a, b) => b[1] - a[1]).map(([g, s]) => ({ label: gname(g), value: Math.round(s / 60) }))) + '<p class="ad-muted">in minuten</p>' : '<p class="ad-muted">Nog geen speeltijd gemeten.</p>'}</section>
+        </div>`;
+      box.querySelector('#tmWho').onchange = (e) => { who = e.target.value; paint(); };
+      box.querySelectorAll('.tm-bar').forEach((b) => { b.onclick = () => { who = b.dataset.who === who ? '' : b.dataset.who; paint(); }; });
+    };
+    main.innerHTML = `${head('Speeltijd', 'Hoeveel uur er is gespeeld: per dag, door iedereen of door één speler. Gemeten vanaf het moment dat dit live ging.', `<div class="tm-nav"><button class="ad-btn" id="tmPrev" aria-label="Vorige maand">&lsaquo;</button><b id="tmMonth"></b><button class="ad-btn" id="tmNext" aria-label="Volgende maand">&rsaquo;</button></div>`)}${demo}<div id="timePage"><div class="ad-load">Laden...</div></div>`;
+    const box = main.querySelector('#timePage');
+    const load = async () => {
+      main.querySelector('#tmMonth').textContent = `${MONTHS[ym[1] - 1]} ${ym[0]}`;
+      main.querySelector('#tmNext').disabled = ym[0] === nowM.getFullYear() && ym[1] === nowM.getMonth() + 1;
+      box.innerHTML = '<div class="ad-load">Laden...</div>';
+      try {
+        const token = await api.getAccessToken();
+        const r = await fetch('/api/playtime?month=' + key(), { cache: 'no-store', headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        if (r.status === 403) throw new Error('Geen toegang: alleen beheerders met het recht "gebruikers bekijken" zien dit.');
+        if (!r.ok) throw new Error('Geen verbinding met de server.');
+        data = await r.json();
+        if (!Array.isArray(data.days)) throw new Error('De server (Worker) is nog niet bijgewerkt. Zodra de nieuwste versie live staat, werkt deze pagina.');
+        paint();
+      } catch (e) {
+        box.innerHTML = `<div class="ad-note">${esc(configured ? e.message : 'Alleen op de echte site te zien: hier in demo-modus is er geen server die de speeltijd bijhoudt.')}</div>`;
+      }
+    };
+    main.querySelector('#tmPrev').onclick = () => { ym = ym[1] === 1 ? [ym[0] - 1, 12] : [ym[0], ym[1] - 1]; who = ''; load(); };
+    main.querySelector('#tmNext').onclick = () => { ym = ym[1] === 12 ? [ym[0] + 1, 1] : [ym[0], ym[1] + 1]; who = ''; load(); };
+    await load();
   }
 
   async function gamesTab() {
@@ -284,6 +364,7 @@ export async function renderAdmin(app) {
       if (tab === 'overview') await overview();
       else if (tab === 'games') await gamesTab();
       else if (tab === 'online') await onlineTab();
+      else if (tab === 'time') await timeTab();
       else await usersTab();
     } catch (e) {
       main.innerHTML = `<div class="ad-denied"><div><h1>Kon dit niet laden</h1><p>${esc(e.message)}</p></div></div>`;

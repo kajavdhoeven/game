@@ -25,9 +25,11 @@ export async function renderProfile(app) {
     const sec = el('<section class="card"><h3>Profielpictogram</h3><p class="muted">Kies wie jij bent in het platform. De grijze profielfoto\'s speel je vrij met opdrachten in de games.</p><div class="avatar-grid"></div></section>');
     const grid = sec.querySelector('.avatar-grid');
     const progress = {};
-    for (const gid of new Set(AVATARS.filter((a) => a.unlock).map((a) => a.unlock.game))) progress[gid] = await api.getProgress(gid).catch(() => null);
+    const ids = new Set();
+    AVATARS.forEach((a) => { if (a.unlock) (a.unlock.games || [a.unlock.game]).forEach((i) => ids.add(i)); });
+    for (const gid of ids) progress[gid] = await api.getProgress(gid).catch(() => null);
     AVATARS.forEach((a) => {
-      const open = avatarUnlocked(a, a.unlock && progress[a.unlock.game]);
+      const open = avatarUnlocked(a, a.unlock && (a.unlock.games ? progress : progress[a.unlock.game]));
       const b = el(`<button class="av-opt ${profile && profile.avatar === a.id ? 'on' : ''} ${open ? '' : 'locked'}" data-id="${a.id}"><div class="avatar lg">${avatarSVG(a.id)}</div><b>${esc(a.name)}${open ? '' : ' 🔒'}</b><small>${!a.unlock ? esc(a.desc) : open ? 'Verdiend met: ' + esc(a.unlock.how) : 'Zo krijg je hem: ' + esc(a.unlock.how)}</small></button>`);
       b.addEventListener('click', async () => {
         if (!open) return toast('Nog vergrendeld. ' + a.unlock.how + '.');

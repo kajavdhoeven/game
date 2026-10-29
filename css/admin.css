@@ -197,3 +197,13 @@ body.admin-mode { background: linear-gradient(180deg, #eef4ff 0%, #f8f5ff 45%, #
 .on-list li .on-since { color: #059669; font-weight: 600; }
 .ad-kpi u { text-underline-offset: 2px; }
 @media (max-width: 640px) { .on-list li { grid-template-columns: 40px 1fr; } .on-list li small { grid-column: 2; } }
+.tm-nav { display: flex; align-items: center; gap: 12px; }
+.tm-nav b { min-width: 150px; text-align: center; text-transform: capitalize; font-size: 17px; }
+.tm-nav .ad-btn { padding: 6px 14px; font-size: 18px; }
+.tm-nav .ad-btn:disabled { opacity: .4; cursor: not-allowed; }
+.tm-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.tm-top h3 { margin: 0; }
+.tm-sel select { margin-left: 6px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--b); font: inherit; background: #fff; }
+.tm-bar { width: 100%; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; font: inherit; display: grid; grid-template-columns: 110px 1fr auto; align-items: center; gap: 10px; border-radius: 8px; }
+.tm-bar:hover, .tm-bar.on { background: #eef2ff; }
+.tm-bar b { font-size: 13px; color: var(--m); font-weight: 600; white-space: nowrap; }
