@@ -291,6 +291,11 @@ const SKIN = {
   blue: ['#4a7ac8', '#2f5498'], green: ['#4aa858', '#2f7a3c'], purple: ['#8a5ac8', '#5e3a98'], gold: ['#d8b040', '#a07a1c'], white: ['#e6eef2', '#a8b8c2'],
   police: ['#3a4a9a', '#222d66'], chef: ['#f0ece0', '#b8b2a0'], orange: ['#e88a3a', '#a8561c'], knight: ['#9aa0a8', '#5e646c'], alien: ['#5ae0a8', '#2a9a70'], boss: ['#a83a4a', '#681f2a'],
 };
+function stunBadge(g, bx, by, stunT) {
+  g.fillStyle = 'rgba(8,10,14,.85)'; rr(g, bx - 17, by - 12, 34, 22, 11); g.fill(); g.strokeStyle = '#ffe27a'; g.lineWidth = 1.5; g.stroke();
+  g.fillStyle = '#ffe27a'; g.font = '700 14px Fredoka, sans-serif'; g.textAlign = 'center'; g.fillText(String(Math.ceil(stunT)), bx + 4, by + 4);
+  g.beginPath(); g.arc(bx - 8, by - 1, 5, 0, 7); g.strokeStyle = '#ffe27a'; g.stroke(); g.beginPath(); g.moveTo(bx - 8, by - 1); g.lineTo(bx - 8, by - 4); g.moveTo(bx - 8, by - 1); g.lineTo(bx - 6, by); g.stroke();
+}
 function drawRobot(g, gd, s, t, stunT, alert) {
   const stunned = stunT > 0;
   const [c1, c2] = SKIN[gd.skin] || SKIN.blue;
@@ -298,11 +303,13 @@ function drawRobot(g, gd, s, t, stunT, alert) {
   if (gd.kind === 'camera') { // aan het plafond
     const cy = (Y[gd.f] - 4) * TS + 8;
     g.fillStyle = '#2a2d33'; g.fillRect(x - 3, cy - 4, 6, 10);
+    if (stunned) stunBadge(g, x, cy + 48, stunT);
     g.save(); g.translate(x, cy + 6); g.rotate(-s.ang); const cg = g.createLinearGradient(-11, 0, 11, 14); cg.addColorStop(0, '#5a6068'); cg.addColorStop(1, '#22262c'); g.fillStyle = cg; rr(g, -11, 0, 22, 14, 5); g.fill(); g.fillStyle = alert ? '#ff3a3a' : '#7ab6ff'; g.beginPath(); g.arc(0, 8, 4.5, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.arc(-1, 6.6, 1.4, 0, 7); g.fill(); g.restore();
     return;
   }
   if (gd.kind === 'drone') {
     const hy = y - 2.6 * TS + Math.sin(t * 4 + gd.id) * 3;
+    if (stunned) stunBadge(g, x, hy - 24, stunT);
     g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(x, y - 1, 18, 4, 0, 0, 7); g.fill();
     g.fillStyle = c2; rr(g, x - 16, hy - 6, 32, 14, 7); g.fill(); const dg = g.createLinearGradient(0, hy - 8, 0, hy + 2); dg.addColorStop(0, shade(c1, 0.3)); dg.addColorStop(1, c1); g.fillStyle = dg; rr(g, x - 13, hy - 8, 26, 10, 5); g.fill();
     g.fillStyle = alert ? '#ff3a3a' : '#ffe27a'; g.beginPath(); g.arc(x, hy + 4, 4, 0, 7); g.fill();

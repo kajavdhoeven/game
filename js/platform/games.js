@@ -87,7 +87,7 @@ export const DEFAULT_GAMES = [
       ['←  →  of  A D', 'Lopen'],
       ['↑  ↓', 'Ladder, trap of lift nemen'],
       ['↓', 'Verstoppen bij een kast, plant of kist'],
-      ['Spatie', 'Pakken, hacken, zwakke robot slaan (5 sec uit)'],
+      ['Spatie', 'Pakken, hacken, bewaker neerslaan (5 sec uit)'],
       ['Spatie ingedrukt', 'Een slot openbreken'],
       ['R', 'Level opnieuw'],
       ['Esc  of  P', 'Pauze'],

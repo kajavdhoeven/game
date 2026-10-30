@@ -6,7 +6,7 @@ export const WALK = 4, CLIMB = 3.2;   // loopsnelheid en klimsnelheid in tegels 
 export const HALF = 0.3;              // halve breedte van Te-Un
 const PORTAL_T = 0.5;                 // een trap of lift duurt even
 export const PICK_T = 1.6;            // zo lang moet je spatie ingedrukt houden om een slot open te breken
-export const BATON_T = 0.4;           // een robot die je bijna heeft, zwaait zo lang uit met zijn knuppel
+export const BATON_T = 0.5;           // een robot die je bijna heeft, zwaait zo lang uit met zijn knuppel
 export const ALARM_T = 6;             // zo lang blijft het alarm aan
 const CHASE = { patrol: 2.8, heavy: 2.1, fast: 3.9, sleeper: 2.6 }; // achtervolgsnelheid (Te-Un loopt 4)
 export const SWING_T = 0.45;          // zo lang duurt een klap met de knuppel
@@ -75,7 +75,8 @@ export class Game {
   // waar een robot nu staat en kijkt: op zijn vaste route is dat een vaste functie van de tijd, anders staat hij in zijn eigen toestand
   guardState(i) {
     const g = this.L.guards[i], st = this.gs[i];
-    if (!st || st.mode === 'patrol' || g.kind === 'camera' || g.kind === 'drone') return guardAt(g, this.t);
+    if (g.kind === 'camera' || g.kind === 'drone') return this.stun[i] > 0 && st && st.frozen ? st.frozen : guardAt(g, this.t);
+    if (!st || st.mode === 'patrol') return guardAt(g, this.t);
     return { x: st.x, dir: st.dir, moving: st.moving, awake: true, chase: st.mode === 'chase', swing: st.swing > 0 ? 1 - st.swing / BATON_T : 0 };
   }
   hasCode() { return this.codeGot || (!!this.L.codeFrom && this.extCode); }
@@ -127,10 +128,10 @@ export class Game {
       const speed = CHASE[g.kind] || 2.8;
       if (st.swing > 0) {
         st.swing -= dt; st.moving = false;
-        if (st.swing <= 0) { st.cool = 0.5; if (!p.hidden && Math.abs(p.x - st.x) < 1.35 && p.mode !== 'portal' && p.mode !== 'climb') this.caught('baton'); }
+        if (st.swing <= 0) { st.cool = 0.5; if (!p.hidden && Math.abs(p.x - st.x) < 1.2 && p.mode !== 'portal' && p.mode !== 'climb') this.caught('baton'); }
         return;
       }
-      if (!p.hidden && st.cool <= 0 && Math.abs(p.x - st.x) < 1.25) { st.swing = BATON_T; st.dir = p.x >= st.x ? 1 : -1; st.moving = false; this.events.push('swing'); return; }
+      if (!p.hidden && st.cool <= 0 && Math.abs(p.x - st.x) < 1.1) { st.swing = BATON_T; st.dir = p.x >= st.x ? 1 : -1; st.moving = false; this.events.push('swing'); return; }
       walk(st.last, speed);
     });
   }
@@ -221,9 +222,27 @@ export class Game {
     this.updateGuards(dt);
     this.detect(dt);
   }
+  // welke bewaker staat vlak bij Te-Un en kan worden neergeslagen? Elke soort kan: robots (ook een zware of een die je achtervolgt), drones en camera's
+  hitTarget() {
+    const p = this.p; let best = -1, bd = 9;
+    this.L.guards.forEach((g, i) => {
+      if (g.f !== p.f || this.stun[i] > 0) return;
+      const s = this.guardState(i), d = Math.abs(s.x - p.x), reach = this.gs[i].mode === 'chase' ? 2.0 : 1.4;
+      if (d < reach && d < bd) { bd = d; best = i; }
+    });
+    return best;
+  }
+  hit(i) {
+    const p = this.p, g = this.L.guards[i], s = this.guardState(i);
+    if (!this.isRobot(i)) this.gs[i].frozen = { ...s };
+    this.stun[i] = STUN_T; p.swing = SWING_T; p.face = s.x >= p.x ? 1 : -1; this.events.push('stun');
+  }
   doAct() {
     const p = this.p;
-    // eerst een voorwerp dat dichtbij ligt
+    // een robot die je achtervolgt gaat voor: eerst die neerslaan
+    const t0 = this.hitTarget();
+    if (t0 >= 0 && this.gs[t0].mode === 'chase') { this.hit(t0); return; }
+    // dan een voorwerp dat dichtbij ligt
     let best = null, bd = 1.0;
     for (const it of this.items) { if (it.done || it.f !== p.f || it.type === 'key') continue; const d = Math.abs(it.x - p.x); if (d < bd) { bd = d; best = it; } }
     if (best && best.type === 'vault') {
@@ -239,14 +258,8 @@ export class Game {
       p.mode = 'keypad'; p.pad = { wall: i }; p.x = w.x + (p.x < w.x ? -0.5 : 0.5); p.face = p.x < w.x ? 1 : -1; p.vx = 0; this.events.push('keypad'); return;
     }
     if (best) { p.mode = 'act'; p.workItem = best; p.work = ACT[best.type] || 0.4; p.x = best.x; this.events.push('work'); return; }
-    // anders een zwakke robot van achteren uitschakelen
-    for (let i = 0; i < this.L.guards.length; i++) {
-      const g = this.L.guards[i];
-      if (g.f !== p.f || g.kind === 'camera' || g.kind === 'drone' || g.kind === 'heavy' || this.stun[i] > 0) continue;
-      if (this.gs[i].mode === 'chase') continue;
-      const s = this.guardState(i);
-      if (Math.abs(s.x - p.x) < 1.1 && (p.x - s.x) * s.dir < 0.2 && !(g.kind === 'sleeper' && s.awake && (p.x - s.x) * s.dir > 0)) { this.stun[i] = STUN_T; p.swing = SWING_T; p.face = s.x >= p.x ? 1 : -1; this.events.push('stun'); return; }
-    }
+    // anders een bewaker in de buurt neerslaan
+    if (t0 >= 0) this.hit(t0);
   }
   // de code ingevuld: klopt hij, dan gaat de deur of kluis open
   submitCode(str) {
